@@ -9,12 +9,13 @@
         :root {
             --primary: #1a237e;
             --accent: #ffd600;
-            --bg: #0d1117;
-            --card-bg: #161b22;
+            --bg: #000000; /* Update: Hitam Pekat */
+            --card-bg: #0a0a0a;
             --text-main: #e6edf3;
             --border: #30363d;
             --status-wait: #f44336;
-            --status-plan: #9c27b0;
+            --status-plan: #1a237e;
+            --status-langsir: #2e7d32;
         }
 
         body { 
@@ -30,66 +31,70 @@
 
         /* Header */
         .header {
-            background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
-            padding: 15px 25px;
+            background: linear-gradient(90deg, #000000 0%, #1a237e 100%);
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 3px solid var(--accent);
         }
 
-        .header h1 { margin: 0; font-size: 20px; letter-spacing: 1.5px; color: white; }
-        .live-status { font-size: 13px; color: #4af54a; font-weight: bold; text-align: right; }
-        .dot { height: 10px; width: 10px; background: #4af54a; border-radius: 50%; display: inline-block; margin-right: 5px; animation: blink 1s infinite; }
+        .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: white; }
+        .header .sub-title { font-size: 12px; color: var(--accent); letter-spacing: 2px; }
+        .live-status { font-size: 12px; color: #4af54a; font-weight: bold; text-align: right; }
+        .dot { height: 8px; width: 8px; background: #4af54a; border-radius: 50%; display: inline-block; margin-right: 5px; animation: blink 1s infinite; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
         /* Main Content */
         .main-content {
             flex: 1;
-            padding: 15px;
+            padding: 10px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .table-container {
             background: var(--card-bg);
             border-radius: 8px;
             border: 1px solid var(--border);
+            margin-bottom: 20px;
         }
 
         table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; }
         th { 
-            background: #21262d; 
-            padding: 12px; 
-            font-size: 11px; 
+            background: #111; 
+            padding: 10px; 
+            font-size: 10px; 
             color: #8b949e; 
             text-transform: uppercase; 
             border-bottom: 2px solid var(--border);
         }
-        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; word-wrap: break-word; }
+        td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; word-wrap: break-word; }
 
         /* Row Styling */
-        .group-header { background: #1f2937; color: var(--accent); font-weight: bold; font-size: 13px; }
-        .nopol-badge { background: #30363d; padding: 4px 8px; border-radius: 4px; font-family: monospace; color: white; font-weight: bold; border: 1px solid #444; }
-        .qty-val { color: #4af54a; font-weight: 800; font-size: 16px; }
+        .group-header { background: #1a237e; color: white; font-weight: bold; font-size: 12px; }
+        .nopol-badge { background: #222; padding: 4px 6px; border-radius: 4px; font-family: monospace; color: white; font-weight: bold; border: 1px solid #444; }
+        .qty-val { color: #4af54a; font-weight: 800; font-size: 15px; }
         
         .status-badge { 
-            font-size: 10px; 
-            padding: 3px 6px; 
+            font-size: 9px; 
+            padding: 3px 5px; 
             border-radius: 3px; 
             font-weight: bold; 
             display: inline-block;
+            text-transform: uppercase;
         }
         .st-terjadwal { background: var(--status-plan); color: white; }
-        .st-tunggu { background: var(--status-wait); color: white; }
+        .st-langsir { background: var(--status-langsir); color: white; }
 
-        .rit-label { font-size: 10px; color: var(--accent); margin-left: 5px; font-style: italic; }
+        .rit-label { font-size: 9px; color: var(--accent); margin-left: 3px; font-style: italic; }
 
         /* Footer Marquee */
         .footer-marquee {
             background: #000;
             color: var(--accent);
-            padding: 12px 0;
+            padding: 10px 0;
             white-space: nowrap;
             overflow: hidden;
             border-top: 1px solid var(--border);
@@ -98,14 +103,22 @@
         .marquee-content {
             display: inline-block;
             padding-left: 100%;
-            animation: marquee 30s linear infinite;
+            animation: marquee 45s linear infinite;
             font-weight: bold;
-            font-size: 15px;
+            font-size: 14px;
         }
 
         @keyframes marquee {
             0% { transform: translate(0, 0); }
             100% { transform: translate(-100%, 0); }
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            th:nth-child(1), td:nth-child(1) { display: none; } /* Sembunyikan kolom supplier di baris data karena sudah ada di header group */
+            th { font-size: 9px; padding: 5px; }
+            td { font-size: 12px; padding: 8px 5px; }
+            .header h1 { font-size: 16px; }
         }
     </style>
 </head>
@@ -113,8 +126,9 @@
 
     <div class="header">
         <div>
+            <div class="sub-title">ANGKUTAN BBM</div>
             <h1>JADWAL PENGIRIMAN BESOK</h1>
-            <div id="targetDate" style="color: var(--accent); font-weight: bold; font-size: 14px; margin-top: 5px;">Memuat Jadwal...</div>
+            <div id="targetDate" style="color: var(--accent); font-weight: bold; font-size: 13px; margin-top: 2px;">Memuat Jadwal...</div>
         </div>
         <div class="live-status">
             <div><span class="dot"></span> LIVE CLOUD</div>
@@ -127,13 +141,13 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 15%;">SUPPLIER</th>
-                        <th style="width: 20%;">CUSTOMER</th>
+                        <th style="width: 12%;">SUPPLIER</th>
+                        <th style="width: 25%;">CUSTOMER</th>
                         <th style="width: 15%;">LOKASI</th>
-                        <th style="width: 18%;">UNIT/NOPOL</th>
+                        <th style="width: 20%;">UNIT/NOPOL</th>
                         <th style="width: 15%;">SOPIR</th>
-                        <th style="width: 7%;">QTY</th>
-                        <th style="width: 10%;">STATUS</th>
+                        <th style="width: 8%;">QTY</th>
+                        <th style="width: 15%;">STATUS</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -145,7 +159,7 @@
 
     <div class="footer-marquee">
         <div class="marquee-content" id="runningText">
-            MEMUAT INFORMASI JADWAL TERBARU... HARAP CEK STATUS UNIT SECARA BERKALA... SAFETY FIRST...
+            PENGUMUMAN: JADWAL PENGIRIMAN SEWAKTU-WAKTU DAPAT BERUBAH SESUAI KEBUTUHAN OPERASIONAL... UTAMAKAN KESELAMATAN BERKENDARA (SAFETY FIRST)... PASTIKAN KELENGKAPAN DATA MUATAN (SURAT JALAN & SEGEL) TERVERIFIKASI... CEK KONDISI FISIK KENDARAAN SEBELUM JALAN...
         </div>
     </div>
 
@@ -159,7 +173,6 @@
         }
 
         async function loadDashboard() {
-            // Setup Tanggal Besok
             const besok = getWIBDate();
             besok.setDate(besok.getDate() + 1);
             const isoBesok = besok.toISOString().split('T')[0];
@@ -175,10 +188,10 @@
 
             if (error) return;
 
-            // Filter: Terjadwal ATAU Tunggu Info
+            // Filter: Terjadwal ATAU Langsir
             const filtered = data.filter(item => {
                 const s = (item.status || "").toUpperCase();
-                return s.includes("TERJADWAL") || s.includes("TUNGGU");
+                return s.includes("TERJADWAL") || s.includes("LANGSIR");
             });
 
             renderData(filtered);
@@ -192,25 +205,33 @@
                 return;
             }
 
-            // Logika Pengelompokan: Berdasarkan Supplier -> Lokasi -> Nopol
-            // Ini untuk menangani Rit dan Lokasi yang sama
+            // Grouping dan Urutan khusus: LANGSIRAN, SSS, OCEAN
+            const orderRef = ["LANGSIRAN", "SSS", "OCEAN"];
             const grouped = {};
+            
             data.forEach(item => {
-                const key = `${item.supplier || 'LAIN'}`;
-                if (!grouped[key]) grouped[key] = [];
-                grouped[key].push(item);
+                const s = (item.supplier || 'LAIN-LAIN').toUpperCase();
+                if (!grouped[s]) grouped[s] = [];
+                grouped[s].push(item);
+            });
+
+            // Urutkan key berdasarkan orderRef
+            const sortedSuppliers = Object.keys(grouped).sort((a, b) => {
+                let indexA = orderRef.findIndex(ref => a.includes(ref));
+                let indexB = orderRef.findIndex(ref => b.includes(ref));
+                if (indexA === -1) indexA = 99;
+                if (indexB === -1) indexB = 99;
+                return indexA - indexB;
             });
 
             tbody.innerHTML = '';
 
-            for (const supplier in grouped) {
-                // Header Supplier
+            sortedSuppliers.forEach(supplier => {
                 const headRow = document.createElement('tr');
                 headRow.className = 'group-header';
                 headRow.innerHTML = `<td colspan="7">DEPO/SUPPLIER: ${supplier}</td>`;
                 tbody.appendChild(headRow);
 
-                // Hitung Rit untuk Nopol yang sama dalam supplier ini
                 const nopolCounts = {};
 
                 grouped[supplier].forEach(row => {
@@ -219,10 +240,11 @@
                     const currentRit = nopolCounts[nopol];
 
                     const tr = document.createElement('tr');
-                    const isWait = (row.status || "").toUpperCase().includes("TUNGGU");
+                    const statusText = (row.status || "").toUpperCase();
+                    const isLangsir = statusText.includes("LANGSIR");
                     
                     tr.innerHTML = `
-                        <td style="color:#8b949e; font-size:12px;">${row.supplier}</td>
+                        <td style="color:#8b949e; font-size:11px;">${row.supplier}</td>
                         <td style="font-weight:bold;">${row.delivery_to || '-'}</td>
                         <td>${row.lokasi || '-'}</td>
                         <td>
@@ -232,23 +254,25 @@
                         <td>${row.sopir || '-'}</td>
                         <td class="qty-val">${row.jumlah_keluar || 0}</td>
                         <td>
-                            <span class="status-badge ${isWait ? 'st-tunggu' : 'st-terjadwal'}">
-                                ${isWait ? 'TUNGGU INFO' : 'TERJADWAL'}
+                            <span class="status-badge ${isLangsir ? 'st-langsir' : 'st-terjadwal'}">
+                                ${isLangsir ? 'LANGSIR' : 'TERJADWAL'}
                             </span>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
-            }
+            });
         }
 
         function updateMarquee(data) {
             const el = document.getElementById('runningText');
+            const baseMsg = "JADWAL SEWAKTU-WAKTU DAPAT BERUBAH... HARAP CEK STATUS SECARA BERKALA... GUNAKAN APD LENGKAP... PASTIKAN SURAT JALAN & SEGEL SESUAI... SAFETY FIRST...";
+            
             if(data.length > 0) {
-                const info = data.map(i => `${i.nopol} > ${i.delivery_to}`).join('  ||  ');
-                el.innerText = `JADWAL PENGIRIMAN BESOK: ${info}  ||  TETAP WASPADA DAN SAFETY FIRST!`.toUpperCase();
+                const info = data.slice(0, 10).map(i => `${i.nopol} > ${i.delivery_to}`).join('  |  ');
+                el.innerText = `UNIT READY: ${info}  ||  ${baseMsg}`.toUpperCase();
             } else {
-                el.innerText = "BELUM ADA DATA JADWAL TERINPUT UNTUK TANGGAL BESOK.";
+                el.innerText = `BELUM ADA JADWAL TERINPUT... ${baseMsg}`;
             }
         }
 
@@ -264,7 +288,7 @@
         }).subscribe();
 
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 300000); // Auto refresh 5 menit
+        setInterval(loadDashboard, 300000); 
         loadDashboard();
     </script>
 </body>

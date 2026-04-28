@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Monitor v8 - Multi-Depo Logic</title>
+    <title>Logistics Monitoring System v8</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -28,7 +28,6 @@
             overflow: hidden; 
         }
 
-        /* HEADER TETAP (FIXED) */
         header {
             background: var(--white);
             padding: 12px 20px;
@@ -56,20 +55,6 @@
             gap: 6px;
         }
 
-        .pulse-dot {
-            width: 8px; height: 8px;
-            background: var(--success);
-            border-radius: 50%;
-            animation: pulse-green 1.5s infinite;
-        }
-
-        @keyframes pulse-green {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 0.5; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        /* AREA TABEL (SCROLLABLE) */
         main {
             flex: 1;
             overflow-y: auto; 
@@ -100,7 +85,6 @@
 
         td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; vertical-align: top; }
 
-        /* BADGE & ANIMASI */
         .nopol-badge {
             background: #334155; 
             color: white;
@@ -112,6 +96,7 @@
             margin-bottom: 4px;
         }
 
+        /* KHUSUS RIT KEDUA (MERAH BERKEDIP) */
         .rit-warning {
             background: var(--danger-blink) !important;
             animation: blink-red 0.8s infinite;
@@ -124,19 +109,16 @@
             100% { opacity: 1; }
         }
 
-        .driver-text { font-size: 0.75rem; color: #475569; font-weight: 700; display: block; }
-        .qty-val { font-family: 'Roboto Mono', monospace; font-weight: 800; color: var(--primary); }
-
         .status-pill {
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 0.6rem;
             font-weight: 800;
+            background: #dcfce7; 
+            color: #166534; 
+            border: 1px solid #bbf7d0;
         }
-        .st-ready { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .st-wait { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
-        /* FOOTER (FIXED) */
         footer {
             background: var(--white);
             height: 45px;
@@ -175,7 +157,6 @@
             <p id="targetDateText">SYNCING DATA...</p>
         </div>
         <div class="live-badge">
-            <div class="pulse-dot"></div>
             <span id="clock">00:00:00</span>
         </div>
     </header>
@@ -203,73 +184,28 @@
     </footer>
 
     <script>
-        const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Data Dummy untuk Demo (Logika Multi-Depo)
+        const rawData = [
+            { supplier: "DEPO OCEAN", nopol: "KH 8942 GN", sopir: "AGUS MULYANTO", delivery_to: "NWB-kse", lokasi: "NWB-SEMANGGANG", qty: 16000 },
+            { supplier: "DEPO SSS", nopol: "L 9761 UJ", sopir: "SUPRIYADI", delivery_to: "GPP-ide", lokasi: "GPP-BAWAH", qty: 8000 },
+            { supplier: "DEPO SSS", nopol: "KH 8942 GN", sopir: "AGUS MULYANTO", delivery_to: "BTM-ide", lokasi: "LANGSIR", qty: 5000 }
+        ];
 
-        function getWIBDate() {
-            return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
-        }
-
-        function setupMarquee() {
-            const msgs = [
-                "<b>LOGIK:</b> Nopol sama di 2 Depo berbeda atau tujuan LANGSIR otomatis RIT KEDUA (MERAH).",
-                "<b>SAFETY:</b> Cek kondisi ban dan rem sebelum berangkat.",
-                "<b>DOKUMEN:</b> Pastikan Surat Jalan sesuai dengan urutan sistem.",
-                "<b>WARNING:</b> Rit kedua ditandai dengan Merah Berkedip."
-            ];
-            const box = document.getElementById('marqueeBox');
-            const content = msgs.map(m => `<div class="marquee-item">${m}</div>`).join('');
-            box.innerHTML = content + content;
-        }
-
-        async function loadData() {
-            const besok = getWIBDate();
-            besok.setDate(besok.getDate() + 1);
-            const isoBesok = besok.toISOString().split('T')[0];
-            
-            document.getElementById('targetDateText').innerText = besok.toLocaleDateString('id-ID', { 
-                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
-            }).toUpperCase();
-
-            const { data, error } = await _supabase
-                .from('data_pengiriman')
-                .select('*')
-                .eq('tanggal', isoBesok)
-                .order('id', { ascending: true }); // BACA DARI ATAS (URUTAN INPUT)
-
-            if (error) return;
-
-            const filtered = data.filter(item => {
-                const s = (item.status || "").toUpperCase();
-                return s.includes("TERJADWAL") || s.includes("TUNGGU");
-            });
-
-            render(filtered);
-        }
-
-        function render(data) {
+        function render() {
             const tbody = document.getElementById('tableBody');
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px;">TIADA JADWAL</td></tr>';
-                return;
-            }
-
-            // Grouping tetap per Depo agar terpisah-pisah visualnya
             const grouped = {};
-            data.forEach(item => {
+            
+            // Kelompokkan per Depo
+            rawData.forEach(item => {
                 const k = item.supplier || 'DEPO UTAMA';
                 if (!grouped[k]) grouped[k] = [];
                 grouped[k].push(item);
             });
 
             tbody.innerHTML = '';
-            
-            // Track Nopol secara global lintas Depo
             const globalNopolTracker = {};
 
             for (const supplier in grouped) {
-                // Header untuk setiap Depo
                 const hRow = document.createElement('tr');
                 hRow.innerHTML = `<td colspan="4" class="group-header">📦 ASAL: ${supplier}</td>`;
                 tbody.appendChild(hRow);
@@ -277,33 +213,30 @@
                 grouped[supplier].forEach(row => {
                     const nopol = row.nopol || '-';
                     const tujuan = (row.delivery_to || "").toUpperCase();
+                    const lokasi = (row.lokasi || "").toUpperCase();
                     
-                    // Update jumlah kemunculan nopol di hari itu (secara global)
+                    // Logika Pelacakan Nopol Lintas Depo
                     globalNopolTracker[nopol] = (globalNopolTracker[nopol] || 0) + 1;
-                    const totalRit = globalNopolTracker[nopol];
+                    const ritKe = globalNopolTracker[nopol];
                     
-                    // Logika RIT: Muncul kedua kali (meski beda Depo) ATAU kata Langsir
-                    const isLangsir = tujuan.includes("LANGSIR");
-                    const isSecondRit = totalRit >= 2 || isLangsir;
+                    // RIT KEDUA JIKA: Nopol muncul lagi ATAU ada kata LANGSIR
+                    const isLangsir = lokasi.includes("LANGSIR") || tujuan.includes("LANGSIR");
+                    const isSecondRit = ritKe >= 2 || isLangsir;
 
-                    const isWait = (row.status || "").toUpperCase().includes("TUNGGU");
                     const tr = document.createElement('tr');
-                    
                     tr.innerHTML = `
                         <td>
-                            <div style="font-weight:800">Ke: ${row.delivery_to || '-'}</div>
-                            <div style="font-size:0.75rem; color:#64748b">${row.lokasi || '-'}</div>
+                            <div style="font-weight:800">Ke: ${row.delivery_to}</div>
+                            <div style="font-size:0.75rem; color:#64748b">${row.lokasi}</div>
                         </td>
                         <td>
                             <span class="nopol-badge ${isSecondRit ? 'rit-warning' : ''}">${nopol}</span>
-                            <span class="driver-text">${row.sopir || '-'}</span>
-                            ${isSecondRit ? `<span style="font-size:0.65rem; color:red; font-weight:900">RIT ${isLangsir && totalRit < 2 ? 'KEDUA (LANGSIR)' : 'KEDUA'}</span>` : ''}
+                            <div style="font-size:0.75rem; font-weight:700">${row.sopir}</div>
+                            ${isSecondRit ? `<div style="font-size:0.65rem; color:red; font-weight:900">RIT KEDUA</div>` : ''}
                         </td>
-                        <td style="text-align: right;" class="qty-val">${(row.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
+                        <td style="text-align: right; font-weight:800">${row.qty.toLocaleString('id-ID')}</td>
                         <td style="text-align: center;">
-                            <span class="status-pill ${isWait ? 'st-wait' : 'st-ready'}">
-                                ${isWait ? 'WAIT' : 'RDY'}
-                            </span>
+                            <span class="status-pill">TERJADWAL</span>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -311,19 +244,20 @@
             }
         }
 
-        function updateClock() {
-            document.getElementById('clock').innerText = getWIBDate().toLocaleTimeString('id-ID', {hour12:false});
+        function setupMarquee() {
+            const msgs = ["<b>INFO:</b> KH 8942 GN di Depo SSS terdeteksi sebagai RIT KEDUA.", "<b>STATUS:</b> Semua pengiriman disetel TERJADWAL.", "<b>RUNNING TEXT:</b> Aktif untuk tampilan HP."];
+            document.getElementById('marqueeBox').innerHTML = msgs.map(m => `<div class="marquee-item">${m}</div>`).join('') + msgs.map(m => `<div class="marquee-item">${m}</div>`).join('');
         }
 
-        // Realtime Subscribe
-        _supabase.channel('monitor-v8').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
-            loadData();
-        }).subscribe();
+        function updateClock() {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID', {hour12:false});
+        }
 
-        setupMarquee();
-        loadData();
-        setInterval(updateClock, 1000);
-        setInterval(loadData, 300000); // Sinkronisasi ulang tiap 5 menit
+        window.onload = () => {
+            render();
+            setupMarquee();
+            setInterval(updateClock, 1000);
+        };
     </script>
 </body>
 </html>

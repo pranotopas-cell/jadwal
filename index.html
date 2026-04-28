@@ -211,7 +211,7 @@
 
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
-                else if (statusRaw.includes("TERJADWAL")) statusDisplay = "st-terjadwal";
+                else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -225,7 +225,7 @@
                     <td style="color:var(--text-yellow); text-align:center; font-size:16px;">${row.jumlah_keluar || '0'}</td>
                     <td>
                         <span class="depo-text">${row.supplier || '-'}</span>
-                        ${isBesok ? '<span class="besok-tag">(BESOK)</span>' : ''}
+                        ${isBesok ? '<span class="besok-tag"></span>' : ''}
                     </td>
                     <td class="${statusClass}" style="text-align:right; font-size:11px;">${statusDisplay}</td>
                 `;

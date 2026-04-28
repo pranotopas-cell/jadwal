@@ -16,7 +16,6 @@
             --border: #dee2e6;
             --status-plan: #e8f0fe;
             --status-plan-text: #1967d2;
-            /* Background Langsir Merah */
             --status-langsir-bg: #d32f2f;
         }
 
@@ -31,6 +30,7 @@
             overflow: hidden;
         }
 
+        /* Header */
         .header {
             background: var(--primary);
             padding: 12px 20px;
@@ -49,6 +49,7 @@
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
         @keyframes blink-red { 0% { background: #d32f2f; } 50% { background: #ff5252; } 100% { background: #d32f2f; } }
 
+        /* Main Content */
         .main-content {
             flex: 1;
             padding: 10px;
@@ -61,7 +62,6 @@
             border-radius: 12px;
             border: 1px solid var(--border);
             overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
 
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -75,8 +75,15 @@
         }
         td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
 
-        /* Depo Taruh di Kiri */
-        .group-header { background: #eeeeee; color: var(--primary); font-weight: 800; font-size: 14px; text-align: left; padding-left: 15px; }
+        /* DEPO/Supplier Background - Kiri */
+        .group-header { 
+            background: #1a237e !important; /* Biru Gelap */
+            color: #ffffff !important; 
+            font-weight: 800; 
+            font-size: 14px; 
+            text-align: left; 
+            padding: 12px 15px;
+        }
         
         .nopol-badge { background: #f1f3f4; padding: 4px 8px; border-radius: 6px; font-weight: bold; border: 1px solid #dadce0; color: #202124; }
         .qty-val { color: #1a73e8; font-weight: bold; font-size: 16px; }
@@ -85,8 +92,6 @@
             font-size: 11px; padding: 6px 10px; border-radius: 4px; font-weight: bold; display: inline-block;
         }
         .st-terjadwal { background: var(--status-plan); color: var(--status-plan-text); }
-        
-        /* Langsir Background Merah Berkedip */
         .st-langsir { 
             animation: blink-red 0.8s infinite; 
             color: white !important; 
@@ -94,28 +99,34 @@
 
         .rit-info { font-weight: 900; color: #d32f2f; margin-left: 8px; font-size: 13px; text-decoration: underline; }
 
+        /* Running Text Responsif */
         .footer-marquee {
             background: #ffffff;
             color: #d93025;
-            height: 40px;
-            line-height: 40px;
-            white-space: nowrap;
-            overflow: hidden;
+            height: 45px;
+            width: 100%;
             border-top: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
         }
 
-        .marquee-content {
+        .marquee-inner {
             display: inline-block;
-            animation: marquee 45s linear infinite;
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: marquee-move 40s linear infinite;
             font-weight: bold;
             font-size: 14px;
         }
 
-        @keyframes marquee {
-            from { transform: translateX(100%); }
-            to { transform: translateX(-100%); }
+        @keyframes marquee-move {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
         }
 
+        /* Mobile Optimization */
         @media (max-width: 768px) {
             table, thead, tbody, th, td, tr { display: block; }
             thead { display: none; }
@@ -132,9 +143,9 @@
                 text-align: left;
                 flex: 1;
             }
-            .group-header { text-align: left !important; font-size: 15px; padding: 10px; }
+            .group-header { font-size: 15px; padding: 12px; margin-bottom: 5px; }
             .status-badge { font-size: 13px; min-width: 100px; text-align: center; }
-            .qty-val { font-size: 18px; }
+            .marquee-inner { font-size: 13px; animation-duration: 30s; }
         }
     </style>
 </head>
@@ -173,8 +184,8 @@
     </div>
 
     <div class="footer-marquee">
-        <div class="marquee-content">
-            PENGUMUMAN KESELAMATAN: WAJIB CEK TEKANAN BAN & REM SEBELUM JALAN... PASTIKAN SEGEL ATAS & BAWAH TERPASANG SEMPURNA... DILARANG BERKENDARA SAAT MENGANTUK... LENGKAPI DOKUMEN MUATAN (SURAT JALAN & ITR)... UTAMAKAN KESELAMATAN (MAX 60KM/JAM)... GUNAKAN APD LENGKAP DI AREA DEPO... LAPORKAN SEGALA KENDALA ARMADA...
+        <div class="marquee-inner">
+            PENGUMUMAN KESELAMATAN: WAJIB CEK TEKANAN BAN & REM... PASTIKAN SEGEL ATAS & BAWAH TERPASANG SEMPURNA... DILARANG BERKENDARA SAAT MENGANTUK... LENGKAPI DOKUMEN MUATAN (SURAT JALAN & ITR)... UTAMAKAN KESELAMATAN (MAX 60KM/JAM)... GUNAKAN APD LENGKAP DI AREA DEPO... LAPORKAN SEGALA KENDALA ARMADA...
         </div>
     </div>
 
@@ -218,11 +229,8 @@
                 return;
             }
 
-            // Urutkan supplier: LANGSIRAN dulu, baru lainnya
             const orderRef = ["LANGSIRAN", "SSS", "OCEAN"];
             const grouped = {};
-            
-            // Map nopol untuk hitung total rit nopol tersebut
             const nopolMap = {};
 
             data.forEach(item => {
@@ -241,16 +249,14 @@
             });
 
             tbody.innerHTML = '';
-            // Tracker rit untuk nopol yang sama saat render
             const nopolTracker = {};
 
             sortedSuppliers.forEach(supplier => {
                 const headRow = document.createElement('tr');
-                headRow.className = 'group-header';
-                headRow.innerHTML = `<td colspan="6">${supplier}</td>`;
+                headRow.innerHTML = `<td colspan="6" class="group-header">${supplier}</td>`;
                 tbody.appendChild(headRow);
 
-                // Urutkan di dalam grup: Terjadwal duluan sebelum langsir
+                // Sort: Terjadwal duluan agar jadi RIT 1
                 const groupData = grouped[supplier].sort((a, b) => {
                     const stA = (a.status || "").toUpperCase();
                     const stB = (b.status || "").toUpperCase();
@@ -264,7 +270,7 @@
                     const isLangsir = statusText.includes("LANGSIR");
                     const nopol = (row.nopol || '-').toUpperCase();
                     
-                    // Logika Penomoran Rit
+                    // Logika RIT: Terjadwal (rit 1), Langsir (rit 2 dst)
                     nopolTracker[nopol] = (nopolTracker[nopol] || 0) + 1;
                     const ritKe = nopolTracker[nopol];
                     const totalRitNopol = nopolMap[nopol];

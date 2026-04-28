@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIDS Mobile - BBM System</title>
+    <title>FIDS Mobile - BBM System V3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -26,25 +26,31 @@
             overflow: hidden;
         }
 
-        /* Header */
+        /* Header - Diperbesar sesuai request */
         .header {
             background: var(--header-bg);
-            padding: 10px 12px;
+            padding: 12px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid var(--text-yellow);
+            border-bottom: 3px solid var(--text-yellow);
             flex-shrink: 0;
         }
-        .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; }
-        #clock { font-size: 18px; font-weight: bold; color: var(--text-yellow); }
+        .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: var(--text-white); }
+        #targetDate { 
+            font-size: 16px; /* Diperbesar */
+            color: var(--text-yellow); 
+            font-weight: bold; 
+            margin-top: 4px;
+        }
+        #clock { font-size: 20px; font-weight: bold; color: var(--text-white); }
 
-        /* Table */
+        /* Table Area */
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
             width: 100%;
-            padding-bottom: 45px; /* Kasih ruang agar tidak tertutup marquee */
+            padding-bottom: 50px; 
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -53,32 +59,33 @@
             background: var(--header-bg);
             color: var(--text-yellow);
             text-align: left;
-            padding: 10px 5px;
-            font-size: 11px;
+            padding: 12px 5px;
+            font-size: 12px;
             text-transform: uppercase;
             border-bottom: 1px solid #1a3a6e;
             position: sticky;
             top: 0;
+            z-index: 10;
         }
 
         td { 
-            padding: 10px 5px; 
-            font-size: 13px; 
+            padding: 12px 5px; 
+            font-size: 14px; 
             font-weight: bold; 
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            vertical-align: middle;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            vertical-align: top; /* Biar rapi kalau ada teks multi-baris */
         }
 
-        /* Flight Column (Nopol & Sopir) */
-        .flight-cell { display: flex; align-items: center; gap: 6px; overflow: hidden; }
+        /* Flight Column */
+        .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
         .nopol-block { 
             background: white; 
             color: black; 
-            padding: 4px 0; 
-            border-radius: 2px; 
+            padding: 5px 0; 
+            border-radius: 3px; 
             font-weight: 900; 
             font-size: 11px;
-            min-width: 80px;
+            min-width: 85px; /* Nopol tetap stabil */
             text-align: center;
             flex-shrink: 0;
         }
@@ -87,20 +94,35 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-size: 12px;
+            font-size: 13px;
+        }
+        .dest-label { 
+            font-size: 12px; /* Diperbesar sedikit sesuai request */
+            color: #ccc; 
+            margin-left: 0px;
+            display: block;
+            padding-left: 2px;
         }
 
-        /* Time/Depo Column */
-        .depo-text { color: var(--green-fids); display: block; font-size: 11px; }
-        .besok-tag { color: var(--text-yellow); font-size: 10px; font-weight: bold; }
+        /* Time/Depo Column - Anti Numpuk */
+        .time-cell { line-height: 1.3; }
+        .depo-text { color: var(--green-fids); display: block; font-size: 12px; }
+        .besok-tag { 
+            color: var(--text-yellow); 
+            font-size: 10px; 
+            font-weight: bold; 
+            background: rgba(255, 235, 59, 0.1);
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
 
-        /* Remarks Status */
+        /* Status Remarks */
         .st-proses { color: #ff5252; animation: blink 0.8s infinite; }
         .st-langsir { color: #ffa726; }
         .st-normal { color: white; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.1; } 100% { opacity: 1; } }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
-        /* Footer Marquee Fixed for Mobile */
+        /* Footer Marquee - Diperlambat */
         .footer-marquee {
             position: fixed;
             bottom: 0;
@@ -108,13 +130,12 @@
             width: 100%;
             background: #000;
             color: var(--text-yellow);
-            height: 40px;
-            line-height: 40px;
-            font-size: 14px;
+            height: 45px;
+            line-height: 45px;
+            font-size: 15px;
             font-weight: bold;
-            border-top: 1px solid var(--text-yellow);
+            border-top: 2px solid var(--text-yellow);
             z-index: 100;
-            overflow: hidden;
         }
     </style>
 </head>
@@ -123,7 +144,7 @@
     <div class="header">
         <div>
             <h1>DEPARTURES</h1>
-            <div id="targetDate" style="font-size: 10px; color: #aaa;">SINKRONISASI...</div>
+            <div id="targetDate">MEMUAT TANGGAL...</div>
         </div>
         <div id="clock">00:00:00</div>
     </div>
@@ -132,10 +153,10 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 45%;">FLIGHT</th>
-                    <th style="width: 15%; text-align: center;">GATE</th>
+                    <th style="width: 48%;">FLIGHT / DEST</th>
+                    <th style="width: 14%; text-align: center;">GATE</th>
                     <th style="width: 20%;">TIME</th>
-                    <th style="width: 20%; text-align: right;">REMARKS</th>
+                    <th style="width: 18%; text-align: right;">REMARKS</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
@@ -144,8 +165,8 @@
     </div>
 
     <div class="footer-marquee">
-        <marquee scrollamount="6">
-            INFO KESELAMATAN: Pastikan Segel Terpasang Sempurna • Periksa Rem dan Ban Sebelum Jalan • Gunakan APD Lengkap • Dilarang Mengemudi Saat Mengantuk • Utamakan Keselamatan Kerja...
+        <marquee scrollamount="4">
+            SAFETY FIRST: Pastikan Segel Terpasang Sempurna • Periksa Tekanan Ban dan Fungsi Rem Sebelum Berangkat • Gunakan APD Lengkap (Helm, Sepatu, Rompi) • Dilarang Mengoperasikan HP Saat Mengemudi • Laporkan Segala Kendala Armada Segera Ke Dispatcher...
         </marquee>
     </div>
 
@@ -166,8 +187,9 @@
             const isoHariIni = hariIni.toISOString().split('T')[0];
             const isoBesok = besok.toISOString().split('T')[0];
             
+            // Perbesar Tampilan Tanggal
             document.getElementById('targetDate').innerText = hariIni.toLocaleDateString('id-ID', { 
-                weekday: 'long', day: 'numeric', month: 'long' 
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
             const { data, error } = await _supabase
@@ -177,20 +199,16 @@
 
             if (error) return;
 
-            // 1. Filter: Hilangkan yang sudah DELIVERED
+            // Filter & Sort
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
-
-            // 2. Sorting Manual sesuai permintaan
             const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU": 4 };
             
             filtered.sort((a, b) => {
                 const statusA = (a.status || "").toUpperCase();
                 const statusB = (b.status || "").toUpperCase();
-                
                 let valA = 99, valB = 99;
                 Object.keys(priority).forEach(key => { if(statusA.includes(key)) valA = priority[key]; });
                 Object.keys(priority).forEach(key => { if(statusB.includes(key)) valB = priority[key]; });
-
                 if (valA !== valB) return valA - valB;
                 return new Date(a.tanggal) - new Date(b.tanggal);
             });
@@ -211,7 +229,7 @@
 
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
-                else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
+                else if (statusRaw.includes("TERJADWAL")) statusDisplay = "HARI INI";
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -220,12 +238,12 @@
                             <div class="nopol-block">${row.nopol || '-'}</div>
                             <div class="sopir-name">${row.sopir || '-'}</div>
                         </div>
-                        <div style="font-size:10px; color:#aaa; margin-left:86px;">TO: ${row.delivery_to || '-'}</div>
+                        <span class="dest-label">TO: ${row.delivery_to || '-'}</span>
                     </td>
-                    <td style="color:var(--text-yellow); text-align:center; font-size:16px;">${row.jumlah_keluar || '0'}</td>
-                    <td>
+                    <td style="color:var(--text-yellow); text-align:center; font-size:18px;">${row.jumlah_keluar || '0'}</td>
+                    <td class="time-cell">
                         <span class="depo-text">${row.supplier || '-'}</span>
-                        ${isBesok ? '<span class="besok-tag"></span>' : ''}
+                        ${isBesok ? '<span class="besok-tag">BESOK</span>' : ''}
                     </td>
                     <td class="${statusClass}" style="text-align:right; font-size:11px;">${statusDisplay}</td>
                 `;
@@ -238,7 +256,7 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        _supabase.channel('fids-final').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
+        _supabase.channel('fids-v3').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
             loadDashboard();
         }).subscribe();
 

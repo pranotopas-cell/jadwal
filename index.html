@@ -16,8 +16,8 @@
             --border: #dee2e6;
             --status-plan: #e8f0fe;
             --status-plan-text: #1967d2;
-            --status-langsir: #e6f4ea;
-            --status-langsir-text: #137333;
+            --status-langsir: #ffebee;
+            --status-langsir-text: #d32f2f;
         }
 
         body { 
@@ -31,7 +31,6 @@
             overflow: hidden;
         }
 
-        /* Header */
         .header {
             background: var(--primary);
             padding: 12px 20px;
@@ -48,8 +47,8 @@
         .dot { height: 8px; width: 8px; background: #4af54a; border-radius: 50%; display: inline-block; margin-right: 5px; animation: blink 1s infinite; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        @keyframes blink-red { 0% { background: #d32f2f; } 50% { background: #ffcdd2; } 100% { background: #d32f2f; } }
 
-        /* Content Area */
         .main-content {
             flex: 1;
             padding: 10px;
@@ -76,48 +75,54 @@
         }
         td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
 
-        /* Group & Badge */
-        .group-header { background: #eeeeee; color: var(--primary); font-weight: 800; font-size: 13px; }
+        .group-header { background: #eeeeee; color: var(--primary); font-weight: 800; font-size: 14px; text-align: center; }
         .nopol-badge { background: #f1f3f4; padding: 4px 8px; border-radius: 6px; font-weight: bold; border: 1px solid #dadce0; color: #202124; }
         .qty-val { color: #1a73e8; font-weight: bold; font-size: 16px; }
         
         .status-badge { 
-            font-size: 10px; padding: 4px 8px; border-radius: 20px; font-weight: bold; 
+            font-size: 11px; padding: 6px 10px; border-radius: 4px; font-weight: bold; display: inline-block;
         }
         .st-terjadwal { background: var(--status-plan); color: var(--status-plan-text); }
-        .st-langsir { background: var(--status-langsir); color: var(--status-langsir-text); }
+        
+        /* Langsir Berkedip Merah */
+        .st-langsir { 
+            animation: blink-red 1s infinite; 
+            color: white !important; 
+        }
 
-        /* Footer Marquee */
+        .rit-info { font-weight: bold; color: #d32f2f; margin-left: 5px; font-size: 12px; border: 1px solid #d32f2f; padding: 2px 4px; border-radius: 3px; }
+
+        /* Footer Marquee Fixed for Mobile */
         .footer-marquee {
             background: #ffffff;
             color: #d93025;
-            padding: 12px 0;
+            height: 40px;
+            line-height: 40px;
             white-space: nowrap;
             overflow: hidden;
             border-top: 2px solid var(--primary);
-            font-weight: bold;
-            z-index: 100;
+            position: relative;
         }
 
         .marquee-content {
             display: inline-block;
-            animation: marquee 50s linear infinite;
+            padding-left: 100%;
+            animation: marquee 40s linear infinite;
+            font-weight: bold;
             font-size: 14px;
         }
 
         @keyframes marquee {
-            from { transform: translateX(100%); }
-            to { transform: translateX(-100%); }
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
         }
 
-        /* Mobile Optimization (Teks tidak tumpang tindih) */
         @media (max-width: 768px) {
             table, thead, tbody, th, td, tr { display: block; }
-            thead { display: none; } /* Sembunyikan header tabel di HP */
-            
+            thead { display: none; }
             tr { margin-bottom: 10px; border-bottom: 2px solid #eee; padding: 10px; }
             td { 
-                border: none; padding: 4px 0; display: flex; justify-content: space-between; align-items: center;
+                border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center;
                 text-align: right; width: 100% !important;
             }
             td::before {
@@ -128,10 +133,9 @@
                 text-align: left;
                 flex: 1;
             }
-            .group-header { text-align: center; background: var(--primary); color: white; border-radius: 4px; padding: 8px; margin-top: 10px; }
-            .group-header::before { content: ""; }
-            .qty-val { font-size: 18px; }
-            .main-content { padding: 5px; }
+            .group-header { text-align: center !important; font-size: 16px; padding: 12px; }
+            .status-badge { font-size: 14px; width: 60%; text-align: center; }
+            .qty-val { font-size: 20px; }
         }
     </style>
 </head>
@@ -171,13 +175,7 @@
 
     <div class="footer-marquee">
         <div class="marquee-content" id="runningText">
-            PENGUMUMAN KESELAMATAN: JADWAL DAPAT BERUBAH SEWAKTU-WAKTU BERDASARKAN KONDISI STOK DEPO... 
-            WAJIB CEK TEKANAN BAN & REM SEBELUM KEBERANGKATAN... 
-            PASTIKAN SEGEL ATAS & BAWAH TERPASANG SEMPURNA... 
-            DILARANG BERKENDARA SAAT MENGANTUK - ISTIRAHATLAH SETIAP 4 JAM... 
-            LENGKAPI DOKUMEN MUATAN (SURAT JALAN & ITR) SEBELUM KELUAR GERBANG... 
-            UTAMAKAN KESELAMATAN DARIPADA KECEPATAN (MAX 60KM/JAM)...
-            LAPORKAN SEGALA KENDALA ARMADA MELALUI GRUP MONITORING...
+            PENGUMUMAN KESELAMATAN: JADWAL DAPAT BERUBAH SEWAKTU-WAKTU... WAJIB CEK TEKANAN BAN & REM... PASTIKAN SEGEL TERPASANG SEMPURNA... DILARANG BERKENDARA SAAT MENGANTUK... LENGKAPI DOKUMEN MUATAN... UTAMAKAN KESELAMATAN (MAX 60KM/JAM)... LAPORKAN SEGALA KENDALA ARMADA...
         </div>
     </div>
 
@@ -223,7 +221,13 @@
 
             const orderRef = ["LANGSIRAN", "SSS", "OCEAN"];
             const grouped = {};
+            
+            // Hitung Nopol untuk info RIT
+            const nopolMap = {};
             data.forEach(item => {
+                const n = item.nopol || 'UNKNOWN';
+                nopolMap[n] = (nopolMap[n] || 0) + 1;
+                
                 const s = (item.supplier || 'LAIN-LAIN').toUpperCase();
                 if (!grouped[s]) grouped[s] = [];
                 grouped[s].push(item);
@@ -236,6 +240,7 @@
             });
 
             tbody.innerHTML = '';
+            const nopolTracker = {}; // Untuk melacak urutan RIT saat render
 
             sortedSuppliers.forEach(supplier => {
                 const headRow = document.createElement('tr');
@@ -246,13 +251,19 @@
                 grouped[supplier].forEach(row => {
                     const statusText = (row.status || "").toUpperCase();
                     const isLangsir = statusText.includes("LANGSIR");
+                    const nopol = row.nopol || '-';
                     
+                    // Logika Hitung RIT
+                    nopolTracker[nopol] = (nopolTracker[nopol] || 0) + 1;
+                    const ritKe = nopolTracker[nopol];
+                    const totalRit = nopolMap[nopol];
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td data-label="CUSTOMER" style="font-weight:bold;">${row.delivery_to || '-'}</td>
                         <td data-label="LOKASI">${row.lokasi || '-'}</td>
                         <td data-label="UNIT/NOPOL">
-                            <span class="nopol-badge">${row.nopol || '-'}</span>
+                            <span class="nopol-badge">${nopol}</span>
                         </td>
                         <td data-label="SOPIR">${row.sopir || '-'}</td>
                         <td data-label="QTY" class="qty-val">${row.jumlah_keluar || 0}</td>
@@ -260,6 +271,7 @@
                             <span class="status-badge ${isLangsir ? 'st-langsir' : 'st-terjadwal'}">
                                 ${isLangsir ? 'LANGSIR' : 'TERJADWAL'}
                             </span>
+                            ${totalRit > 1 ? `<span class="rit-info">RIT ${ritKe}</span>` : ''}
                         </td>
                     `;
                     tbody.appendChild(tr);

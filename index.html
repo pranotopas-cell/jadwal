@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Jadwal Besok - Stable Cloud</title>
+    <title>Dashboard Jadwal Besok - Green Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --primary: #1a237e;
-            --accent: #ffd600;
-            --bg: #0d1117;
-            --card-bg: #161b22;
-            --text-main: #e6edf3;
-            --border: #30363d;
-            --status-wait: #f44336;
-            --status-plan: #9c27b0;
+            --primary: #004d40; /* Hijau Tua */
+            --accent: #4db6ac;  /* Hijau Tosca */
+            --bg: #00251a;      /* Background Sangat Gelap */
+            --card-bg: #00332a;
+            --text-main: #e0f2f1;
+            --border: #00695c;
+            --status-wait: #ff5252;
+            --status-plan: #ffd600;
         }
 
         body { 
@@ -30,82 +30,82 @@
 
         /* Header */
         .header {
-            background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
-            padding: 15px 25px;
+            background: linear-gradient(135deg, var(--primary) 0%, #00251a 100%);
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 3px solid var(--accent);
         }
 
-        .header h1 { margin: 0; font-size: 20px; letter-spacing: 1.5px; color: white; }
-        .live-status { font-size: 13px; color: #4af54a; font-weight: bold; text-align: right; }
-        .dot { height: 10px; width: 10px; background: #4af54a; border-radius: 50%; display: inline-block; margin-right: 5px; animation: blink 1s infinite; }
+        .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: var(--accent); }
+        .live-status { font-size: 12px; color: #64ffda; text-align: right; }
+        .dot { height: 8px; width: 8px; background: #64ffda; border-radius: 50%; display: inline-block; margin-right: 5px; animation: blink 1s infinite; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
         /* Main Content */
         .main-content {
             flex: 1;
-            padding: 15px;
+            padding: 10px;
             overflow-y: auto;
         }
 
         .table-container {
             background: var(--card-bg);
-            border-radius: 8px;
+            border-radius: 10px;
             border: 1px solid var(--border);
+            overflow: hidden;
         }
 
-        table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th { 
-            background: #21262d; 
+            background: rgba(0,0,0,0.3); 
             padding: 12px; 
-            font-size: 11px; 
-            color: #8b949e; 
+            font-size: 10px; 
+            color: var(--accent); 
             text-transform: uppercase; 
             border-bottom: 2px solid var(--border);
         }
-        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; word-wrap: break-word; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
 
-        /* Row Styling */
-        .group-header { background: #1f2937; color: var(--accent); font-weight: bold; font-size: 13px; }
-        .nopol-badge { background: #30363d; padding: 4px 8px; border-radius: 4px; font-family: monospace; color: white; font-weight: bold; border: 1px solid #444; }
-        .qty-val { color: #4af54a; font-weight: 800; font-size: 16px; }
+        .group-header { background: #004d40; color: #fff; font-weight: bold; font-size: 12px; }
+        .nopol-badge { background: #00251a; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--accent); color: white; font-weight: bold; }
+        .qty-val { color: #64ffda; font-weight: 800; font-size: 15px; }
         
-        .status-badge { 
-            font-size: 10px; 
-            padding: 3px 6px; 
-            border-radius: 3px; 
-            font-weight: bold; 
-            display: inline-block;
-        }
-        .st-terjadwal { background: var(--status-plan); color: white; }
-        .st-tunggu { background: var(--status-wait); color: white; }
+        .status-badge { font-size: 9px; padding: 3px 6px; border-radius: 3px; font-weight: bold; color: #000; }
+        .st-terjadwal { background: var(--status-plan); }
+        .st-tunggu { background: var(--status-wait); color: #fff; }
 
-        .rit-label { font-size: 10px; color: var(--accent); margin-left: 5px; font-style: italic; }
-
-        /* Footer Marquee */
+        /* Running Text Footer */
         .footer-marquee {
-            background: #000;
-            color: var(--accent);
-            padding: 12px 0;
-            white-space: nowrap;
+            background: #001a14;
+            color: #e0f2f1;
+            padding: 10px 0;
+            border-top: 2px solid var(--primary);
             overflow: hidden;
-            border-top: 1px solid var(--border);
         }
 
         .marquee-content {
             display: inline-block;
+            white-space: nowrap;
             padding-left: 100%;
-            animation: marquee 30s linear infinite;
-            font-weight: bold;
-            font-size: 15px;
+            animation: marquee 45s linear infinite;
+            font-size: 14px;
         }
+
+        .marquee-content b { color: var(--accent); }
 
         @keyframes marquee {
             0% { transform: translate(0, 0); }
             100% { transform: translate(-100%, 0); }
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            .header h1 { font-size: 15px; }
+            td, th { padding: 8px; font-size: 12px; }
+            .qty-val { font-size: 13px; }
         }
     </style>
 </head>
@@ -114,7 +114,7 @@
     <div class="header">
         <div>
             <h1>JADWAL PENGIRIMAN BESOK</h1>
-            <div id="targetDate" style="color: var(--accent); font-weight: bold; font-size: 14px; margin-top: 5px;">Memuat Jadwal...</div>
+            <div id="targetDate" style="color: white; font-size: 12px; margin-top: 3px;">Memuat...</div>
         </div>
         <div class="live-status">
             <div><span class="dot"></span> LIVE CLOUD</div>
@@ -127,26 +127,22 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 15%;">SUPPLIER</th>
-                        <th style="width: 20%;">CUSTOMER</th>
-                        <th style="width: 15%;">LOKASI</th>
-                        <th style="width: 18%;">UNIT/NOPOL</th>
-                        <th style="width: 15%;">SOPIR</th>
-                        <th style="width: 7%;">QTY</th>
-                        <th style="width: 10%;">STATUS</th>
+                        <th>CUSTOMER/TUJUAN</th>
+                        <th>UNIT/NOPOL</th>
+                        <th>SOPIR</th>
+                        <th style="width: 50px; text-align: center;">QTY</th>
+                        <th style="width: 80px; text-align: center;">STATUS</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="7" style="text-align:center; padding:50px; color:#8b949e;">Sinkronisasi Data...</td></tr>
+                    <tr><td colspan="5" style="text-align:center; padding:30px;">Menghubungkan Database...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <div class="footer-marquee">
-        <div class="marquee-content" id="runningText">
-            MEMUAT INFORMASI JADWAL TERBARU... HARAP CEK STATUS UNIT SECARA BERKALA... SAFETY FIRST...
-        </div>
+        <div class="marquee-content" id="runningText"></div>
     </div>
 
     <script>
@@ -158,8 +154,24 @@
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }
 
-        async function loadDashboard() {
-            // Setup Tanggal Besok
+        // Pesan Running Text yang diperbarui
+        function setupMarquee() {
+            const msgs = [
+                "🚛 <b>SAFETY FIRST:</b> Cek tekanan ban, rem, dan lampu sebelum keberangkatan.",
+                "🛑 <b>ANTI-NGANTUK:</b> Istirahat 15 menit setiap 4 jam mengemudi. Jangan paksakan!",
+                "⚠️ <b>KEAMANAN:</b> Pastikan segel tangki utuh dan tidak bocor saat tiba di tujuan.",
+                "✨ <b>KELUARGA:</b> Ingat, ada keluarga menanti Anda di rumah dengan selamat.",
+                "📱 <b>DILARANG:</b> Jangan menggunakan handphone saat kemudi sedang berjalan.",
+                "⛽ <b>OPERASIONAL:</b> Laporkan segera jika ada kendala mesin di perjalanan.",
+                "📏 <b>JARAK AMAN:</b> Selalu jaga jarak aman dengan kendaraan di depan Anda.",
+                "🌧️ <b>CUACA:</b> Hati-hati jalan licin saat hujan, kurangi kecepatan kendaraan.",
+                "🛠️ <b>TOOLS:</b> Pastikan kunci-kunci dan ban serep tersedia di dalam unit.",
+                "📄 <b>DOKUMEN:</b> Periksa kembali Surat Jalan (SJ) dan Berita Acara (BA) sebelum berangkat."
+            ];
+            document.getElementById('runningText').innerHTML = msgs.join(" &nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp; ");
+        }
+
+        async function loadData() {
             const besok = getWIBDate();
             besok.setDate(besok.getDate() + 1);
             const isoBesok = besok.toISOString().split('T')[0];
@@ -175,65 +187,53 @@
 
             if (error) return;
 
-            // Filter: Terjadwal ATAU Tunggu Info
             const filtered = data.filter(item => {
                 const s = (item.status || "").toUpperCase();
                 return s.includes("TERJADWAL") || s.includes("TUNGGU");
             });
 
-            renderData(filtered);
-            updateMarquee(filtered);
+            renderTable(filtered);
         }
 
-        function renderData(data) {
+        function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#8b949e;">TIDAK ADA JADWAL TERDATA UNTUK BESOK</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#64ffda;">TIDAK ADA JADWAL UNTUK BESOK</td></tr>';
                 return;
             }
 
-            // Logika Pengelompokan: Berdasarkan Supplier -> Lokasi -> Nopol
-            // Ini untuk menangani Rit dan Lokasi yang sama
+            // Grouping Supplier
             const grouped = {};
             data.forEach(item => {
-                const key = `${item.supplier || 'LAIN'}`;
-                if (!grouped[key]) grouped[key] = [];
-                grouped[key].push(item);
+                const k = item.supplier || 'LAIN-LAIN';
+                if (!grouped[k]) grouped[k] = [];
+                grouped[k].push(item);
             });
 
             tbody.innerHTML = '';
-
             for (const supplier in grouped) {
-                // Header Supplier
-                const headRow = document.createElement('tr');
-                headRow.className = 'group-header';
-                headRow.innerHTML = `<td colspan="7">DEPO/SUPPLIER: ${supplier}</td>`;
-                tbody.appendChild(headRow);
+                const hRow = document.createElement('tr');
+                hRow.className = 'group-header';
+                hRow.innerHTML = `<td colspan="5">📦 DEPO: ${supplier}</td>`;
+                tbody.appendChild(hRow);
 
-                // Hitung Rit untuk Nopol yang sama dalam supplier ini
                 const nopolCounts = {};
-
                 grouped[supplier].forEach(row => {
                     const nopol = row.nopol || '-';
                     nopolCounts[nopol] = (nopolCounts[nopol] || 0) + 1;
-                    const currentRit = nopolCounts[nopol];
+                    const rit = nopolCounts[nopol];
 
                     const tr = document.createElement('tr');
                     const isWait = (row.status || "").toUpperCase().includes("TUNGGU");
                     
                     tr.innerHTML = `
-                        <td style="color:#8b949e; font-size:12px;">${row.supplier}</td>
-                        <td style="font-weight:bold;">${row.delivery_to || '-'}</td>
-                        <td>${row.lokasi || '-'}</td>
-                        <td>
-                            <span class="nopol-badge">${nopol}</span>
-                            ${nopolCounts[nopol] > 1 || data.filter(x=>x.nopol === nopol).length > 1 ? `<span class="rit-label">(RIT ${currentRit})</span>` : ''}
-                        </td>
+                        <td><b>${row.delivery_to || '-'}</b><br><small>${row.lokasi || '-'}</small></td>
+                        <td><span class="nopol-badge">${nopol}</span> ${nopolCounts[nopol]>1 || data.filter(x=>x.nopol===nopol).length>1 ? `<span style="font-size:9px; color:var(--accent)">RIT ${rit}</span>`:''}</td>
                         <td>${row.sopir || '-'}</td>
-                        <td class="qty-val">${row.jumlah_keluar || 0}</td>
-                        <td>
+                        <td class="qty-val" style="text-align:center;">${row.jumlah_keluar || 0}</td>
+                        <td style="text-align:center;">
                             <span class="status-badge ${isWait ? 'st-tunggu' : 'st-terjadwal'}">
-                                ${isWait ? 'TUNGGU INFO' : 'TERJADWAL'}
+                                ${isWait ? 'TUNGGU' : 'OK'}
                             </span>
                         </td>
                     `;
@@ -242,30 +242,20 @@
             }
         }
 
-        function updateMarquee(data) {
-            const el = document.getElementById('runningText');
-            if(data.length > 0) {
-                const info = data.map(i => `${i.nopol} > ${i.delivery_to}`).join('  ||  ');
-                el.innerText = `JADWAL PENGIRIMAN BESOK: ${info}  ||  TETAP WASPADA DAN SAFETY FIRST!`.toUpperCase();
-            } else {
-                el.innerText = "BELUM ADA DATA JADWAL TERINPUT UNTUK TANGGAL BESOK.";
-            }
-        }
-
         function updateClock() {
             const now = getWIBDate();
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false}) + " WIB";
         }
 
-        // Realtime Listener
-        _supabase.channel('custom-all-channel')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
-            loadDashboard();
+        // Realtime Subscription
+        _supabase.channel('obs-green').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
+            loadData();
         }).subscribe();
 
+        setupMarquee();
+        loadData();
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 300000); // Auto refresh 5 menit
-        loadDashboard();
+        setInterval(loadData, 300000);
     </script>
 </body>
 </html>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Jadwal Pengiriman BBM - Corporate View</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary-color: #0f172a;
@@ -17,136 +18,69 @@
             --warning: #f59e0b;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
 
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            padding: 20px;
-        }
+        body { background-color: var(--bg-body); color: var(--text-main); padding: 20px; }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
 
-        /* Header Styles */
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            margin-bottom: 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: white; padding: 24px; border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-bottom: 24px;
             border-left: 6px solid var(--accent-color);
         }
 
-        .header-title h1 {
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .header-title p {
-            color: #64748b;
-            font-size: 0.9rem;
-            margin-top: 4px;
-        }
+        .header-title h1 { font-size: 1.5rem; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; }
+        .header-title p { color: #64748b; font-size: 0.9rem; margin-top: 4px; }
 
         .date-badge {
-            background: var(--primary-color);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background: var(--primary-color); color: white; padding: 8px 16px;
+            border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px;
         }
 
-        /* Table Dashboard */
-        .dashboard-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-            overflow: hidden;
-        }
+        /* Dashboard Table */
+        .dashboard-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); overflow: hidden; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        thead { background-color: var(--secondary-color); color: white; }
+        th { padding: 16px; font-size: 0.85rem; text-transform: uppercase; }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-
-        thead {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-
-        th {
-            padding: 16px;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        td {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.95rem;
-            vertical-align: middle;
-        }
-
-        /* Grouping Styles */
-        .group-header {
-            background-color: #f1f5f9;
-            font-weight: bold;
-            color: var(--accent-color);
-        }
-
-        .row-nopol {
-            font-weight: 600;
-            color: var(--primary-color);
-        }
+        .group-header { background-color: #f1f5f9; font-weight: bold; color: var(--accent-color); }
+        .row-nopol { font-weight: 600; color: var(--primary-color); }
 
         .status-badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: bold;
+            padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;
+            font-weight: bold; display: inline-block; background: #dcfce7; color: #166534;
+        }
+
+        .qty-cell { font-family: 'Courier New', monospace; font-weight: bold; text-align: right; }
+
+        /* Running Text Styles */
+        .marquee-container {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .marquee-content {
             display: inline-block;
+            padding-left: 100%;
+            animation: marquee 30s linear infinite;
+            font-weight: 500;
+            font-size: 1.1rem;
         }
 
-        .status-pending { background: #fef3c7; color: #92400e; }
-        .status-ready { background: #dcfce7; color: #166534; }
-
-        .qty-cell {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            text-align: right;
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
         }
 
-        .summary-footer {
-            padding: 16px;
-            background: #f8fafc;
-            border-top: 2px solid var(--border-color);
-            text-align: right;
-            font-weight: bold;
-        }
-
-        @media print {
-            body { padding: 0; background: white; }
-            .container { max-width: 100%; }
-            .dashboard-card { box-shadow: none; border: 1px solid #ccc; }
-        }
+        .loading { padding: 40px; text-align: center; color: #64748b; }
     </style>
 </head>
 <body>
@@ -159,7 +93,7 @@
         </div>
         <div class="date-badge">
             <i data-lucide="calendar"></i>
-            <span id="targetDateText">Jadwal Besok</span>
+            <span id="targetDateText">Memuat Tanggal...</span>
         </div>
     </header>
 
@@ -175,101 +109,109 @@
                 </tr>
             </thead>
             <tbody id="shippingTableBody">
-                </tbody>
+                <tr>
+                    <td colspan="5" class="loading">Mengambil data dari server...</td>
+                </tr>
+            </tbody>
         </table>
-        <div class="summary-footer" id="totalQtyFooter">
-            Total Estimasi Pengiriman: 0 L
+    </div>
+
+    <div class="marquee-container">
+        <div class="marquee-content">
+            ⚠️ JADWAL PENGIRIMAN DAPAT BERUBAH SEWAKTU-WAKTU TERGANTUNG KONDISI OPERASIONAL DI LAPANGAN. 
+            &nbsp;&nbsp;&nbsp;&nbsp; 🚛 UTAMAKAN KESELAMATAN BERKENDARA: "KELUARGA MENANTI ANDA DI RUMAH". 
+            &nbsp;&nbsp;&nbsp;&nbsp; 🛑 PATUHI BATAS KECEPATAN DAN ISTIRAHAT JIKA MERASA LELAH. 
+            &nbsp;&nbsp;&nbsp;&nbsp; ✨ ZERO ACCIDENT ADALAH PRIORITAS UTAMA KITA SEMUA.
         </div>
     </div>
 </div>
 
 <script>
-    // Data Dummy untuk Demonstrasi (Besok)
-    const rawData = [
-        { asal: "Depot A", nopol: "KH 1234 AB", sopir: "Budi Santoso", tujuan: "SPBU 64.001", status: "Ready", qty: 8000 },
-        { asal: "Depot A", nopol: "KH 1234 AB", sopir: "Budi Santoso", tujuan: "SPBU 64.005", status: "Ready", qty: 5000 },
-        { asal: "Depot B", nopol: "KH 5678 CD", sopir: "Andi Wijaya", tujuan: "Site Alpha", status: "Pending", qty: 16000 },
-        { asal: "Depot A", nopol: "KH 9999 EF", sopir: "Hendra", tujuan: "SPBU 64.001", status: "Ready", qty: 10000 },
-        { asal: "Depot C", nopol: "KH 4421 GH", sopir: "Iwan", tujuan: "PT. Energi Maju", status: "Ready", qty: 5000 }
-    ];
+    // Konfigurasi Supabase
+    const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    function renderTable() {
+    async function fetchData() {
+        try {
+            const { data, error } = await _supabase
+                .from('data_pengiriman')
+                .select('*')
+                .eq('status', 'Terjadwal');
+
+            if (error) throw error;
+            renderTable(data);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            document.getElementById('shippingTableBody').innerHTML = 
+                `<tr><td colspan="5" style="text-align:center; color:red; padding:20px;">Gagal memuat data: ${error.message}</td></tr>`;
+        }
+    }
+
+    function renderTable(data) {
         const tableBody = document.getElementById('shippingTableBody');
-        let html = '';
-        let totalQty = 0;
+        if (!data || data.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Tidak ada jadwal pengiriman untuk saat ini.</td></tr>';
+            return;
+        }
 
-        // Logika Pengelompokan:
-        // 1. Group by Tujuan Pengiriman (Sesuai Permintaan)
-        const groupedByTujuan = {};
+        let html = '';
         
-        rawData.forEach(item => {
-            if (!groupedByTujuan[item.tujuan]) {
-                groupedByTujuan[item.tujuan] = [];
-            }
-            groupedByTujuan[item.tujuan].push(item);
-        });
+        // Group by Tujuan
+        const groupedByTujuan = data.reduce((acc, item) => {
+            if (!acc[item.tujuan]) acc[item.tujuan] = [];
+            acc[item.tujuan].push(item);
+            return acc;
+        }, {});
 
         let mainCounter = 1;
 
         for (const tujuan in groupedByTujuan) {
-            // Render Header Group (Tujuan Pengiriman)
+            // Header Group
             html += `
                 <tr class="group-header">
                     <td colspan="5"><i data-lucide="map-pin" style="width:14px; height:14px; vertical-align:middle"></i> TUJUAN: ${tujuan}</td>
                 </tr>
             `;
 
-            // Sub-grouping by Nopol di dalam Tujuan yang sama
-            const items = groupedByTujuan[tujuan];
-            const nopolMap = {};
-            
-            items.forEach(item => {
-                if (!nopolMap[item.nopol]) nopolMap[item.nopol] = [];
-                nopolMap[item.nopol].push(item);
+            groupedByTujuan[tujuan].forEach(d => {
+                html += `
+                    <tr>
+                        <td>${mainCounter++}</td>
+                        <td>
+                            <div class="row-nopol">${d.nopol || '-'}</div>
+                            <div style="font-size:0.8rem; color:#64748b">${d.sopir || 'Tanpa Sopir'}</div>
+                        </td>
+                        <td>
+                            <div style="font-size:0.8rem; color:#64748b">Dari: ${d.asal || '-'}</div>
+                            <div>Ke: ${d.tujuan || '-'}</div>
+                        </td>
+                        <td>
+                            <span class="status-badge">${d.status.toUpperCase()}</span>
+                        </td>
+                        <td class="qty-cell">${(d.qty || 0).toLocaleString('id-ID')}</td>
+                    </tr>
+                `;
             });
-
-            for (const nopol in nopolMap) {
-                const deliveries = nopolMap[nopol];
-                
-                deliveries.forEach((d, index) => {
-                    totalQty += d.qty;
-                    html += `
-                        <tr>
-                            <td>${mainCounter++}</td>
-                            <td>
-                                <div class="row-nopol">${d.nopol}</div>
-                                <div style="font-size:0.8rem; color:#64748b">${d.sopir}</div>
-                            </td>
-                            <td>
-                                <div style="font-size:0.8rem; color:#64748b">Dari: ${d.asal}</div>
-                                <div>Ke: ${d.tujuan}</div>
-                            </td>
-                            <td>
-                                <span class="status-badge ${d.status === 'Ready' ? 'status-ready' : 'status-pending'}">
-                                    ${d.status.toUpperCase()}
-                                </span>
-                            </td>
-                            <td class="qty-cell">${d.qty.toLocaleString('id-ID')}</td>
-                        </tr>
-                    `;
-                });
-            }
         }
 
         tableBody.innerHTML = html;
-        document.getElementById('totalQtyFooter').innerText = `Total Estimasi Pengiriman: ${totalQty.toLocaleString('id-ID')} L`;
-        
-        // Update Tanggal Besok
+        lucide.createIcons();
+    }
+
+    function setDate() {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('targetDateText').innerText = tomorrow.toLocaleDateString('id-ID', options);
-
-        // Re-init Icons
-        lucide.createIcons();
     }
 
-    window.onload = renderTable;
+    window.onload = () => {
+        setDate();
+        fetchData();
+        // Refresh data setiap 5 menit secara otomatis
+        setInterval(fetchData, 300000);
+    };
 </script>
 
 </body>

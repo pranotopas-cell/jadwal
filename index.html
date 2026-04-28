@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Monitoring System v7</title>
+    <title>Logistics Monitor v8 - Multi-Depo Logic</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -28,31 +28,32 @@
             overflow: hidden; 
         }
 
-        /* HEADER FIXED */
+        /* HEADER TETAP (FIXED) */
         header {
             background: var(--white);
-            padding: 15px 20px;
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 4px solid var(--accent);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             z-index: 100;
+            flex-shrink: 0;
         }
 
-        .header-title h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); }
-        .header-title p { font-size: 0.7rem; color: #64748b; font-weight: 800; }
+        .header-title h1 { font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); }
+        .header-title p { font-size: 0.65rem; color: #64748b; font-weight: 800; }
 
         .live-badge {
             background: var(--primary);
             color: white;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 6px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: bold;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .pulse-dot {
@@ -68,7 +69,7 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* SCROLLABLE TABLE */
+        /* AREA TABEL (SCROLLABLE) */
         main {
             flex: 1;
             overflow-y: auto; 
@@ -84,9 +85,9 @@
             margin-bottom: 20px;
         }
 
-        table { width: 100%; border-collapse: collapse; min-width: 550px; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
         thead { background: var(--primary); color: white; position: sticky; top: 0; z-index: 10; }
-        th { padding: 12px; font-size: 0.65rem; text-transform: uppercase; text-align: left; }
+        th { padding: 10px; font-size: 0.6rem; text-transform: uppercase; text-align: left; }
 
         .group-header {
             background: #f8fafc;
@@ -97,9 +98,9 @@
             border-bottom: 1px solid #e2e8f0;
         }
 
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; vertical-align: top; }
+        td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; vertical-align: top; }
 
-        /* RIT STYLING */
+        /* BADGE & ANIMASI */
         .nopol-badge {
             background: #334155; 
             color: white;
@@ -123,23 +124,19 @@
             100% { opacity: 1; }
         }
 
-        .driver-text {
-            font-size: 0.75rem;
-            color: #475569;
-            font-weight: 700;
-            display: block;
-        }
+        .driver-text { font-size: 0.75rem; color: #475569; font-weight: 700; display: block; }
+        .qty-val { font-family: 'Roboto Mono', monospace; font-weight: 800; color: var(--primary); }
 
         .status-pill {
             padding: 4px 8px;
             border-radius: 12px;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             font-weight: 800;
         }
         .st-ready { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .st-wait { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
-        /* FOOTER FIXED */
+        /* FOOTER (FIXED) */
         footer {
             background: var(--white);
             height: 45px;
@@ -148,6 +145,7 @@
             align-items: center;
             overflow: hidden;
             z-index: 100;
+            flex-shrink: 0;
         }
 
         .marquee-container {
@@ -174,7 +172,7 @@
     <header>
         <div class="header-title">
             <h1>Logistics Monitor</h1>
-            <p id="targetDateText">SYNCHRONIZING...</p>
+            <p id="targetDateText">SYNCING DATA...</p>
         </div>
         <div class="live-badge">
             <div class="pulse-dot"></div>
@@ -187,10 +185,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th width="45%">Tujuan</th>
-                        <th width="30%">Armada / Sopir</th>
+                        <th width="40%">Tujuan</th>
+                        <th width="35%">Nopol / Sopir</th>
                         <th width="15%" style="text-align: right;">QTY</th>
-                        <th width="10%" style="text-align: center;">Status</th>
+                        <th width="10%" style="text-align: center;">ST</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -215,10 +213,10 @@
 
         function setupMarquee() {
             const msgs = [
-                "<b>LOGIK:</b> Nopol sama di 2 Depo berbeda atau tujuan LANGSIR otomatis RIT KEDUA.",
-                "<b>SAFETY:</b> Pastikan unit dalam kondisi prima sebelum keberangkatan.",
-                "<b>DOKUMEN:</b> Validasi Surat Jalan dan BA sesuai urutan pengiriman.",
-                "<b>REMINDER:</b> Keselamatan adalah prioritas utama kami."
+                "<b>LOGIK:</b> Nopol sama di 2 Depo berbeda atau tujuan LANGSIR otomatis RIT KEDUA (MERAH).",
+                "<b>SAFETY:</b> Cek kondisi ban dan rem sebelum berangkat.",
+                "<b>DOKUMEN:</b> Pastikan Surat Jalan sesuai dengan urutan sistem.",
+                "<b>WARNING:</b> Rit kedua ditandai dengan Merah Berkedip."
             ];
             const box = document.getElementById('marqueeBox');
             const content = msgs.map(m => `<div class="marquee-item">${m}</div>`).join('');
@@ -238,7 +236,7 @@
                 .from('data_pengiriman')
                 .select('*')
                 .eq('tanggal', isoBesok)
-                .order('id', { ascending: true });
+                .order('id', { ascending: true }); // BACA DARI ATAS (URUTAN INPUT)
 
             if (error) return;
 
@@ -253,10 +251,11 @@
         function render(data) {
             const tbody = document.getElementById('tableBody');
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px;">TIADA JADUAL</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px;">TIADA JADWAL</td></tr>';
                 return;
             }
 
+            // Grouping tetap per Depo agar terpisah-pisah visualnya
             const grouped = {};
             data.forEach(item => {
                 const k = item.supplier || 'DEPO UTAMA';
@@ -266,10 +265,11 @@
 
             tbody.innerHTML = '';
             
-            // Track Nopol secara global (lintas depo) untuk mendeteksi multi-isi
+            // Track Nopol secara global lintas Depo
             const globalNopolTracker = {};
 
             for (const supplier in grouped) {
+                // Header untuk setiap Depo
                 const hRow = document.createElement('tr');
                 hRow.innerHTML = `<td colspan="4" class="group-header">📦 ASAL: ${supplier}</td>`;
                 tbody.appendChild(hRow);
@@ -278,15 +278,13 @@
                     const nopol = row.nopol || '-';
                     const tujuan = (row.delivery_to || "").toUpperCase();
                     
-                    // Update tracker: simpan jumlah kemunculan Nopol
+                    // Update jumlah kemunculan nopol di hari itu (secara global)
                     globalNopolTracker[nopol] = (globalNopolTracker[nopol] || 0) + 1;
-                    const ritKe = globalNopolTracker[nopol];
+                    const totalRit = globalNopolTracker[nopol];
                     
-                    // LOGIK RIT KEDUA:
-                    // 1. Jika Nopol sudah muncul sebelumnya (ritKe >= 2)
-                    // 2. ATAU Tujuan mengandung kata "LANGSIR"
+                    // Logika RIT: Muncul kedua kali (meski beda Depo) ATAU kata Langsir
                     const isLangsir = tujuan.includes("LANGSIR");
-                    const isSecondRit = ritKe >= 2 || isLangsir;
+                    const isSecondRit = totalRit >= 2 || isLangsir;
 
                     const isWait = (row.status || "").toUpperCase().includes("TUNGGU");
                     const tr = document.createElement('tr');
@@ -299,12 +297,12 @@
                         <td>
                             <span class="nopol-badge ${isSecondRit ? 'rit-warning' : ''}">${nopol}</span>
                             <span class="driver-text">${row.sopir || '-'}</span>
-                            ${isSecondRit ? `<span style="font-size:0.7rem; color:red; font-weight:900">RIT ${isLangsir && ritKe < 2 ? 'KEDUA (LANGSIR)' : 'KEDUA'}</span>` : ''}
+                            ${isSecondRit ? `<span style="font-size:0.65rem; color:red; font-weight:900">RIT ${isLangsir && totalRit < 2 ? 'KEDUA (LANGSIR)' : 'KEDUA'}</span>` : ''}
                         </td>
                         <td style="text-align: right;" class="qty-val">${(row.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
                         <td style="text-align: center;">
                             <span class="status-pill ${isWait ? 'st-wait' : 'st-ready'}">
-                                ${isWait ? 'WAITING' : 'READY'}
+                                ${isWait ? 'WAIT' : 'RDY'}
                             </span>
                         </td>
                     `;
@@ -317,14 +315,15 @@
             document.getElementById('clock').innerText = getWIBDate().toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        _supabase.channel('monitor-v7').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
+        // Realtime Subscribe
+        _supabase.channel('monitor-v8').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
             loadData();
         }).subscribe();
 
         setupMarquee();
         loadData();
         setInterval(updateClock, 1000);
-        setInterval(loadData, 300000);
+        setInterval(loadData, 300000); // Sinkronisasi ulang tiap 5 menit
     </script>
 </body>
 </html>

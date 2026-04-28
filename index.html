@@ -29,22 +29,25 @@
         /* Header */
         .header {
             background: var(--header-bg);
-            padding: 8px 12px;
+            padding: 10px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 2px solid var(--text-yellow);
+            flex-shrink: 0;
         }
-        .header h1 { margin: 0; font-size: 16px; letter-spacing: 1px; }
-        #clock { font-size: 16px; font-weight: bold; color: var(--text-yellow); }
+        .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; }
+        #clock { font-size: 18px; font-weight: bold; color: var(--text-yellow); }
 
-        /* Table Optimization */
-        .main-content { flex: 1; overflow-y: auto; width: 100%; }
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            table-layout: fixed; /* Kunci agar kolom tidak geser */
+        /* Table */
+        .main-content { 
+            flex: 1; 
+            overflow-y: auto; 
+            width: 100%;
+            padding-bottom: 45px; /* Kasih ruang agar tidak tertutup marquee */
         }
+        
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         
         th {
             background: var(--header-bg);
@@ -54,27 +57,28 @@
             font-size: 11px;
             text-transform: uppercase;
             border-bottom: 1px solid #1a3a6e;
+            position: sticky;
+            top: 0;
         }
 
         td { 
-            padding: 8px 5px; 
+            padding: 10px 5px; 
             font-size: 13px; 
             font-weight: bold; 
             border-bottom: 1px solid rgba(255,255,255,0.05);
             vertical-align: middle;
-            overflow: hidden;
         }
 
-        /* Nopol & Sopir Column */
+        /* Flight Column (Nopol & Sopir) */
         .flight-cell { display: flex; align-items: center; gap: 6px; overflow: hidden; }
         .nopol-block { 
             background: white; 
             color: black; 
-            padding: 3px 0; 
-            border-radius: 3px; 
+            padding: 4px 0; 
+            border-radius: 2px; 
             font-weight: 900; 
             font-size: 11px;
-            min-width: 75px; /* Lebar kotak nopol sama semua */
+            min-width: 80px;
             text-align: center;
             flex-shrink: 0;
         }
@@ -83,29 +87,34 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-size: 12px; /* Ukuran default */
-            max-width: 100%;
+            font-size: 12px;
         }
 
-        /* Kolom Time dengan Indikator Besok */
-        .depo-text { color: var(--green-fids); display: block; line-height: 1.1; }
-        .besok-tag { color: #ffa726; font-size: 9px; display: block; margin-top: 2px; }
+        /* Time/Depo Column */
+        .depo-text { color: var(--green-fids); display: block; font-size: 11px; }
+        .besok-tag { color: var(--text-yellow); font-size: 10px; font-weight: bold; }
 
-        /* Status Styles */
-        .st-proses { color: #ff5252; animation: blink 1s infinite; }
+        /* Remarks Status */
+        .st-proses { color: #ff5252; animation: blink 0.8s infinite; }
         .st-langsir { color: #ffa726; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .st-normal { color: white; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.1; } 100% { opacity: 1; } }
 
-        /* Footer */
-        .footer {
-            background: black;
+        /* Footer Marquee Fixed for Mobile */
+        .footer-marquee {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #000;
             color: var(--text-yellow);
-            height: 30px;
-            line-height: 30px;
-            font-size: 12px;
-            white-space: nowrap;
-            overflow: hidden;
+            height: 40px;
+            line-height: 40px;
+            font-size: 14px;
+            font-weight: bold;
             border-top: 1px solid var(--text-yellow);
+            z-index: 100;
+            overflow: hidden;
         }
     </style>
 </head>
@@ -114,7 +123,7 @@
     <div class="header">
         <div>
             <h1>DEPARTURES</h1>
-            <div id="targetDate" style="font-size: 10px; color: #aaa;">LOADING...</div>
+            <div id="targetDate" style="font-size: 10px; color: #aaa;">SINKRONISASI...</div>
         </div>
         <div id="clock">00:00:00</div>
     </div>
@@ -123,18 +132,21 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 42%;">FLIGHT</th>
-                    <th style="width: 20%;">DEST</th>
+                    <th style="width: 45%;">FLIGHT</th>
+                    <th style="width: 15%; text-align: center;">GATE</th>
                     <th style="width: 20%;">TIME</th>
-                    <th style="width: 18%;">REMARKS</th>
+                    <th style="width: 20%; text-align: right;">REMARKS</th>
                 </tr>
             </thead>
-            <tbody id="tableBody"></tbody>
+            <tbody id="tableBody">
+                </tbody>
         </table>
     </div>
 
-    <div class="footer">
-        <marquee scrollamount="5">UTAMAKAN KESELAMATAN KERJA • CEK KESIAPAN ARMADA SEBELUM JALAN • JAGA JARAK AMAN BERKENDARA...</marquee>
+    <div class="footer-marquee">
+        <marquee scrollamount="6">
+            INFO KESELAMATAN: Pastikan Segel Terpasang Sempurna • Periksa Rem dan Ban Sebelum Jalan • Gunakan APD Lengkap • Dilarang Mengemudi Saat Mengantuk • Utamakan Keselamatan Kerja...
+        </marquee>
     </div>
 
     <script>
@@ -154,20 +166,36 @@
             const isoHariIni = hariIni.toISOString().split('T')[0];
             const isoBesok = besok.toISOString().split('T')[0];
             
-            document.getElementById('targetDate').innerText = hariIni.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase();
+            document.getElementById('targetDate').innerText = hariIni.toLocaleDateString('id-ID', { 
+                weekday: 'long', day: 'numeric', month: 'long' 
+            }).toUpperCase();
 
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
-                .in('tanggal', [isoHariIni, isoBesok])
-                .order('tanggal', { ascending: true })
-                .order('id', { ascending: false });
+                .in('tanggal', [isoHariIni, isoBesok]);
 
             if (error) return;
 
-            // Filter out delivered
-            const filteredData = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
-            renderData(filteredData, isoBesok);
+            // 1. Filter: Hilangkan yang sudah DELIVERED
+            let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
+
+            // 2. Sorting Manual sesuai permintaan
+            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU": 4 };
+            
+            filtered.sort((a, b) => {
+                const statusA = (a.status || "").toUpperCase();
+                const statusB = (b.status || "").toUpperCase();
+                
+                let valA = 99, valB = 99;
+                Object.keys(priority).forEach(key => { if(statusA.includes(key)) valA = priority[key]; });
+                Object.keys(priority).forEach(key => { if(statusB.includes(key)) valB = priority[key]; });
+
+                if (valA !== valB) return valA - valB;
+                return new Date(a.tanggal) - new Date(b.tanggal);
+            });
+
+            renderData(filtered, isoBesok);
         }
 
         function renderData(data, isoBesok) {
@@ -179,7 +207,7 @@
                 const isBesok = row.tanggal === isoBesok;
                 
                 let statusDisplay = statusRaw;
-                let statusClass = "";
+                let statusClass = "st-normal";
 
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
@@ -192,14 +220,14 @@
                             <div class="nopol-block">${row.nopol || '-'}</div>
                             <div class="sopir-name">${row.sopir || '-'}</div>
                         </div>
+                        <div style="font-size:10px; color:#aaa; margin-left:86px;">TO: ${row.delivery_to || '-'}</div>
                     </td>
-                    <td style="color:white; font-size:11px;">${row.delivery_to || '-'}</td>
+                    <td style="color:var(--text-yellow); text-align:center; font-size:16px;">${row.jumlah_keluar || '0'}</td>
                     <td>
-                        <span class="depo-text" style="font-size:11px;">${row.supplier || '-'}</span>
-                        <span style="color:var(--text-yellow); font-size:10px;">QTY: ${row.jumlah_keluar || '0'}</span>
+                        <span class="depo-text">${row.supplier || '-'}</span>
                         ${isBesok ? '<span class="besok-tag">(BESOK)</span>' : ''}
                     </td>
-                    <td class="${statusClass}" style="font-size:11px; text-align:right;">${statusDisplay}</td>
+                    <td class="${statusClass}" style="text-align:right; font-size:11px;">${statusDisplay}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -210,7 +238,7 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        _supabase.channel('fids-mobile').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
+        _supabase.channel('fids-final').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
             loadDashboard();
         }).subscribe();
 

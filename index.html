@@ -211,7 +211,7 @@
 
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
-                else if (statusRaw.includes("TERJADWAL")) statusDisplay = "HARI INI";
+                else if (statusRaw.includes("TERJADWAL")) statusDisplay = "st-terjadwal";
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `

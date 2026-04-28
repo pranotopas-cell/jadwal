@@ -3,70 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Logistik - Real Time View</title>
+    <title>Corporate Logistics Dashboard - Fuel Distribution</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --primary-color: #0f172a;
-            --secondary-color: #1e293b;
-            --accent-color: #2563eb;
-            --bg-body: #f1f5f9;
-            --text-main: #1e293b;
-            --border-color: #e2e8f0;
-            --danger: #be123c;
+            --primary-dark: #064e3b; /* Hijau Tua Corporate */
+            --accent-tosca: #0d9488; /* Tosca Profesional */
+            --light-tosca: #f0fdfa;
+            --text-slate: #334155;
+            --white: #ffffff;
+            --border-color: #cbd5e1;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--bg-body); color: var(--text-main); padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        
+        body { 
+            background-color: #f8fafc; 
+            color: var(--text-slate); 
+            padding: 25px;
+        }
 
-        /* Header Section */
+        .container { max-width: 1300px; margin: 0 auto; }
+
+        /* Header Style */
         header {
             display: flex; justify-content: space-between; align-items: center;
-            background: white; padding: 24px; border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-bottom: 24px;
-            border-bottom: 4px solid var(--accent-color);
+            background: var(--primary-dark); padding: 30px; border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); margin-bottom: 30px;
+            color: var(--white);
+            border-bottom: 5px solid var(--accent-tosca);
         }
 
-        .header-title h1 { font-size: 1.6rem; color: var(--primary-color); letter-spacing: -0.5px; }
-        .header-title p { color: #64748b; font-size: 0.9rem; }
-
-        .date-badge {
-            background: var(--primary-color); color: white; padding: 10px 18px;
-            border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+        .header-title h1 { 
+            font-size: 1.8rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px;
+            margin-bottom: 5px;
         }
-
-        /* Table Styling */
-        .dashboard-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); overflow: hidden; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        thead { background-color: var(--secondary-color); color: white; }
-        th { padding: 16px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
-        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
-
-        .group-header { background-color: #f8fafc; font-weight: 800; color: var(--accent-color); border-top: 2px solid #e2e8f0; }
-        .nopol-box { font-weight: 700; color: var(--primary-color); font-size: 1rem; }
-        .status-tag { 
-            padding: 4px 12px; border-radius: 6px; font-size: 0.7rem; 
-            font-weight: 800; background: #ecfdf5; color: #065f46; 
-            display: inline-block; border: 1px solid #a7f3d0;
-        }
-
-        /* Running Text / Marquee */
-        .marquee-footer {
-            background: var(--danger); color: white; padding: 15px 0;
-            border-radius: 10px; overflow: hidden; position: relative;
-            box-shadow: 0 10px 15px -3px rgba(190, 18, 60, 0.2);
-        }
-
-        .marquee-content {
-            display: inline-block; white-space: nowrap; padding-left: 100%;
-            animation: marquee 35s linear infinite; font-weight: 600; font-size: 1.1rem;
-        }
-
-        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
         
-        .loading { padding: 50px; text-align: center; color: #94a3b8; font-style: italic; }
+        .header-title p { opacity: 0.8; font-size: 0.95rem; }
+
+        .date-container {
+            background: var(--accent-tosca);
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-align: right;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .date-label { font-size: 0.75rem; text-transform: uppercase; opacity: 0.9; font-weight: bold; }
+        .date-value { font-size: 1.1rem; font-weight: 600; display: block; }
+
+        /* Table Dashboard */
+        .dashboard-wrapper {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        
+        thead { background-color: #f1f5f9; }
+        
+        th { 
+            padding: 20px; 
+            text-align: left; 
+            font-size: 0.8rem; 
+            color: var(--primary-dark); 
+            text-transform: uppercase;
+            font-weight: 800;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        /* Group Header */
+        .group-row { background: var(--light-tosca); }
+        .group-row td { 
+            font-weight: 800; 
+            color: var(--accent-tosca); 
+            padding: 15px 20px;
+            font-size: 0.95rem;
+        }
+
+        td { padding: 18px 20px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
+
+        /* Content Styles */
+        .nopol-highlight { color: var(--primary-dark); font-weight: 700; font-size: 1.1rem; }
+        .sopir-name { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
+        
+        .route-info { display: flex; flex-direction: column; gap: 3px; }
+        .tag-supplier { color: var(--accent-tosca); font-weight: 600; font-size: 0.8rem; }
+        
+        .status-pill {
+            background: #dcfce7;
+            color: #166534;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid #bbf7d0;
+            display: inline-block;
+        }
+
+        .qty-text { 
+            text-align: right; 
+            font-family: 'Monaco', monospace; 
+            font-weight: 700; 
+            color: var(--primary-dark);
+            font-size: 1.1rem;
+        }
+
+        /* Running Text Footer */
+        .marquee-footer {
+            margin-top: 25px;
+            background: var(--primary-dark);
+            color: var(--white);
+            padding: 15px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .marquee-inner {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: marquee-scroll 40s linear infinite;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        @keyframes marquee-scroll {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+
+        .loading-overlay { padding: 100px; text-align: center; color: var(--accent-tosca); font-weight: 600; }
     </style>
 </head>
 <body>
@@ -74,51 +148,50 @@
 <div class="container">
     <header>
         <div class="header-title">
-            <h1>Logistik Pengiriman BBM</h1>
-            <p>Monitoring Jadwal Distribusi & Armada</p>
+            <h1>Jadwal Pengiriman BBM</h1>
+            <p>Sistem Pemantauan Distribusi Real-Time & Armada</p>
         </div>
-        <div class="date-badge">
-            <i data-lucide="calendar"></i>
-            <span id="txtTanggal">Memuat Hari...</span>
+        <div class="date-container">
+            <span class="date-label">Rencana Pengiriman Besok:</span>
+            <span id="targetDate" class="date-value">Memuat tanggal...</span>
         </div>
     </header>
 
-    <div class="dashboard-card">
+    <div class="dashboard-wrapper">
         <table>
             <thead>
                 <tr>
-                    <th width="50">No</th>
+                    <th width="60">No</th>
                     <th>Info Armada</th>
-                    <th>Asal (Supplier) & Lokasi</th>
+                    <th>Asal, Delivery & Lokasi</th>
                     <th>Status</th>
-                    <th style="text-align: right;">Volume Keluar</th>
+                    <th style="text-align: right;">Jumlah Keluar (L)</th>
                 </tr>
             </thead>
-            <tbody id="tableBody">
-                <tr><td colspan="5" class="loading">Sinkronisasi data dengan Supabase...</td></tr>
+            <tbody id="mainTable">
+                <tr><td colspan="5" class="loading-overlay">Menghubungkan ke Server Supabase...</td></tr>
             </tbody>
         </table>
     </div>
 
     <div class="marquee-footer">
-        <div class="marquee-content">
-            🚨 INFO: JADWAL PENGIRIMAN DAPAT BERUBAH SEWAKTU-WAKTU BERDASARKAN PRIORITAS OPERASIONAL DAN STOK SUPPLIER. 
-            &nbsp;&nbsp;&nbsp;&nbsp; 🚛 SAFETY REMINDER: SELALU CEK TEKANAN BAN DAN SISTEM PENGEREMAN SEBELUM JALAN. 
-            &nbsp;&nbsp;&nbsp;&nbsp; 🛑 DILARANG MENGOPERASIKAN PONSEL SAAT MENGEMUDI! KESELAMATAN ADALAH TANGGUNG JAWAB KITA BERSAMA. 
-            &nbsp;&nbsp;&nbsp;&nbsp; ✨ "INGAT, KELUARGA MENANTI ANDA DI RUMAH DENGAN SELAMAT."
+        <div class="marquee-inner">
+            🚛 <b>SAFETY FIRST:</b> SELALU CEK KELENGKAPAN SURAT JALAN DAN SEGEL TANGKI SEBELUM KEBERANGKATAN. &nbsp;&nbsp;&nbsp;&nbsp; 
+            ⚠️ <b>INFO:</b> JADWAL DAPAT BERUBAH SEWAKTU-WAKTU MENYESUAIKAN ANTREAN DI DEPOT SUPPLIER. &nbsp;&nbsp;&nbsp;&nbsp;
+            🛑 <b>REMINDER:</b> PATUHI BATAS KECEPATAN DAN ISTIRAHATLAH JIKA LELAH. KELUARGA MENANTI ANDA DI RUMAH.
         </div>
     </div>
 </div>
 
 <script>
-    // Konfigurasi API Supabase
+    // Konfigurasi Supabase
     const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function fetchJadwal() {
+    async function loadLogisticsData() {
         try {
-            // Mengambil data sesuai kolom yang Anda sebutkan
+            // Mengambil data dari tabel data_pengiriman
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('tanggal, hari, supplier, jumlah_keluar, delivery_to, lokasi, nopol, sopir, status')
@@ -126,73 +199,79 @@
                 .order('delivery_to', { ascending: true });
 
             if (error) throw error;
-            renderTable(data);
+            renderUI(data);
         } catch (err) {
-            console.error('Fetch Error:', err);
-            document.getElementById('tableBody').innerHTML = 
-                `<tr><td colspan="5" style="text-align:center; color:red; padding:20px;">Koneksi Gagal: ${err.message}</td></tr>`;
+            console.error('Error fetching:', err);
+            document.getElementById('mainTable').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:50px; color:red;">Gagal memuat data: ${err.message}</td></tr>`;
         }
     }
 
-    function renderTable(list) {
-        const tbody = document.getElementById('tableBody');
+    function renderUI(list) {
+        const tableBody = document.getElementById('mainTable');
         if (!list || list.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">Belum ada jadwal pengiriman untuk hari ini.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:100px;">Tidak ada jadwal pengiriman untuk besok.</td></tr>';
             return;
         }
 
         let html = '';
         let currentGroup = '';
-        let rowNumber = 1;
+        let no = 1;
 
         list.forEach(item => {
-            // Grouping berdasarkan kolom 'delivery_to'
+            // Grouping berdasarkan delivery_to
             if (currentGroup !== item.delivery_to) {
                 currentGroup = item.delivery_to;
                 html += `
-                    <tr class="group-header">
-                        <td colspan="5"><i data-lucide="map-pin" style="width:14px; vertical-align:middle"></i> TUJUAN: ${currentGroup}</td>
+                    <tr class="group-row">
+                        <td colspan="5"><i data-lucide="building-2" style="width:16px; vertical-align:middle; margin-right:8px;"></i> TUJUAN: ${currentGroup}</td>
                     </tr>
                 `;
             }
 
             html += `
                 <tr>
-                    <td>${rowNumber++}</td>
+                    <td>${no++}</td>
                     <td>
-                        <div class="nopol-box">${item.nopol || 'NO POL'}</div>
-                        <div style="font-size:0.8rem; color:#64748b">${item.sopir || 'Tanpa Sopir'}</div>
+                        <div class="nopol-highlight">${item.nopol || 'N/A'}</div>
+                        <div class="sopir-name"><i data-lucide="user" style="width:12px; height:12px; display:inline-block"></i> ${item.sopir || 'Belum Ada Sopir'}</div>
                     </td>
                     <td>
-                        <div style="font-size:0.8rem; color:#64748b">Supplier: ${item.supplier || '-'}</div>
-                        <div>Lokasi: ${item.lokasi || '-'}</div>
+                        <div class="route-info">
+                            <span class="tag-supplier">Asal: ${item.supplier || '-'}</span>
+                            <div style="font-weight:600;">Delivery: ${item.delivery_to || '-'}</div>
+                            <div style="font-size:0.8rem; color:#64748b;">Lokasi: ${item.lokasi || '-'}</div>
+                        </div>
                     </td>
                     <td>
-                        <span class="status-tag">${item.status.toUpperCase()}</span>
+                        <span class="status-pill">${(item.status || 'TERJADWAL').toUpperCase()}</span>
                     </td>
-                    <td style="text-align: right; font-family: 'Courier New', monospace; font-weight: 800; color: #1e293b;">
-                        ${(item.jumlah_keluar || 0).toLocaleString('id-ID')} L
+                    <td class="qty-text">
+                        ${(item.jumlah_keluar || 0).toLocaleString('id-ID')}
                     </td>
                 </tr>
             `;
         });
 
-        tbody.innerHTML = html;
+        tableBody.innerHTML = html;
         lucide.createIcons();
     }
 
-    function initDisplay() {
-        // Tampilkan Hari dan Tanggal
-        const skrg = new Date();
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('txtTanggal').innerText = skrg.toLocaleDateString('id-ID', options);
+    function setupDate() {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
         
-        fetchJadwal();
-        // Refresh data otomatis tiap 2 menit
-        setInterval(fetchJadwal, 120000);
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateString = tomorrow.toLocaleDateString('id-ID', options);
+        document.getElementById('targetDate').innerText = dateString;
     }
 
-    window.onload = initDisplay;
+    // Jalankan Dashboard
+    window.onload = () => {
+        setupDate();
+        loadLogisticsData();
+        // Refresh data otomatis setiap 2 menit
+        setInterval(loadLogisticsData, 120000);
+    };
 </script>
 
 </body>

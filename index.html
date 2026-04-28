@@ -62,6 +62,7 @@
             border-radius: 12px;
             border: 1px solid var(--border);
             overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -75,14 +76,15 @@
         }
         td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
 
-        /* DEPO/Supplier Background - Kiri */
+        /* Group Header Berdasarkan Status */
         .group-header { 
-            background: #1a237e !important; /* Biru Gelap */
-            color: #ffffff !important; 
+            background: #e0e0e0 !important; 
+            color: var(--primary) !important; 
             font-weight: 800; 
             font-size: 14px; 
             text-align: left; 
-            padding: 12px 15px;
+            padding: 10px 15px;
+            letter-spacing: 1px;
         }
         
         .nopol-badge { background: #f1f3f4; padding: 4px 8px; border-radius: 6px; font-weight: bold; border: 1px solid #dadce0; color: #202124; }
@@ -97,55 +99,68 @@
             color: white !important; 
         }
 
-        .rit-info { font-weight: 900; color: #d32f2f; margin-left: 8px; font-size: 13px; text-decoration: underline; }
-
-        /* Running Text Responsif */
+        /* Footer Marquee Fixed for Mobile */
         .footer-marquee {
             background: #ffffff;
             color: #d93025;
-            height: 45px;
-            width: 100%;
-            border-top: 2px solid var(--primary);
-            display: flex;
-            align-items: center;
-            position: relative;
+            height: 40px;
+            line-height: 40px;
+            white-space: nowrap;
             overflow: hidden;
+            border-top: 2px solid var(--primary);
+            position: relative;
+            width: 100%;
         }
 
-        .marquee-inner {
+        .marquee-content {
             display: inline-block;
-            white-space: nowrap;
             padding-left: 100%;
-            animation: marquee-move 40s linear infinite;
+            animation: marquee-scroll 30s linear infinite;
             font-weight: bold;
             font-size: 14px;
         }
 
-        @keyframes marquee-move {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
+        @keyframes marquee-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
         }
 
-        /* Mobile Optimization */
+        /* Mobile Layout Enhancements */
         @media (max-width: 768px) {
             table, thead, tbody, th, td, tr { display: block; }
             thead { display: none; }
-            tr { margin-bottom: 10px; border-bottom: 2px solid #eee; padding: 10px; }
+            tr { 
+                margin-bottom: 12px; 
+                background: #fff;
+                border: 1px solid #eee;
+                border-radius: 8px;
+                padding: 12px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            }
             td { 
-                border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center;
+                border: none; padding: 5px 0; display: flex; justify-content: space-between; align-items: center;
                 text-align: right; width: 100% !important;
             }
             td::before {
                 content: attr(data-label);
-                font-weight: bold;
+                font-weight: 700;
                 color: var(--text-sub);
-                font-size: 11px;
+                font-size: 10px;
                 text-align: left;
+                text-transform: uppercase;
                 flex: 1;
             }
-            .group-header { font-size: 15px; padding: 12px; margin-bottom: 5px; }
-            .status-badge { font-size: 13px; min-width: 100px; text-align: center; }
-            .marquee-inner { font-size: 13px; animation-duration: 30s; }
+            .group-header { 
+                text-align: center !important; 
+                font-size: 15px; 
+                border-radius: 6px; 
+                margin: 10px 5px;
+                background: var(--primary) !important;
+                color: white !important;
+            }
+            .status-badge { font-size: 12px; width: 50%; text-align: center; }
+            .qty-val { font-size: 18px; color: #d32f2f; }
+            .nopol-badge { font-size: 15px; padding: 6px 12px; background: #202124; color: #fff; }
         }
     </style>
 </head>
@@ -184,8 +199,8 @@
     </div>
 
     <div class="footer-marquee">
-        <div class="marquee-inner">
-            PENGUMUMAN KESELAMATAN: WAJIB CEK TEKANAN BAN & REM... PASTIKAN SEGEL ATAS & BAWAH TERPASANG SEMPURNA... DILARANG BERKENDARA SAAT MENGANTUK... LENGKAPI DOKUMEN MUATAN (SURAT JALAN & ITR)... UTAMAKAN KESELAMATAN (MAX 60KM/JAM)... GUNAKAN APD LENGKAP DI AREA DEPO... LAPORKAN SEGALA KENDALA ARMADA...
+        <div class="marquee-content">
+            PENGUMUMAN KESELAMATAN: WAJIB CEK TEKANAN BAN & REM SEBELUM JALAN... PASTIKAN SEGEL ATAS & BAWAH TERPASANG SEMPURNA... DILARANG BERKENDARA SAAT MENGANTUK... LENGKAPI DOKUMEN MUATAN... UTAMAKAN KESELAMATAN (MAX 60KM/JAM)...
         </div>
     </div>
 
@@ -214,6 +229,7 @@
 
             if (error) return;
 
+            // Filter data hanya yang Terjadwal & Langsir
             const filtered = data.filter(item => {
                 const s = (item.status || "").toUpperCase();
                 return s.includes("TERJADWAL") || s.includes("LANGSIR");
@@ -229,70 +245,52 @@
                 return;
             }
 
-            const orderRef = ["LANGSIRAN", "SSS", "OCEAN"];
-            const grouped = {};
-            const nopolMap = {};
+            // Kelompokkan berdasarkan STATUS (Terjadwal vs Langsir)
+            const grouped = {
+                "TERJADWAL": [],
+                "LANGSIR": []
+            };
 
             data.forEach(item => {
-                const n = (item.nopol || 'UNTITLED').toUpperCase();
-                nopolMap[n] = (nopolMap[n] || 0) + 1;
-
-                const s = (item.supplier || 'LAIN-LAIN').toUpperCase();
-                if (!grouped[s]) grouped[s] = [];
-                grouped[s].push(item);
-            });
-
-            const sortedSuppliers = Object.keys(grouped).sort((a, b) => {
-                let iA = orderRef.findIndex(ref => a.includes(ref));
-                let iB = orderRef.findIndex(ref => b.includes(ref));
-                return (iA === -1 ? 99 : iA) - (iB === -1 ? 99 : iB);
+                const s = (item.status || "").toUpperCase();
+                if (s.includes("LANGSIR")) {
+                    grouped["LANGSIR"].push(item);
+                } else {
+                    grouped["TERJADWAL"].push(item);
+                }
             });
 
             tbody.innerHTML = '';
-            const nopolTracker = {};
 
-            sortedSuppliers.forEach(supplier => {
-                const headRow = document.createElement('tr');
-                headRow.innerHTML = `<td colspan="6" class="group-header">${supplier}</td>`;
-                tbody.appendChild(headRow);
+            Object.keys(grouped).forEach(statusGroup => {
+                if (grouped[statusGroup].length > 0) {
+                    // Header Status
+                    const headRow = document.createElement('tr');
+                    headRow.className = 'group-header';
+                    headRow.innerHTML = `<td colspan="6">STATUS: ${statusGroup}</td>`;
+                    tbody.appendChild(headRow);
 
-                // Sort: Terjadwal duluan agar jadi RIT 1
-                const groupData = grouped[supplier].sort((a, b) => {
-                    const stA = (a.status || "").toUpperCase();
-                    const stB = (b.status || "").toUpperCase();
-                    if (stA.includes("TERJADWAL") && !stB.includes("TERJADWAL")) return -1;
-                    if (!stA.includes("TERJADWAL") && stB.includes("TERJADWAL")) return 1;
-                    return 0;
-                });
-
-                groupData.forEach(row => {
-                    const statusText = (row.status || "").toUpperCase();
-                    const isLangsir = statusText.includes("LANGSIR");
-                    const nopol = (row.nopol || '-').toUpperCase();
-                    
-                    // Logika RIT: Terjadwal (rit 1), Langsir (rit 2 dst)
-                    nopolTracker[nopol] = (nopolTracker[nopol] || 0) + 1;
-                    const ritKe = nopolTracker[nopol];
-                    const totalRitNopol = nopolMap[nopol];
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td data-label="CUSTOMER" style="font-weight:bold;">${row.delivery_to || '-'}</td>
-                        <td data-label="LOKASI">${row.lokasi || '-'}</td>
-                        <td data-label="UNIT/NOPOL">
-                            <span class="nopol-badge">${nopol}</span>
-                        </td>
-                        <td data-label="SOPIR">${row.sopir || '-'}</td>
-                        <td data-label="QTY" class="qty-val">${row.jumlah_keluar || 0}</td>
-                        <td data-label="STATUS">
-                            <span class="status-badge ${isLangsir ? 'st-langsir' : 'st-terjadwal'}">
-                                ${isLangsir ? 'LANGSIR' : 'TERJADWAL'}
-                            </span>
-                            ${totalRitNopol > 1 ? `<span class="rit-info">RIT ${ritKe}</span>` : ''}
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                    // Baris Data
+                    grouped[statusGroup].forEach(row => {
+                        const isLangsir = statusGroup === "LANGSIR";
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td data-label="CUSTOMER" style="font-weight:bold;">${row.delivery_to || '-'}</td>
+                            <td data-label="LOKASI">${row.lokasi || '-'}</td>
+                            <td data-label="UNIT/NOPOL">
+                                <span class="nopol-badge">${row.nopol || '-'}</span>
+                            </td>
+                            <td data-label="SOPIR">${row.sopir || '-'}</td>
+                            <td data-label="QTY" class="qty-val">${row.jumlah_keluar || 0}</td>
+                            <td data-label="STATUS">
+                                <span class="status-badge ${isLangsir ? 'st-langsir' : 'st-terjadwal'}">
+                                    ${statusGroup}
+                                </span>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
             });
         }
 

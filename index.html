@@ -8,8 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --primary-dark: #064e3b; /* Hijau Tua Corporate */
-            --accent-tosca: #0d9488; /* Tosca Profesional */
+            --primary-dark: #064e3b; 
+            --accent-tosca: #0d9488; 
             --light-tosca: #f0fdfa;
             --text-slate: #334155;
             --white: #ffffff;
@@ -17,129 +17,65 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
-        
-        body { 
-            background-color: #f8fafc; 
-            color: var(--text-slate); 
-            padding: 25px;
-        }
-
+        body { background-color: #f8fafc; color: var(--text-slate); padding: 25px; }
         .container { max-width: 1300px; margin: 0 auto; }
 
-        /* Header Style */
         header {
             display: flex; justify-content: space-between; align-items: center;
             background: var(--primary-dark); padding: 30px; border-radius: 16px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); margin-bottom: 30px;
-            color: var(--white);
-            border-bottom: 5px solid var(--accent-tosca);
+            color: var(--white); border-bottom: 5px solid var(--accent-tosca);
         }
 
-        .header-title h1 { 
-            font-size: 1.8rem; 
-            text-transform: uppercase; 
-            letter-spacing: 1.5px;
-            margin-bottom: 5px;
-        }
-        
+        .header-title h1 { font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; }
         .header-title p { opacity: 0.8; font-size: 0.95rem; }
 
         .date-container {
-            background: var(--accent-tosca);
-            padding: 12px 20px;
-            border-radius: 10px;
-            text-align: right;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            background: var(--accent-tosca); padding: 12px 20px; border-radius: 10px;
+            text-align: right; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .date-label { font-size: 0.75rem; text-transform: uppercase; opacity: 0.9; font-weight: bold; }
         .date-value { font-size: 1.1rem; font-weight: 600; display: block; }
 
-        /* Table Dashboard */
         .dashboard-wrapper {
-            background: var(--white);
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-            border: 1px solid var(--border-color);
+            background: var(--white); border-radius: 16px; border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;
         }
 
         table { width: 100%; border-collapse: collapse; }
-        
         thead { background-color: #f1f5f9; }
-        
         th { 
-            padding: 20px; 
-            text-align: left; 
-            font-size: 0.8rem; 
-            color: var(--primary-dark); 
-            text-transform: uppercase;
-            font-weight: 800;
-            border-bottom: 2px solid var(--border-color);
+            padding: 20px; text-align: left; font-size: 0.8rem; color: var(--primary-dark); 
+            text-transform: uppercase; font-weight: 800; border-bottom: 2px solid var(--border-color);
         }
 
-        /* Group Header */
         .group-row { background: var(--light-tosca); }
-        .group-row td { 
-            font-weight: 800; 
-            color: var(--accent-tosca); 
-            padding: 15px 20px;
-            font-size: 0.95rem;
-        }
-
+        .group-row td { font-weight: 800; color: var(--accent-tosca); padding: 15px 20px; font-size: 0.95rem; }
         td { padding: 18px 20px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
 
-        /* Content Styles */
         .nopol-highlight { color: var(--primary-dark); font-weight: 700; font-size: 1.1rem; }
         .sopir-name { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
-        
-        .route-info { display: flex; flex-direction: column; gap: 3px; }
         .tag-supplier { color: var(--accent-tosca); font-weight: 600; font-size: 0.8rem; }
         
         .status-pill {
-            background: #dcfce7;
-            color: #166534;
-            padding: 6px 14px;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            border: 1px solid #bbf7d0;
-            display: inline-block;
+            background: #dcfce7; color: #166534; padding: 6px 14px; border-radius: 50px;
+            font-size: 0.75rem; font-weight: 700; border: 1px solid #bbf7d0; display: inline-block;
         }
 
-        .qty-text { 
-            text-align: right; 
-            font-family: 'Monaco', monospace; 
-            font-weight: 700; 
-            color: var(--primary-dark);
-            font-size: 1.1rem;
-        }
+        .qty-text { text-align: right; font-family: 'Monaco', monospace; font-weight: 700; color: var(--primary-dark); font-size: 1.1rem; }
 
-        /* Running Text Footer */
         .marquee-footer {
-            margin-top: 25px;
-            background: var(--primary-dark);
-            color: var(--white);
-            padding: 15px 0;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            margin-top: 25px; background: var(--primary-dark); color: var(--white);
+            padding: 18px 0; border-radius: 12px; overflow: hidden;
         }
 
         .marquee-inner {
-            display: inline-block;
-            white-space: nowrap;
-            padding-left: 100%;
-            animation: marquee-scroll 40s linear infinite;
-            font-size: 1rem;
-            font-weight: 500;
+            display: inline-block; white-space: nowrap; padding-left: 100%;
+            animation: marquee-scroll 60s linear infinite; font-size: 1rem;
         }
 
-        @keyframes marquee-scroll {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
-
+        @keyframes marquee-scroll { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
         .loading-overlay { padding: 100px; text-align: center; color: var(--accent-tosca); font-weight: 600; }
     </style>
 </head>
@@ -175,33 +111,38 @@
     </div>
 
     <div class="marquee-footer">
-        <div class="marquee-inner">
-            🚛 <b>SAFETY FIRST:</b> SELALU CEK KELENGKAPAN SURAT JALAN DAN SEGEL TANGKI SEBELUM KEBERANGKATAN. &nbsp;&nbsp;&nbsp;&nbsp; 
-            ⚠️ <b>INFO:</b> JADWAL DAPAT BERUBAH SEWAKTU-WAKTU MENYESUAIKAN ANTREAN DI DEPOT SUPPLIER. &nbsp;&nbsp;&nbsp;&nbsp;
-            🛑 <b>REMINDER:</b> PATUHI BATAS KECEPATAN DAN ISTIRAHATLAH JIKA LELAH. KELUARGA MENANTI ANDA DI RUMAH.
-        </div>
+        <div class="marquee-inner" id="marqueeContent">
+            </div>
     </div>
 </div>
 
 <script>
-    // Konfigurasi Supabase
     const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // Ambil tanggal besok format YYYY-MM-DD untuk query
+    function getTomorrowISO() {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        return d.toISOString().split('T')[0];
+    }
+
     async function loadLogisticsData() {
         try {
-            // Mengambil data dari tabel data_pengiriman
+            const tglBesok = getTomorrowISO();
+            
+            // Query filter: Status Terjadwal DAN Tanggal Besok
             const { data, error } = await _supabase
                 .from('data_pengiriman')
-                .select('tanggal, hari, supplier, jumlah_keluar, delivery_to, lokasi, nopol, sopir, status')
-                .eq('status', 'Terjadwal')
+                .select('*')
+                .eq('tanggal', tglBesok)
                 .order('delivery_to', { ascending: true });
 
             if (error) throw error;
             renderUI(data);
         } catch (err) {
-            console.error('Error fetching:', err);
+            console.error('Error:', err);
             document.getElementById('mainTable').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:50px; color:red;">Gagal memuat data: ${err.message}</td></tr>`;
         }
     }
@@ -209,7 +150,7 @@
     function renderUI(list) {
         const tableBody = document.getElementById('mainTable');
         if (!list || list.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:100px;">Tidak ada jadwal pengiriman untuk besok.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:100px;">Tidak ada data ditemukan untuk tanggal pengiriman besok.</td></tr>';
             return;
         }
 
@@ -218,61 +159,59 @@
         let no = 1;
 
         list.forEach(item => {
-            // Grouping berdasarkan delivery_to
             if (currentGroup !== item.delivery_to) {
                 currentGroup = item.delivery_to;
-                html += `
-                    <tr class="group-row">
-                        <td colspan="5"><i data-lucide="building-2" style="width:16px; vertical-align:middle; margin-right:8px;"></i> TUJUAN: ${currentGroup}</td>
-                    </tr>
-                `;
+                html += `<tr class="group-row"><td colspan="5"><i data-lucide="map-pin" style="width:16px; vertical-align:middle; margin-right:8px;"></i> TUJUAN: ${currentGroup}</td></tr>`;
             }
 
             html += `
                 <tr>
                     <td>${no++}</td>
                     <td>
-                        <div class="nopol-highlight">${item.nopol || 'N/A'}</div>
-                        <div class="sopir-name"><i data-lucide="user" style="width:12px; height:12px; display:inline-block"></i> ${item.sopir || 'Belum Ada Sopir'}</div>
+                        <div class="nopol-highlight">${item.nopol || '-'}</div>
+                        <div class="sopir-name"><i data-lucide="user" style="width:12px;"></i> ${item.sopir || 'Driver Belum Input'}</div>
                     </td>
                     <td>
                         <div class="route-info">
-                            <span class="tag-supplier">Asal: ${item.supplier || '-'}</span>
-                            <div style="font-weight:600;">Delivery: ${item.delivery_to || '-'}</div>
+                            <span class="tag-supplier">Supplier: ${item.supplier || '-'}</span>
+                            <div style="font-weight:600;">Ke: ${item.delivery_to || '-'}</div>
                             <div style="font-size:0.8rem; color:#64748b;">Lokasi: ${item.lokasi || '-'}</div>
                         </div>
                     </td>
-                    <td>
-                        <span class="status-pill">${(item.status || 'TERJADWAL').toUpperCase()}</span>
-                    </td>
-                    <td class="qty-text">
-                        ${(item.jumlah_keluar || 0).toLocaleString('id-ID')}
-                    </td>
+                    <td><span class="status-pill">${(item.status || 'PROSES').toUpperCase()}</span></td>
+                    <td class="qty-text">${(item.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
                 </tr>
             `;
         });
-
         tableBody.innerHTML = html;
         lucide.createIcons();
     }
 
-    function setupDate() {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const dateString = tomorrow.toLocaleDateString('id-ID', options);
-        document.getElementById('targetDate').innerText = dateString;
+    function setupMarquee() {
+        const msgs = [
+            "🚛 <b>SAFETY FIRST:</b> Cek tekanan ban, rem, dan lampu sebelum keberangkatan.",
+            "🛑 <b>ANTI-NGANTUK:</b> Istirahat 15 menit setiap 4 jam mengemudi. Jangan paksakan!",
+            "⚠️ <b>KEAMANAN:</b> Pastikan segel tangki utuh dan tidak bocor saat tiba di tujuan.",
+            "✨ <b>KELUARGA:</b> Ingat, ada keluarga menanti Anda di rumah dengan selamat.",
+            "📱 <b>DILARANG:</b> Jangan menggunakan handphone saat kemudi sedang berjalan.",
+            "⛽ <b>OPERASIONAL:</b> Laporkan segera jika ada kendala mesin di perjalanan.",
+            "📏 <b>JARAK AMAN:</b> Selalu jaga jarak aman dengan kendaraan di depan Anda."
+        ];
+        document.getElementById('marqueeContent').innerHTML = msgs.join(" &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ");
     }
 
-    // Jalankan Dashboard
+    function setupDate() {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        document.getElementById('targetDate').innerText = d.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
     window.onload = () => {
         setupDate();
+        setupMarquee();
         loadLogisticsData();
-        // Refresh data otomatis setiap 2 menit
-        setInterval(loadLogisticsData, 120000);
+        setInterval(loadLogisticsData, 120000); // Auto-refresh 2 menit
     };
 </script>
-
 </body>
 </html>

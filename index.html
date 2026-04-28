@@ -3,199 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Corporate Logistics Dashboard</title>
+    <title>Corporate Logistics - Monitoring</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --corp-blue: #0a192f;
-            --corp-green: #00c853;
-            --corp-light: #f8f9fa;
-            --border-color: #e0e6ed;
-            --text-dark: #1e293b;
+            --primary: #0f172a;    /* Dark Slate */
+            --accent: #2563eb;     /* Corporate Blue */
+            --success: #22c55e;    /* Emerald Green */
+            --bg-body: #f1f5f9;
+            --white: #ffffff;
+            --text-main: #1e293b;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; 
-            background-color: #f0f2f5; 
-            color: var(--text-dark);
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background-color: var(--bg-body); 
+            color: var(--text-main);
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden; /* Mencegah seluruh halaman goyang */
         }
 
-        /* Header Corporate */
-        .header {
-            background-color: var(--corp-blue);
-            color: white;
-            padding: 12px 20px;
+        /* HEADER TETAP (FIXED) */
+        header {
+            background: var(--white);
+            padding: 16px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid var(--corp-green);
-        }
-
-        .header-title h1 { margin: 0; font-size: 18px; letter-spacing: 1px; font-weight: 800; }
-        .header-title span { font-size: 11px; color: var(--corp-green); font-weight: 600; }
-
-        /* Animasi Live Pulse */
-        .live-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.05);
-            padding: 5px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        .pulse {
-            width: 10px;
-            height: 10px;
-            background: var(--corp-green);
-            border-radius: 50%;
-            box-shadow: 0 0 0 rgba(0, 200, 83, 0.4);
-            animation: pulse-green 2s infinite;
-        }
-
-        @keyframes pulse-green {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 200, 83, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 200, 83, 0); }
-        }
-
-        /* Main Area */
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-        }
-
-        .table-card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-        }
-
-        table { width: 100%; border-collapse: collapse; }
-        
-        thead th {
-            background-color: #f8fafc;
-            color: #64748b;
-            font-size: 10px;
-            text-transform: uppercase;
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        .group-header {
-            background: #f1f5f9;
-            color: var(--corp-blue);
-            font-weight: 700;
-            font-size: 12px;
-            padding: 10px 15px;
-        }
-
-        td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-
-        .nopol-box {
-            background: #1e293b;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-family: 'Courier New', Courier, monospace;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .status-pill {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 800;
-            display: inline-block;
-        }
-        .st-ok { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .st-wait { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-
-        /* Footer Running Text (Fix Mobile) */
-        .footer {
-            background: white;
-            height: 45px;
-            border-top: 2px solid var(--corp-blue);
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
+            border-bottom: 4px solid var(--accent);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             z-index: 100;
         }
 
-        .marquee-box {
+        .header-title h1 { font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); }
+        .header-title p { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+
+        .live-badge {
+            background: var(--primary);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pulse-dot {
+            width: 8px; height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* AREA DATA YANG BISA DI-SCROLL */
+        main {
+            flex: 1;
+            overflow-y: auto; /* Hanya bagian ini yang gerak */
+            padding: 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .dashboard-card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        
+        thead { background: var(--primary); color: white; position: sticky; top: 0; }
+        th { padding: 12px 15px; font-size: 0.7rem; text-transform: uppercase; text-align: left; }
+
+        .group-header {
+            background: #f8fafc;
+            color: var(--accent);
+            font-weight: 800;
+            font-size: 11px;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+
+        .row-nopol {
+            font-weight: 700;
+            color: var(--primary);
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-align: center;
+            display: inline-block;
+            min-width: 70px;
+        }
+        .st-ready { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .st-wait { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        .qty-val { font-family: 'Roboto Mono', monospace; font-weight: 800; font-size: 1.1rem; color: var(--accent); }
+
+        /* FOOTER RUNNING TEXT TETAP (FIXED) */
+        footer {
+            background: var(--white);
+            height: 40px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        .marquee-container {
             display: flex;
             white-space: nowrap;
-            animation: marquee-move 40s linear infinite;
+            animation: move-marquee 35s linear infinite;
         }
 
-        .marquee-item {
-            padding: 0 40px;
-            font-size: 13px;
+        .marquee-text {
+            padding: 0 30px;
+            font-size: 0.85rem;
             font-weight: 600;
-            color: var(--corp-blue);
+            color: var(--primary);
         }
 
-        .marquee-item b { color: var(--corp-green); }
+        .marquee-text b { color: var(--accent); }
 
-        @keyframes marquee-move {
+        @keyframes move-marquee {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
 
-        /* Mobile Adjustments */
+        /* RESPONSIVE HP */
         @media (max-width: 600px) {
-            .header-title h1 { font-size: 15px; }
-            td, th { padding: 10px 8px; font-size: 12px; }
-            .status-pill { padding: 2px 6px; }
+            .header-title h1 { font-size: 1rem; }
+            .live-badge { font-size: 0.7rem; padding: 4px 8px; }
+            td, th { padding: 10px 8px; }
+            .qty-val { font-size: 1rem; }
+            .marquee-text { font-size: 0.75rem; }
         }
     </style>
 </head>
 <body>
 
-    <header class="header">
+    <header>
         <div class="header-title">
-            <h1>LOGISTICS MANAGEMENT</h1>
-            <span id="targetDate">-- LOADING DATA --</span>
+            <h1>Logistik Pengiriman</h1>
+            <p id="targetDateText">MENYIAPKAN DATA...</p>
         </div>
-        <div class="live-status">
-            <div class="pulse"></div>
-            <div id="clock">00:00:00</div>
+        <div class="live-badge">
+            <div class="pulse-dot"></div>
+            <span id="clock">00:00:00</span>
         </div>
     </header>
 
-    <main class="main-content">
-        <div class="table-card">
+    <main>
+        <div class="dashboard-card">
             <table>
                 <thead>
                     <tr>
-                        <th>Tujuan</th>
-                        <th>Nopol</th>
-                        <th style="text-align:center">KL</th>
-                        <th style="text-align:center">Status</th>
+                        <th>Detail Pengiriman</th>
+                        <th>Armada</th>
+                        <th style="text-align: right;">Quantity</th>
+                        <th style="text-align: center;">Status</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="4" style="text-align:center; padding:50px;">Synchronizing with Cloud Server...</td></tr>
+                    <tr><td colspan="4" style="text-align:center; padding:50px;">Menghubungkan ke server korporasi...</td></tr>
                 </tbody>
             </table>
         </div>
     </main>
 
-    <footer class="footer">
-        <div class="marquee-box" id="marqueeBox">
+    <footer>
+        <div class="marquee-container" id="marqueeBox">
             </div>
     </footer>
 
@@ -210,24 +210,23 @@
 
         function setupMarquee() {
             const msgs = [
-                "<b>SAFETY:</b> Patuhi batas kecepatan dan cek tekanan ban.",
-                "<b>REST:</b> Istirahat jika lelah, keselamatan Anda paling utama.",
-                "<b>DOCS:</b> Pastikan Surat Jalan & BA sesuai sebelum berangkat.",
-                "<b>DRIVE:</b> Dilarang menggunakan ponsel saat mengemudi.",
-                "<b>VEHICLE:</b> Laporkan segera jika ada kendala pada mesin unit."
+                "<b>SAFETY FIRST:</b> Cek kondisi rem dan tekanan ban sebelum unit berangkat.",
+                "<b>REST AREA:</b> Istirahat 15 menit setiap 4 jam perjalanan untuk menjaga stamina.",
+                "<b>DOCUMENTS:</b> Pastikan Surat Jalan (SJ) dan Berita Acara (BA) sudah tervalidasi.",
+                "<b>SECURITY:</b> Pastikan segel tangki aman dan tidak ada kebocoran saat tiba.",
+                "<b>REMINDER:</b> Dilarang keras menggunakan HP saat kemudi sedang berjalan."
             ];
             const box = document.getElementById('marqueeBox');
-            const content = msgs.map(m => `<div class="marquee-item">${m}</div>`).join('');
-            // Double content agar loop tidak putus
-            box.innerHTML = content + content;
+            const content = msgs.map(m => `<div class="marquee-text">${m}</div>`).join('');
+            box.innerHTML = content + content; // Duplicate for smooth loop
         }
 
-        async function fetchData() {
+        async function loadData() {
             const besok = getWIBDate();
             besok.setDate(besok.getDate() + 1);
             const isoBesok = besok.toISOString().split('T')[0];
             
-            document.getElementById('targetDate').innerText = besok.toLocaleDateString('id-ID', { 
+            document.getElementById('targetDateText').innerText = besok.toLocaleDateString('id-ID', { 
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
             }).toUpperCase();
 
@@ -243,19 +242,19 @@
                 return s.includes("TERJADWAL") || s.includes("TUNGGU");
             });
 
-            renderTable(filtered);
+            render(filtered);
         }
 
-        function renderTable(data) {
+        function render(data) {
             const tbody = document.getElementById('tableBody');
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px; color:#94a3b8;">NO SCHEDULED DATA FOR TOMORROW</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px;">TIDAK ADA JADWAL TERDATA</td></tr>';
                 return;
             }
 
             const grouped = {};
             data.forEach(item => {
-                const k = item.supplier || 'OTHERS';
+                const k = item.supplier || 'DEPO UTAMA';
                 if (!grouped[k]) grouped[k] = [];
                 grouped[k].push(item);
             });
@@ -263,7 +262,7 @@
             tbody.innerHTML = '';
             for (const supplier in grouped) {
                 const hRow = document.createElement('tr');
-                hRow.innerHTML = `<td colspan="4" class="group-header">📦 DEPO: ${supplier}</td>`;
+                hRow.innerHTML = `<td colspan="4" class="group-header">📦 ASAL: ${supplier}</td>`;
                 tbody.appendChild(hRow);
 
                 const nopolCounts = {};
@@ -274,14 +273,17 @@
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><b>${row.delivery_to || '-'}</b><br><small style="color:#64748b">${row.lokasi || '-'}</small></td>
                         <td>
-                            <span class="nopol-box">${nopol}</span>
-                            ${nopolCounts[nopol]>1 || data.filter(x=>x.nopol===nopol).length>1 ? `<br><small style="color:var(--corp-green); font-weight:bold">RIT ${nopolCounts[nopol]}</small>` : ''}
+                            <div style="font-weight:700">Ke: ${row.delivery_to || '-'}</div>
+                            <div style="font-size:0.75rem; color:#64748b">${row.lokasi || '-'}</div>
                         </td>
-                        <td style="text-align:center; font-weight:800; color:var(--corp-blue)">${row.jumlah_keluar || 0}</td>
-                        <td style="text-align:center;">
-                            <span class="status-pill ${isWait ? 'st-wait' : 'st-ok'}">
+                        <td>
+                            <span class="row-nopol">${nopol}</span>
+                            ${nopolCounts[nopol]>1 || data.filter(x=>x.nopol===nopol).length>1 ? `<br><span style="font-size:0.7rem; color:var(--accent); font-weight:800">RIT ${nopolCounts[nopol]}</span>` : ''}
+                        </td>
+                        <td style="text-align: right;" class="qty-val">${(row.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
+                        <td style="text-align: center;">
+                            <span class="status-badge ${isWait ? 'st-wait' : 'st-ready'}">
                                 ${isWait ? 'WAITING' : 'READY'}
                             </span>
                         </td>
@@ -292,18 +294,18 @@
         }
 
         function updateClock() {
-            document.getElementById('clock').innerText = getWIBDate().toLocaleTimeString('id-ID', {hour12:false}) + " WIB";
+            document.getElementById('clock').innerText = getWIBDate().toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        // Live Realtime
-        _supabase.channel('corp-monitor').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
-            fetchData();
+        // Realtime Listener
+        _supabase.channel('corp-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
+            loadData();
         }).subscribe();
 
         setupMarquee();
-        fetchData();
+        loadData();
         setInterval(updateClock, 1000);
-        setInterval(fetchData, 300000);
+        setInterval(loadData, 300000);
     </script>
 </body>
 </html>

@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Jadwal Terjadwal - Live</title>
+    <title>Dashboard Jadwal Besok - Stable Cloud</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --primary: #1a237e; /* Biru Gelap Profesional */
+            --primary: #1a237e;
             --accent: #ffd600;
             --bg: #0d1117;
             --card-bg: #161b22;
             --text-main: #e6edf3;
             --border: #30363d;
+            --status-wait: #f44336;
+            --status-plan: #9c27b0;
         }
 
         body { 
@@ -20,10 +22,10 @@
             margin: 0; 
             background-color: var(--bg); 
             color: var(--text-main);
-            overflow: hidden; /* Supaya layout tetap fix dengan running text */
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            overflow: hidden;
         }
 
         /* Header */
@@ -33,19 +35,19 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid var(--accent);
+            border-bottom: 3px solid var(--accent);
         }
 
         .header h1 { margin: 0; font-size: 20px; letter-spacing: 1.5px; color: white; }
-        .live-status { font-size: 12px; color: #4af54a; font-weight: bold; }
+        .live-status { font-size: 13px; color: #4af54a; font-weight: bold; text-align: right; }
         .dot { height: 10px; width: 10px; background: #4af54a; border-radius: 50%; display: inline-block; margin-right: 5px; animation: blink 1s infinite; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
-        /* Table Area */
+        /* Main Content */
         .main-content {
             flex: 1;
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
         }
 
@@ -53,63 +55,70 @@
             background: var(--card-bg);
             border-radius: 8px;
             border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        table { width: 100%; border-collapse: collapse; text-align: left; }
+        table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; }
         th { 
             background: #21262d; 
-            padding: 15px; 
-            font-size: 12px; 
+            padding: 12px; 
+            font-size: 11px; 
             color: #8b949e; 
             text-transform: uppercase; 
             border-bottom: 2px solid var(--border);
         }
-        td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        
-        .row-terjadwal { background: rgba(255, 214, 0, 0.05); }
-        .tgl-col { color: var(--accent); font-weight: bold; }
-        .nopol-box { background: #30363d; padding: 4px 8px; border-radius: 4px; font-family: monospace; color: white; }
-        .qty-badge { color: #4af54a; font-weight: 800; font-size: 16px; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; word-wrap: break-word; }
 
-        /* Running Text Footer */
+        /* Row Styling */
+        .group-header { background: #1f2937; color: var(--accent); font-weight: bold; font-size: 13px; }
+        .nopol-badge { background: #30363d; padding: 4px 8px; border-radius: 4px; font-family: monospace; color: white; font-weight: bold; border: 1px solid #444; }
+        .qty-val { color: #4af54a; font-weight: 800; font-size: 16px; }
+        
+        .status-badge { 
+            font-size: 10px; 
+            padding: 3px 6px; 
+            border-radius: 3px; 
+            font-weight: bold; 
+            display: inline-block;
+        }
+        .st-terjadwal { background: var(--status-plan); color: white; }
+        .st-tunggu { background: var(--status-wait); color: white; }
+
+        .rit-label { font-size: 10px; color: var(--accent); margin-left: 5px; font-style: italic; }
+
+        /* Footer Marquee */
         .footer-marquee {
             background: #000;
             color: var(--accent);
-            padding: 10px 0;
-            border-top: 1px solid var(--border);
+            padding: 12px 0;
             white-space: nowrap;
             overflow: hidden;
-            box-sizing: border-box;
+            border-top: 1px solid var(--border);
         }
 
         .marquee-content {
             display: inline-block;
             padding-left: 100%;
-            animation: marquee 25s linear infinite;
+            animation: marquee 30s linear infinite;
             font-weight: bold;
             font-size: 15px;
-            letter-spacing: 1px;
         }
 
         @keyframes marquee {
             0% { transform: translate(0, 0); }
             100% { transform: translate(-100%, 0); }
         }
-
-        /* Empty State */
-        .no-data { text-align: center; padding: 50px; color: #8b949e; font-style: italic; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div>
-            <h1 id="titleDisplay">MONITORING JADWAL TERJADWAL</h1>
-            <span id="dateDisplay" style="font-size: 12px; color: #cbd5e0;"></span>
+            <h1>JADWAL PENGIRIMAN BESOK</h1>
+            <div id="targetDate" style="color: var(--accent); font-weight: bold; font-size: 14px; margin-top: 5px;">Memuat Jadwal...</div>
         </div>
         <div class="live-status">
-            <span class="dot"></span> <span id="clock">00:00:00</span> WIB
+            <div><span class="dot"></span> LIVE CLOUD</div>
+            <div id="clock">00:00:00 WIB</div>
         </div>
     </div>
 
@@ -118,17 +127,17 @@
             <table>
                 <thead>
                     <tr>
-                        <th>TANGGAL</th>
-                        <th>SUPPLIER</th>
-                        <th>CUSTOMER / TUJUAN</th>
-                        <th>LOKASI</th>
-                        <th>UNIT/NOPOL</th>
-                        <th>SOPIR</th>
-                        <th>QTY (KL)</th>
+                        <th style="width: 15%;">SUPPLIER</th>
+                        <th style="width: 20%;">CUSTOMER</th>
+                        <th style="width: 15%;">LOKASI</th>
+                        <th style="width: 18%;">UNIT/NOPOL</th>
+                        <th style="width: 15%;">SOPIR</th>
+                        <th style="width: 7%;">QTY</th>
+                        <th style="width: 10%;">STATUS</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="7" class="no-data">Menghubungkan ke Cloud...</td></tr>
+                    <tr><td colspan="7" style="text-align:center; padding:50px; color:#8b949e;">Sinkronisasi Data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -136,7 +145,7 @@
 
     <div class="footer-marquee">
         <div class="marquee-content" id="runningText">
-            MEMUAT INFORMASI TERBARU... TETAP UTAMAKAN KESELAMATAN BERKENDARA (SAFETY FIRST)... PASTIKAN UNIT STANDBY TEPAT WAKTU...
+            MEMUAT INFORMASI JADWAL TERBARU... HARAP CEK STATUS UNIT SECARA BERKALA... SAFETY FIRST...
         </div>
     </div>
 
@@ -149,85 +158,114 @@
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }
 
-        async function loadJadwalTerjadwal() {
-            const now = getWIBDate();
-            const startStr = now.toISOString().split('T')[0];
+        async function loadDashboard() {
+            // Setup Tanggal Besok
+            const besok = getWIBDate();
+            besok.setDate(besok.getDate() + 1);
+            const isoBesok = besok.toISOString().split('T')[0];
             
-            // Ambil data hari ini dan masa depan
+            document.getElementById('targetDate').innerText = besok.toLocaleDateString('id-ID', { 
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+            }).toUpperCase();
+
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
-                .gte('tanggal', startStr)
-                .order('tanggal', { ascending: true });
+                .eq('tanggal', isoBesok);
 
             if (error) return;
 
-            // Filter HANYA yang statusnya mengandung kata "TERJADWAL"
-            const filtered = data.filter(item => 
-                item.status && item.status.toUpperCase().includes('TERJADWAL')
-            );
+            // Filter: Terjadwal ATAU Tunggu Info
+            const filtered = data.filter(item => {
+                const s = (item.status || "").toUpperCase();
+                return s.includes("TERJADWAL") || s.includes("TUNGGU");
+            });
 
-            renderTable(filtered);
+            renderData(filtered);
             updateMarquee(filtered);
         }
 
-        function renderTable(list) {
+        function renderData(data) {
             const tbody = document.getElementById('tableBody');
-            if (list.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="no-data">Tidak ada jadwal dengan status TERJADWAL saat ini.</td></tr>';
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#8b949e;">TIDAK ADA JADWAL TERDATA UNTUK BESOK</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = '';
-            list.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.className = 'row-terjadwal';
-                tr.innerHTML = `
-                    <td class="tgl-col">${formatDate(row.tanggal)}<br><small>${row.hari}</small></td>
-                    <td>${row.supplier || '-'}</td>
-                    <td style="font-weight:bold;">${row.delivery_to || '-'}</td>
-                    <td>${row.lokasi || '-'}</td>
-                    <td><span class="nopol-box">${row.nopol || '-'}</span></td>
-                    <td>${row.sopir || '-'}</td>
-                    <td class="qty-badge">${row.jumlah_keluar || 0}</td>
-                `;
-                tbody.appendChild(tr);
+            // Logika Pengelompokan: Berdasarkan Supplier -> Lokasi -> Nopol
+            // Ini untuk menangani Rit dan Lokasi yang sama
+            const grouped = {};
+            data.forEach(item => {
+                const key = `${item.supplier || 'LAIN'}`;
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(item);
             });
-        }
 
-        function updateMarquee(list) {
-            const el = document.getElementById('runningText');
-            if (list.length > 0) {
-                let info = list.map(item => `${item.nopol} (${item.delivery_to})`).join(' --- ');
-                el.innerText = `INFO JADWAL TERBARU: ${info} --- TETAP SEMANGAT DAN JAGA KESEHATAN...`.toUpperCase();
-            } else {
-                el.innerText = "BELUM ADA JADWAL TERJADWAL UNTUK HARI INI. UNIT STANDBY MONITORING.";
+            tbody.innerHTML = '';
+
+            for (const supplier in grouped) {
+                // Header Supplier
+                const headRow = document.createElement('tr');
+                headRow.className = 'group-header';
+                headRow.innerHTML = `<td colspan="7">DEPO/SUPPLIER: ${supplier}</td>`;
+                tbody.appendChild(headRow);
+
+                // Hitung Rit untuk Nopol yang sama dalam supplier ini
+                const nopolCounts = {};
+
+                grouped[supplier].forEach(row => {
+                    const nopol = row.nopol || '-';
+                    nopolCounts[nopol] = (nopolCounts[nopol] || 0) + 1;
+                    const currentRit = nopolCounts[nopol];
+
+                    const tr = document.createElement('tr');
+                    const isWait = (row.status || "").toUpperCase().includes("TUNGGU");
+                    
+                    tr.innerHTML = `
+                        <td style="color:#8b949e; font-size:12px;">${row.supplier}</td>
+                        <td style="font-weight:bold;">${row.delivery_to || '-'}</td>
+                        <td>${row.lokasi || '-'}</td>
+                        <td>
+                            <span class="nopol-badge">${nopol}</span>
+                            ${nopolCounts[nopol] > 1 || data.filter(x=>x.nopol === nopol).length > 1 ? `<span class="rit-label">(RIT ${currentRit})</span>` : ''}
+                        </td>
+                        <td>${row.sopir || '-'}</td>
+                        <td class="qty-val">${row.jumlah_keluar || 0}</td>
+                        <td>
+                            <span class="status-badge ${isWait ? 'st-tunggu' : 'st-terjadwal'}">
+                                ${isWait ? 'TUNGGU INFO' : 'TERJADWAL'}
+                            </span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             }
         }
 
-        function formatDate(iso) {
-            const d = new Date(iso);
-            return d.getDate().toString().padStart(2, '0') + '/' + (d.getMonth() + 1).toString().padStart(2, '0');
+        function updateMarquee(data) {
+            const el = document.getElementById('runningText');
+            if(data.length > 0) {
+                const info = data.map(i => `${i.nopol} > ${i.delivery_to}`).join('  ||  ');
+                el.innerText = `JADWAL PENGIRIMAN BESOK: ${info}  ||  TETAP WASPADA DAN SAFETY FIRST!`.toUpperCase();
+            } else {
+                el.innerText = "BELUM ADA DATA JADWAL TERINPUT UNTUK TANGGAL BESOK.";
+            }
         }
 
         function updateClock() {
             const now = getWIBDate();
-            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('dateDisplay').innerText = now.toLocaleDateString('id-ID', options).toUpperCase();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false}) + " WIB";
         }
 
-        // Live Subscription
-        _supabase
-            .channel('db-monitor')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
-                loadJadwalTerjadwal();
-            })
-            .subscribe();
+        // Realtime Listener
+        _supabase.channel('custom-all-channel')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
+            loadDashboard();
+        }).subscribe();
 
         setInterval(updateClock, 1000);
-        setInterval(loadJadwalTerjadwal, 60000); // Refresh tiap menit (backup)
-        loadJadwalTerjadwal();
+        setInterval(loadDashboard, 300000); // Auto refresh 5 menit
+        loadDashboard();
     </script>
 </body>
 </html>

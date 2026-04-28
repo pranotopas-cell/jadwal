@@ -39,6 +39,7 @@
             align-items: center;
             color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 10;
         }
 
         .header h1 { margin: 0; font-size: 18px; letter-spacing: 0.5px; }
@@ -55,6 +56,7 @@
             padding: 10px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            padding-bottom: 60px; /* Jarak untuk marquee di bawah */
         }
 
         .table-container {
@@ -69,29 +71,31 @@
         th { 
             background: #f8f9fa; 
             padding: 12px 10px; 
-            font-size: 11px; 
+            font-size: 10px; 
             color: var(--text-sub); 
             text-align: left;
             border-bottom: 2px solid var(--border);
+            text-transform: uppercase;
         }
-        td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
 
         /* Group Header Berdasarkan Status */
         .group-header { 
-            background: #e0e0e0 !important; 
+            background: #eeeeee !important; 
             color: var(--primary) !important; 
             font-weight: 800; 
-            font-size: 14px; 
+            font-size: 13px; 
             text-align: left; 
             padding: 10px 15px;
             letter-spacing: 1px;
+            border-bottom: 2px solid var(--border);
         }
         
         .nopol-badge { background: #f1f3f4; padding: 4px 8px; border-radius: 6px; font-weight: bold; border: 1px solid #dadce0; color: #202124; }
-        .qty-val { color: #1a73e8; font-weight: bold; font-size: 16px; }
+        .qty-val { color: #1a73e8; font-weight: bold; font-size: 15px; }
         
         .status-badge { 
-            font-size: 11px; padding: 6px 10px; border-radius: 4px; font-weight: bold; display: inline-block;
+            font-size: 10px; padding: 5px 8px; border-radius: 4px; font-weight: bold; display: inline-block;
         }
         .st-terjadwal { background: var(--status-plan); color: var(--status-plan-text); }
         .st-langsir { 
@@ -99,23 +103,27 @@
             color: white !important; 
         }
 
-        /* Footer Marquee Fixed for Mobile */
+        /* Fixed Running Text di Bawah */
         .footer-marquee {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
             background: #ffffff;
             color: #d93025;
-            height: 40px;
-            line-height: 40px;
+            height: 45px;
+            line-height: 45px;
             white-space: nowrap;
             overflow: hidden;
-            border-top: 2px solid var(--primary);
-            position: relative;
-            width: 100%;
+            border-top: 3px solid var(--primary);
+            z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
 
         .marquee-content {
             display: inline-block;
             padding-left: 100%;
-            animation: marquee-scroll 30s linear infinite;
+            animation: marquee-scroll 40s linear infinite;
             font-weight: bold;
             font-size: 14px;
         }
@@ -125,25 +133,24 @@
             100% { transform: translateX(-100%); }
         }
 
-        /* Mobile Layout Enhancements */
+        /* Mobile Layout Optimization */
         @media (max-width: 768px) {
             table, thead, tbody, th, td, tr { display: block; }
             thead { display: none; }
             tr { 
-                margin-bottom: 12px; 
+                margin-bottom: 15px; 
                 background: #fff;
-                border: 1px solid #eee;
-                border-radius: 8px;
+                border: 1px solid #ddd;
+                border-radius: 10px;
                 padding: 12px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.02);
             }
             td { 
-                border: none; padding: 5px 0; display: flex; justify-content: space-between; align-items: center;
+                border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center;
                 text-align: right; width: 100% !important;
             }
             td::before {
                 content: attr(data-label);
-                font-weight: 700;
+                font-weight: 800;
                 color: var(--text-sub);
                 font-size: 10px;
                 text-align: left;
@@ -152,15 +159,15 @@
             }
             .group-header { 
                 text-align: center !important; 
-                font-size: 15px; 
-                border-radius: 6px; 
-                margin: 10px 5px;
+                font-size: 14px; 
+                margin-bottom: 10px;
                 background: var(--primary) !important;
                 color: white !important;
+                border-radius: 6px;
             }
-            .status-badge { font-size: 12px; width: 50%; text-align: center; }
+            .status-badge { font-size: 12px; width: 45%; text-align: center; }
             .qty-val { font-size: 18px; color: #d32f2f; }
-            .nopol-badge { font-size: 15px; padding: 6px 12px; background: #202124; color: #fff; }
+            .nopol-badge { font-size: 14px; background: #202124; color: #fff; }
         }
     </style>
 </head>
@@ -183,12 +190,12 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 25%;">CUSTOMER</th>
+                        <th style="width: 15%;">SUPPLIER</th>
+                        <th style="width: 20%;">CUSTOMER</th>
                         <th style="width: 15%;">LOKASI</th>
-                        <th style="width: 25%;">UNIT/NOPOL</th>
+                        <th style="width: 20%;">UNIT/NOPOL</th>
                         <th style="width: 15%;">SOPIR</th>
-                        <th style="width: 10%;">QTY</th>
-                        <th style="width: 10%;">STATUS</th>
+                        <th style="width: 15%;">STATUS</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -199,8 +206,8 @@
     </div>
 
     <div class="footer-marquee">
-        <div class="marquee-content">
-            PENGUMUMAN KESELAMATAN: WAJIB CEK TEKANAN BAN & REM SEBELUM JALAN... PASTIKAN SEGEL ATAS & BAWAH TERPASANG SEMPURNA... DILARANG BERKENDARA SAAT MENGANTUK... LENGKAPI DOKUMEN MUATAN... UTAMAKAN KESELAMATAN (MAX 60KM/JAM)...
+        <div class="marquee-content" id="runningText">
+            PENGUMUMAN KESELAMATAN: WAJIB CEK TEKANAN BAN & REM SEBELUM JALAN... PASTIKAN SEGEL ATAS & BAWAH TERPASANG SEMPURNA... DILARANG BERKENDARA SAAT MENGANTUK... LENGKAPI DOKUMEN MUATAN (SURAT JALAN & ITR)... UTAMAKAN KESELAMATAN (MAX 60KM/JAM)... GUNAKAN APD LENGKAP... LAPORKAN SEGALA KENDALA ARMADA SEGERA...
         </div>
     </div>
 
@@ -229,7 +236,6 @@
 
             if (error) return;
 
-            // Filter data hanya yang Terjadwal & Langsir
             const filtered = data.filter(item => {
                 const s = (item.status || "").toUpperCase();
                 return s.includes("TERJADWAL") || s.includes("LANGSIR");
@@ -245,7 +251,7 @@
                 return;
             }
 
-            // Kelompokkan berdasarkan STATUS (Terjadwal vs Langsir)
+            // Kelompokkan berdasarkan STATUS
             const grouped = {
                 "TERJADWAL": [],
                 "LANGSIR": []
@@ -264,24 +270,22 @@
 
             Object.keys(grouped).forEach(statusGroup => {
                 if (grouped[statusGroup].length > 0) {
-                    // Header Status
                     const headRow = document.createElement('tr');
                     headRow.className = 'group-header';
                     headRow.innerHTML = `<td colspan="6">STATUS: ${statusGroup}</td>`;
                     tbody.appendChild(headRow);
 
-                    // Baris Data
                     grouped[statusGroup].forEach(row => {
                         const isLangsir = statusGroup === "LANGSIR";
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
+                            <td data-label="SUPPLIER" style="color:var(--primary); font-weight:bold;">${row.supplier || '-'}</td>
                             <td data-label="CUSTOMER" style="font-weight:bold;">${row.delivery_to || '-'}</td>
                             <td data-label="LOKASI">${row.lokasi || '-'}</td>
                             <td data-label="UNIT/NOPOL">
                                 <span class="nopol-badge">${row.nopol || '-'}</span>
                             </td>
                             <td data-label="SOPIR">${row.sopir || '-'}</td>
-                            <td data-label="QTY" class="qty-val">${row.jumlah_keluar || 0}</td>
                             <td data-label="STATUS">
                                 <span class="status-badge ${isLangsir ? 'st-langsir' : 'st-terjadwal'}">
                                     ${statusGroup}

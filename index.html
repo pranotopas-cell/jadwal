@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Corporate Logistics - Monitoring v5</title>
+    <title>Corporate Logistics - Monitoring v6</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #0f172a;    
             --accent: #2563eb;     
             --success: #22c55e;    
-            --danger-blink: #ff0000;
+            --danger-blink: #dc2626;
             --bg-body: #f1f5f9;
             --white: #ffffff;
             --text-main: #1e293b;
@@ -28,10 +28,10 @@
             overflow: hidden; 
         }
 
-        /* HEADER FIXED */
+        /* FIXED HEADER */
         header {
             background: var(--white);
-            padding: 16px 20px;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -68,7 +68,7 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* SCROLLABLE TABLE AREA */
+        /* SCROLLABLE CONTENT */
         main {
             flex: 1;
             overflow-y: auto; 
@@ -99,7 +99,7 @@
 
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; vertical-align: top; }
 
-        /* BADGE NOPOL & ANIMASI KEDIP */
+        /* BADGE NOPOL & RIT LOGIC */
         .nopol-badge {
             background: #334155; 
             color: white;
@@ -109,18 +109,17 @@
             font-weight: 900;
             display: inline-block;
             margin-bottom: 4px;
-            border: 1px solid transparent;
         }
 
-        .nopol-rit-multi {
+        .rit-warning {
             background: var(--danger-blink) !important;
             animation: blink-red 0.8s infinite;
-            box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
+            box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
         }
 
         @keyframes blink-red {
             0% { opacity: 1; }
-            50% { opacity: 0.3; }
+            50% { opacity: 0.4; }
             100% { opacity: 1; }
         }
 
@@ -142,7 +141,7 @@
 
         .qty-val { font-family: 'Roboto Mono', monospace; font-weight: 800; color: var(--primary); font-size: 1rem; }
 
-        /* FOOTER FIXED RUNNING TEXT */
+        /* FIXED FOOTER */
         footer {
             background: var(--white);
             height: 45px;
@@ -182,7 +181,7 @@
     <header>
         <div class="header-title">
             <h1>Logistics Monitor</h1>
-            <p id="targetDateText">SYNCHRONIZING DATA...</p>
+            <p id="targetDateText">SYNCING...</p>
         </div>
         <div class="live-badge">
             <div class="pulse-dot"></div>
@@ -202,7 +201,7 @@
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="4" style="text-align:center; padding:50px;">Mengakses Server...</td></tr>
+                    <tr><td colspan="4" style="text-align:center; padding:50px;">Memuat Data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -223,10 +222,10 @@
 
         function setupMarquee() {
             const msgs = [
-                "<b>PERHATIAN:</b> RIT kedua/lebih ditandai warna MERAH KEDIP.",
-                "<b>SAFETY:</b> Cek tekanan ban dan pengereman sebelum jalan.",
-                "<b>DOKUMEN:</b> Pastikan nomor Surat Jalan sudah sesuai sistem.",
-                "<b>REST:</b> Utamakan keselamatan, istirahat jika lelah."
+                "<b>INFO:</b> Tujuan LANGSIR atau NOPOL GANDA otomatis menjadi RIT KEDUA (MERAH).",
+                "<b>SAFETY:</b> Cek tekanan ban dan rem sebelum keberangkatan.",
+                "<b>DOKUMEN:</b> Pastikan nomor Surat Jalan tervalidasi di sistem.",
+                "<b>REST:</b> Istirahat jika lelah, keselamatan adalah prioritas utama."
             ];
             const box = document.getElementById('marqueeBox');
             const content = msgs.map(m => `<div class="marquee-item">${m}</div>`).join('');
@@ -242,12 +241,11 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
             }).toUpperCase();
 
-            // URUTAN DARI ATAS (Ascending)
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
                 .eq('tanggal', isoBesok)
-                .order('id', { ascending: true });
+                .order('id', { ascending: true }); // URUTAN DARI ATAS
 
             if (error) return;
 
@@ -268,7 +266,7 @@
 
             const grouped = {};
             data.forEach(item => {
-                const k = item.supplier || 'DEPO UTAMA';
+                const k = item.supplier || 'DEPO PUSAT';
                 if (!grouped[k]) grouped[k] = [];
                 grouped[k].push(item);
             });
@@ -283,11 +281,15 @@
 
                 grouped[supplier].forEach(row => {
                     const nopol = row.nopol || '-';
+                    const tujuan = (row.delivery_to || "").toUpperCase();
                     
-                    // Logika Hitung RIT berdasarkan urutan ATAS ke BAWAH
+                    // Hitung kemunculan Nopol
                     nopolTracker[nopol] = (nopolTracker[nopol] || 0) + 1;
-                    const currentRit = nopolTracker[nopol];
-                    const isMultiRit = currentRit >= 2;
+                    const ritCount = nopolTracker[nopol];
+                    
+                    // LOGIKA RIT: Jika nopol muncul ke-2x ATAU tujuan mengandung kata "LANGSIR"
+                    const isLangsir = tujuan.includes("LANGSIR");
+                    const isSecondRit = ritCount >= 2 || isLangsir;
 
                     const isWait = (row.status || "").toUpperCase().includes("TUNGGU");
                     const tr = document.createElement('tr');
@@ -298,9 +300,9 @@
                             <div style="font-size:0.75rem; color:#64748b">${row.lokasi || '-'}</div>
                         </td>
                         <td>
-                            <span class="nopol-badge ${isMultiRit ? 'nopol-rit-multi' : ''}">${nopol}</span>
+                            <span class="nopol-badge ${isSecondRit ? 'rit-warning' : ''}">${nopol}</span>
                             <span class="driver-text">${row.sopir || '-'}</span>
-                            ${isMultiRit ? `<span style="font-size:0.7rem; color:red; font-weight:900">RIT ${currentRit}</span>` : ''}
+                            ${isSecondRit ? `<span style="font-size:0.7rem; color:red; font-weight:900">RIT ${isLangsir && ritCount < 2 ? 'KEDUA (LANGSIR)' : 'KEDUA'}</span>` : ''}
                         </td>
                         <td style="text-align: right;" class="qty-val">${(row.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
                         <td style="text-align: center;">
@@ -318,7 +320,7 @@
             document.getElementById('clock').innerText = getWIBDate().toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        _supabase.channel('monitor-v5').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
+        _supabase.channel('monitor-v6').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
             loadData();
         }).subscribe();
 

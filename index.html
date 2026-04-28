@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIDS - Monitoring Angkutan BBM</title>
+    <title>Flight Information Delivery System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-airport: #001a4d; /* Biru Tua Bandara */
+            --bg-airport: #001a4d;
             --header-bg: #000c26;
             --text-yellow: #ffeb3b;
             --text-white: #ffffff;
-            --border-blue: #003399;
-            --row-odd: #001a4d;
-            --row-even: #002666;
+            --blue-light: #00d4ff;
         }
 
         body { 
-            font-family: 'Arial Narrow', Arial, sans-serif; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0; 
             background-color: var(--bg-airport); 
             color: var(--text-white);
@@ -30,33 +28,22 @@
         /* Header */
         .header {
             background: var(--header-bg);
-            padding: 15px 25px;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid var(--text-yellow);
+            border-bottom: 2px solid var(--text-yellow);
         }
 
-        .header-title h1 { 
-            margin: 0; 
-            font-size: 24px; 
-            color: var(--text-yellow); 
-            letter-spacing: 2px;
-        }
-        
-        .sub-header { font-size: 14px; color: #00d4ff; font-weight: bold; }
+        .header-left h1 { margin: 0; font-size: 22px; color: var(--text-white); font-weight: 500; }
+        .header-left span { color: var(--text-yellow); font-size: 14px; font-weight: bold; }
 
-        .live-info { text-align: right; }
-        #clock { font-size: 22px; font-weight: bold; color: var(--text-yellow); }
-        #targetDate { font-size: 14px; color: white; }
+        .header-right { text-align: right; }
+        #clock { font-size: 24px; font-weight: bold; color: var(--text-yellow); display: block; }
+        #targetDate { font-size: 14px; color: white; text-transform: uppercase; }
 
         /* Table Area */
-        .main-content {
-            flex: 1;
-            padding: 0;
-            overflow-y: auto;
-            background: var(--bg-airport);
-        }
+        .main-content { flex: 1; overflow-y: auto; }
 
         table { width: 100%; border-collapse: collapse; }
         
@@ -64,51 +51,59 @@
             background: var(--header-bg);
             color: var(--text-yellow);
             text-align: left;
-            padding: 15px;
-            font-size: 18px;
-            border-bottom: 2px solid var(--text-yellow);
+            padding: 12px 15px;
+            font-size: 16px;
+            font-weight: normal;
+            border-bottom: 1px solid #1a3a6e;
             position: sticky;
             top: 0;
             z-index: 10;
         }
 
-        tbody tr:nth-child(odd) { background: var(--row-odd); }
-        tbody tr:nth-child(even) { background: var(--row-even); }
-        tbody tr { border-bottom: 1px solid var(--border-blue); }
+        tbody tr { border-bottom: 1px solid rgba(255,255,255,0.1); }
+        tbody tr:nth-child(even) { background: rgba(255,255,255,0.03); }
 
-        td { padding: 15px; font-size: 18px; font-weight: bold; text-transform: uppercase; }
+        td { padding: 12px 15px; font-size: 18px; font-weight: 500; text-transform: uppercase; vertical-align: middle; }
 
-        /* Styling Kolom Spesifik */
-        .col-flight { color: #00d4ff; } /* Sopir/Nopol */
-        .col-dest { color: var(--text-white); } /* Tujuan */
-        .col-time { color: #4af54a; } /* Asal Depo */
-        .col-gate { color: var(--text-yellow); text-align: center; } /* QTY */
-        
-        /* Status Warna */
-        .st-proses { color: #ff5252; animation: blink 1s infinite; }
-        .st-delivered { color: #4af54a; }
-        .st-langsir { color: #ff9800; }
-        .st-default { color: #ffffff; }
+        /* Nopol Block Style (Kaya Logo Maskapai) */
+        .flight-container { display: flex; align-items: center; gap: 10px; }
+        .nopol-block { 
+            background: white; 
+            color: black; 
+            padding: 4px 8px; 
+            border-radius: 2px; 
+            font-weight: 900; 
+            font-size: 16px;
+            min-width: 80px;
+            text-align: center;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.3);
+        }
+        .sopir-name { color: var(--blue-light); font-weight: bold; }
 
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.1; } 100% { opacity: 1; } }
+        /* Status Colors */
+        .st-proses { color: #ff5252; animation: blink 1s infinite; font-weight: 900; }
+        .st-langsir { color: #ffa726; }
+        .st-normal { color: var(--text-white); }
+        .st-info { color: #4af54a; }
 
-        /* Running Text */
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+
+        /* Footer */
         .footer-marquee {
             background: #000;
             color: var(--text-yellow);
-            height: 50px;
-            line-height: 50px;
+            height: 40px;
+            line-height: 40px;
             white-space: nowrap;
             overflow: hidden;
-            border-top: 2px solid var(--text-yellow);
+            border-top: 1px solid var(--text-yellow);
         }
 
         .marquee-content {
             display: inline-block;
             padding-left: 100%;
-            animation: marquee-scroll 50s linear infinite;
-            font-size: 18px;
-            font-weight: bold;
+            animation: marquee-scroll 40s linear infinite;
+            font-size: 16px;
         }
 
         @keyframes marquee-scroll {
@@ -120,13 +115,13 @@
 <body>
 
     <div class="header">
-        <div class="header-title">
-            <div class="sub-header">BBM MONITORING SYSTEM</div>
-            <h1>JADWAL PENGIRIMAN</h1>
+        <div class="header-left">
+            <h1>DEPARTURES</h1>
+            <span id="currentDay">JADWAL PENGIRIMAN BBM</span>
         </div>
-        <div class="live-info">
-            <div id="targetDate">LOADING...</div>
-            <div id="clock">00:00:00 WIB</div>
+        <div class="header-right">
+            <span id="clock">00:00:00</span>
+            <span id="targetDate">LOADING...</span>
         </div>
     </div>
 
@@ -134,22 +129,21 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 20%;">FLIGHT (SOPIR/UNIT)</th>
-                    <th style="width: 25%;">DESTINATION (TUJUAN)</th>
-                    <th style="width: 20%;">TIME (ASAL DEPO)</th>
-                    <th style="width: 10%; text-align: center;">GATE (QTY)</th>
-                    <th style="width: 25%;">REMARK (STATUS)</th>
+                    <th style="width: 25%;">FLIGHT</th>
+                    <th style="width: 25%;">DESTINATION</th>
+                    <th style="width: 15%;">TIME</th>
+                    <th style="width: 10%;">GATE</th>
+                    <th style="width: 25%;">REMARKS</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <tr><td colspan="5" style="text-align:center; padding:50px;">CONNECTING TO SERVER...</td></tr>
-            </tbody>
+                </tbody>
         </table>
     </div>
 
     <div class="footer-marquee">
         <div class="marquee-content" id="runningText">
-            PENGUMUMAN KESELAMATAN: WAJIB CEK TEKANAN BAN & REM SEBELUM JALAN... PASTIKAN SEGEL ATAS & BAWAH TERPASANG SEMPURNA... DILARANG BERKENDARA SAAT MENGANTUK... UTAMAKAN KESELAMATAN...
+            INFO KESELAMATAN: Pastikan Segel Terpasang Sempurna • Periksa Rem dan Ban • Gunakan APD Lengkap • Dilarang Merokok di Area Terminal BBM • Utamakan Keselamatan Kerja...
         </div>
     </div>
 
@@ -171,64 +165,59 @@
             const isoBesok = besok.toISOString().split('T')[0];
             
             document.getElementById('targetDate').innerText = hariIni.toLocaleDateString('id-ID', { 
-                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
-            }).toUpperCase();
+                day: 'numeric', month: 'long', year: 'numeric' 
+            });
 
-            // 1. Ambil data hari ini (Semua Status)
-            const { data: dataHariIni, error: err1 } = await _supabase
+            // Ambil data Hari Ini & Besok
+            const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
-                .eq('tanggal', isoHariIni);
+                .in('tanggal', [isoHariIni, isoBesok])
+                .order('tanggal', { ascending: true });
 
-            // 2. Ambil data besok (Khusus Langsir)
-            const { data: dataBesok, error: err2 } = await _supabase
-                .from('data_pengiriman')
-                .select('*')
-                .eq('tanggal', isoBesok);
+            if (error) return;
 
-            if (err1 || err2) return;
+            // Filter: Hilangkan yang DELIVERED
+            const filteredData = data.filter(item => {
+                const s = (item.status || "").toUpperCase();
+                return !s.includes("DELIVERED");
+            });
 
-            // Gabungkan data
-            let combinedData = [...dataHariIni];
-            
-            // Tambahkan data besok yang statusnya langsir
-            if (dataBesok) {
-                const langsirBesok = dataBesok.filter(item => (item.status || "").toUpperCase().includes("LANGSIR"));
-                combinedData = [...combinedData, ...langsirBesok];
-            }
-
-            renderData(combinedData);
+            renderData(filteredData);
         }
 
         function renderData(data) {
             const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">TIDAK ADA JADWAL HARI INI</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; color:#555;">NO DEPARTURES</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = '';
-
             data.forEach(row => {
                 const statusRaw = (row.status || "").toUpperCase();
-                let statusClass = "st-default";
+                let statusClass = "st-normal";
                 let statusDisplay = statusRaw;
 
-                // Logika Styling Status
+                // Logika Status
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
-                else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
-                
-                // Jika status Terjadwal, ganti teks jadi Hari Ini (Sesuai instruksi)
-                if (statusRaw.includes("TERJADWAL")) statusDisplay = "HARI INI";
+                else if (statusRaw.includes("TERJADWAL")) statusDisplay = "HARI INI";
+                else if (statusRaw.includes("TUNGGU")) statusClass = "st-info";
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="col-flight">${row.sopir || '-'} / ${row.nopol || '-'}</td>
-                    <td class="col-dest">${row.delivery_to || '-'}</td>
-                    <td class="col-time">${row.supplier || '-'}</td>
-                    <td class="col-gate">${row.qty || '0'}</td>
-                    <td class="col-remark">
+                    <td>
+                        <div class="flight-container">
+                            <div class="nopol-block">${row.nopol || 'B 0000'}</div>
+                            <div class="sopir-name">${row.sopir || '-'}</div>
+                        </div>
+                    </td>
+                    <td style="color: white;">${row.delivery_to || '-'}</td>
+                    <td style="color: #4af54a;">${row.supplier || '-'}</td>
+                    <td style="color: var(--text-yellow); text-align: center;">${row.qty || '0'}</td>
+                    <td>
                         <span class="${statusClass}">${statusDisplay}</span>
                     </td>
                 `;
@@ -238,17 +227,17 @@
 
         function updateClock() {
             const now = getWIB();
-            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false}) + " WIB";
+            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        // Realtime listener
-        _supabase.channel('fids-update')
+        // Realtime sync
+        _supabase.channel('fids-v2')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
             loadDashboard();
         }).subscribe();
 
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 60000); // Refresh data tiap menit
+        setInterval(loadDashboard, 60000); 
         loadDashboard();
     </script>
 </body>

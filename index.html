@@ -2,262 +2,198 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Monitoring System v8</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Logistik - Real Time View</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --primary: #0f172a;    
-            --accent: #2563eb;     
-            --success: #22c55e;    
-            --danger-blink: #dc2626;
+            --primary-color: #0f172a;
+            --secondary-color: #1e293b;
+            --accent-color: #2563eb;
             --bg-body: #f1f5f9;
-            --white: #ffffff;
             --text-main: #1e293b;
+            --border-color: #e2e8f0;
+            --danger: #be123c;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
 
-        body { 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            background-color: var(--bg-body); 
-            color: var(--text-main);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden; 
-        }
-
+        /* Header Section */
         header {
-            background: var(--white);
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 4px solid var(--accent);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 100;
-            flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center;
+            background: white; padding: 24px; border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-bottom: 24px;
+            border-bottom: 4px solid var(--accent-color);
         }
 
-        .header-title h1 { font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); }
-        .header-title p { font-size: 0.65rem; color: #64748b; font-weight: 800; }
+        .header-title h1 { font-size: 1.6rem; color: var(--primary-color); letter-spacing: -0.5px; }
+        .header-title p { color: #64748b; font-size: 0.9rem; }
 
-        .live-badge {
-            background: var(--primary);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        .date-badge {
+            background: var(--primary-color); color: white; padding: 10px 18px;
+            border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 10px;
         }
 
-        main {
-            flex: 1;
-            overflow-y: auto; 
-            padding: 10px;
-            -webkit-overflow-scrolling: touch;
+        /* Table Styling */
+        .dashboard-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); overflow: hidden; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        thead { background-color: var(--secondary-color); color: white; }
+        th { padding: 16px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+
+        .group-header { background-color: #f8fafc; font-weight: 800; color: var(--accent-color); border-top: 2px solid #e2e8f0; }
+        .nopol-box { font-weight: 700; color: var(--primary-color); font-size: 1rem; }
+        .status-tag { 
+            padding: 4px 12px; border-radius: 6px; font-size: 0.7rem; 
+            font-weight: 800; background: #ecfdf5; color: #065f46; 
+            display: inline-block; border: 1px solid #a7f3d0;
         }
 
-        .dashboard-card {
-            background: var(--white);
-            border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            overflow: hidden;
-            margin-bottom: 20px;
+        /* Running Text / Marquee */
+        .marquee-footer {
+            background: var(--danger); color: white; padding: 15px 0;
+            border-radius: 10px; overflow: hidden; position: relative;
+            box-shadow: 0 10px 15px -3px rgba(190, 18, 60, 0.2);
         }
 
-        table { width: 100%; border-collapse: collapse; min-width: 500px; }
-        thead { background: var(--primary); color: white; position: sticky; top: 0; z-index: 10; }
-        th { padding: 10px; font-size: 0.6rem; text-transform: uppercase; text-align: left; }
-
-        .group-header {
-            background: #f8fafc;
-            color: var(--accent);
-            font-weight: 800;
-            font-size: 10px;
-            padding: 10px 15px;
-            border-bottom: 1px solid #e2e8f0;
+        .marquee-content {
+            display: inline-block; white-space: nowrap; padding-left: 100%;
+            animation: marquee 35s linear infinite; font-weight: 600; font-size: 1.1rem;
         }
 
-        td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; vertical-align: top; }
-
-        .nopol-badge {
-            background: #334155; 
-            color: white;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-weight: 900;
-            display: inline-block;
-            margin-bottom: 4px;
-        }
-
-        /* KHUSUS RIT KEDUA (MERAH BERKEDIP) */
-        .rit-warning {
-            background: var(--danger-blink) !important;
-            animation: blink-red 0.8s infinite;
-            box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
-        }
-
-        @keyframes blink-red {
-            0% { opacity: 1; }
-            50% { opacity: 0.4; }
-            100% { opacity: 1; }
-        }
-
-        .status-pill {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.6rem;
-            font-weight: 800;
-            background: #dcfce7; 
-            color: #166534; 
-            border: 1px solid #bbf7d0;
-        }
-
-        footer {
-            background: var(--white);
-            height: 45px;
-            border-top: 3px solid var(--primary);
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            z-index: 100;
-            flex-shrink: 0;
-        }
-
-        .marquee-container {
-            display: flex;
-            white-space: nowrap;
-            animation: marquee-scroll 40s linear infinite;
-        }
-
-        .marquee-item {
-            padding: 0 40px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        @keyframes marquee-scroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+        
+        .loading { padding: 50px; text-align: center; color: #94a3b8; font-style: italic; }
     </style>
 </head>
 <body>
 
+<div class="container">
     <header>
         <div class="header-title">
-            <h1>Logistics Monitor</h1>
-            <p id="targetDateText">SYNCING DATA...</p>
+            <h1>Logistik Pengiriman BBM</h1>
+            <p>Monitoring Jadwal Distribusi & Armada</p>
         </div>
-        <div class="live-badge">
-            <span id="clock">00:00:00</span>
+        <div class="date-badge">
+            <i data-lucide="calendar"></i>
+            <span id="txtTanggal">Memuat Hari...</span>
         </div>
     </header>
 
-    <main>
-        <div class="dashboard-card">
-            <table>
-                <thead>
-                    <tr>
-                        <th width="40%">Tujuan</th>
-                        <th width="35%">Nopol / Sopir</th>
-                        <th width="15%" style="text-align: right;">QTY</th>
-                        <th width="10%" style="text-align: center;">ST</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <tr><td colspan="4" style="text-align:center; padding:50px;">Memuat Database...</td></tr>
-                </tbody>
-            </table>
+    <div class="dashboard-card">
+        <table>
+            <thead>
+                <tr>
+                    <th width="50">No</th>
+                    <th>Info Armada</th>
+                    <th>Asal (Supplier) & Lokasi</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Volume Keluar</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="5" class="loading">Sinkronisasi data dengan Supabase...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="marquee-footer">
+        <div class="marquee-content">
+            🚨 INFO: JADWAL PENGIRIMAN DAPAT BERUBAH SEWAKTU-WAKTU BERDASARKAN PRIORITAS OPERASIONAL DAN STOK SUPPLIER. 
+            &nbsp;&nbsp;&nbsp;&nbsp; 🚛 SAFETY REMINDER: SELALU CEK TEKANAN BAN DAN SISTEM PENGEREMAN SEBELUM JALAN. 
+            &nbsp;&nbsp;&nbsp;&nbsp; 🛑 DILARANG MENGOPERASIKAN PONSEL SAAT MENGEMUDI! KESELAMATAN ADALAH TANGGUNG JAWAB KITA BERSAMA. 
+            &nbsp;&nbsp;&nbsp;&nbsp; ✨ "INGAT, KELUARGA MENANTI ANDA DI RUMAH DENGAN SELAMAT."
         </div>
-    </main>
+    </div>
+</div>
 
-    <footer>
-        <div class="marquee-container" id="marqueeBox"></div>
-    </footer>
+<script>
+    // Konfigurasi API Supabase
+    const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    <script>
-        // Data Dummy untuk Demo (Logika Multi-Depo)
-        const rawData = [
-            { supplier: "DEPO OCEAN", nopol: "KH 8942 GN", sopir: "AGUS MULYANTO", delivery_to: "NWB-kse", lokasi: "NWB-SEMANGGANG", qty: 16000 },
-            { supplier: "DEPO SSS", nopol: "L 9761 UJ", sopir: "SUPRIYADI", delivery_to: "GPP-ide", lokasi: "GPP-BAWAH", qty: 8000 },
-            { supplier: "DEPO SSS", nopol: "KH 8942 GN", sopir: "AGUS MULYANTO", delivery_to: "BTM-ide", lokasi: "LANGSIR", qty: 5000 }
-        ];
+    async function fetchJadwal() {
+        try {
+            // Mengambil data sesuai kolom yang Anda sebutkan
+            const { data, error } = await _supabase
+                .from('data_pengiriman')
+                .select('tanggal, hari, supplier, jumlah_keluar, delivery_to, lokasi, nopol, sopir, status')
+                .eq('status', 'Terjadwal')
+                .order('delivery_to', { ascending: true });
 
-        function render() {
-            const tbody = document.getElementById('tableBody');
-            const grouped = {};
-            
-            // Kelompokkan per Depo
-            rawData.forEach(item => {
-                const k = item.supplier || 'DEPO UTAMA';
-                if (!grouped[k]) grouped[k] = [];
-                grouped[k].push(item);
-            });
+            if (error) throw error;
+            renderTable(data);
+        } catch (err) {
+            console.error('Fetch Error:', err);
+            document.getElementById('tableBody').innerHTML = 
+                `<tr><td colspan="5" style="text-align:center; color:red; padding:20px;">Koneksi Gagal: ${err.message}</td></tr>`;
+        }
+    }
 
-            tbody.innerHTML = '';
-            const globalNopolTracker = {};
+    function renderTable(list) {
+        const tbody = document.getElementById('tableBody');
+        if (!list || list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">Belum ada jadwal pengiriman untuk hari ini.</td></tr>';
+            return;
+        }
 
-            for (const supplier in grouped) {
-                const hRow = document.createElement('tr');
-                hRow.innerHTML = `<td colspan="4" class="group-header">📦 ASAL: ${supplier}</td>`;
-                tbody.appendChild(hRow);
+        let html = '';
+        let currentGroup = '';
+        let rowNumber = 1;
 
-                grouped[supplier].forEach(row => {
-                    const nopol = row.nopol || '-';
-                    const tujuan = (row.delivery_to || "").toUpperCase();
-                    const lokasi = (row.lokasi || "").toUpperCase();
-                    
-                    // Logika Pelacakan Nopol Lintas Depo
-                    globalNopolTracker[nopol] = (globalNopolTracker[nopol] || 0) + 1;
-                    const ritKe = globalNopolTracker[nopol];
-                    
-                    // RIT KEDUA JIKA: Nopol muncul lagi ATAU ada kata LANGSIR
-                    const isLangsir = lokasi.includes("LANGSIR") || tujuan.includes("LANGSIR");
-                    const isSecondRit = ritKe >= 2 || isLangsir;
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>
-                            <div style="font-weight:800">Ke: ${row.delivery_to}</div>
-                            <div style="font-size:0.75rem; color:#64748b">${row.lokasi}</div>
-                        </td>
-                        <td>
-                            <span class="nopol-badge ${isSecondRit ? 'rit-warning' : ''}">${nopol}</span>
-                            <div style="font-size:0.75rem; font-weight:700">${row.sopir}</div>
-                            ${isSecondRit ? `<div style="font-size:0.65rem; color:red; font-weight:900">RIT KEDUA</div>` : ''}
-                        </td>
-                        <td style="text-align: right; font-weight:800">${row.qty.toLocaleString('id-ID')}</td>
-                        <td style="text-align: center;">
-                            <span class="status-pill">TERJADWAL</span>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+        list.forEach(item => {
+            // Grouping berdasarkan kolom 'delivery_to'
+            if (currentGroup !== item.delivery_to) {
+                currentGroup = item.delivery_to;
+                html += `
+                    <tr class="group-header">
+                        <td colspan="5"><i data-lucide="map-pin" style="width:14px; vertical-align:middle"></i> TUJUAN: ${currentGroup}</td>
+                    </tr>
+                `;
             }
-        }
 
-        function setupMarquee() {
-            const msgs = ["<b>INFO:</b> KH 8942 GN di Depo SSS terdeteksi sebagai RIT KEDUA.", "<b>STATUS:</b> Semua pengiriman disetel TERJADWAL.", "<b>RUNNING TEXT:</b> Aktif untuk tampilan HP."];
-            document.getElementById('marqueeBox').innerHTML = msgs.map(m => `<div class="marquee-item">${m}</div>`).join('') + msgs.map(m => `<div class="marquee-item">${m}</div>`).join('');
-        }
+            html += `
+                <tr>
+                    <td>${rowNumber++}</td>
+                    <td>
+                        <div class="nopol-box">${item.nopol || 'NO POL'}</div>
+                        <div style="font-size:0.8rem; color:#64748b">${item.sopir || 'Tanpa Sopir'}</div>
+                    </td>
+                    <td>
+                        <div style="font-size:0.8rem; color:#64748b">Supplier: ${item.supplier || '-'}</div>
+                        <div>Lokasi: ${item.lokasi || '-'}</div>
+                    </td>
+                    <td>
+                        <span class="status-tag">${item.status.toUpperCase()}</span>
+                    </td>
+                    <td style="text-align: right; font-family: 'Courier New', monospace; font-weight: 800; color: #1e293b;">
+                        ${(item.jumlah_keluar || 0).toLocaleString('id-ID')} L
+                    </td>
+                </tr>
+            `;
+        });
 
-        function updateClock() {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID', {hour12:false});
-        }
+        tbody.innerHTML = html;
+        lucide.createIcons();
+    }
 
-        window.onload = () => {
-            render();
-            setupMarquee();
-            setInterval(updateClock, 1000);
-        };
-    </script>
+    function initDisplay() {
+        // Tampilkan Hari dan Tanggal
+        const skrg = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('txtTanggal').innerText = skrg.toLocaleDateString('id-ID', options);
+        
+        fetchJadwal();
+        // Refresh data otomatis tiap 2 menit
+        setInterval(fetchJadwal, 120000);
+    }
+
+    window.onload = initDisplay;
+</script>
+
 </body>
 </html>

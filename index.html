@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Corporate Logistics - Monitoring v6</title>
+    <title>Logistik Monitor - HP Version</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -18,6 +18,7 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
+        /* MENGUNCI BODY AGAR TIDAK SCROLL SATU HALAMAN */
         body { 
             font-family: 'Segoe UI', Roboto, sans-serif; 
             background-color: var(--bg-body); 
@@ -28,35 +29,36 @@
             overflow: hidden; 
         }
 
-        /* FIXED HEADER */
+        /* HEADER TETAP DI ATAS */
         header {
             background: var(--white);
-            padding: 15px 20px;
+            padding: 12px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 4px solid var(--accent);
+            border-bottom: 3px solid var(--accent);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             z-index: 100;
+            flex-shrink: 0;
         }
 
-        .header-title h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); }
-        .header-title p { font-size: 0.7rem; color: #64748b; font-weight: 800; }
+        .header-title h1 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); }
+        .header-title p { font-size: 0.65rem; color: #64748b; font-weight: 800; }
 
         .live-badge {
             background: var(--primary);
             color: white;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 6px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: bold;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 5px;
         }
 
         .pulse-dot {
-            width: 8px; height: 8px;
+            width: 7px; height: 7px;
             background: var(--success);
             border-radius: 50%;
             animation: pulse-green 1.5s infinite;
@@ -64,57 +66,57 @@
 
         @keyframes pulse-green {
             0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 0.5; }
+            50% { transform: scale(1.4); opacity: 0.5; }
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* SCROLLABLE CONTENT */
+        /* BAGIAN ISI YANG BISA DI-SCROLL */
         main {
             flex: 1;
             overflow-y: auto; 
-            padding: 10px;
-            -webkit-overflow-scrolling: touch;
+            padding: 8px;
+            -webkit-overflow-scrolling: touch; /* Scroll halus di iPhone */
         }
 
         .dashboard-card {
             background: var(--white);
-            border-radius: 10px;
+            border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             overflow: hidden;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
-        table { width: 100%; border-collapse: collapse; min-width: 550px; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
         thead { background: var(--primary); color: white; position: sticky; top: 0; z-index: 10; }
-        th { padding: 12px; font-size: 0.65rem; text-transform: uppercase; text-align: left; }
+        th { padding: 10px; font-size: 0.6rem; text-transform: uppercase; text-align: left; }
 
         .group-header {
             background: #f8fafc;
             color: var(--accent);
             font-weight: 800;
-            font-size: 10px;
-            padding: 10px 15px;
+            font-size: 9px;
+            padding: 8px 12px;
             border-bottom: 1px solid #e2e8f0;
         }
 
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; vertical-align: top; }
+        td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.75rem; vertical-align: top; }
 
-        /* BADGE NOPOL & RIT LOGIC */
+        /* NOPOL & LOGIKA KEDIP */
         .nopol-badge {
             background: #334155; 
             color: white;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 4px;
             font-family: 'Courier New', monospace;
             font-weight: 900;
             display: inline-block;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .rit-warning {
             background: var(--danger-blink) !important;
             animation: blink-red 0.8s infinite;
-            box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+            box-shadow: 0 0 6px rgba(220, 38, 38, 0.5);
         }
 
         @keyframes blink-red {
@@ -124,43 +126,44 @@
         }
 
         .driver-text {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #475569;
             font-weight: 700;
             display: block;
         }
 
         .status-pill {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.65rem;
+            padding: 3px 6px;
+            border-radius: 10px;
+            font-size: 0.6rem;
             font-weight: 800;
         }
         .st-ready { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .st-wait { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
-        .qty-val { font-family: 'Roboto Mono', monospace; font-weight: 800; color: var(--primary); font-size: 1rem; }
+        .qty-val { font-family: 'Roboto Mono', monospace; font-weight: 800; color: var(--primary); font-size: 0.9rem; }
 
-        /* FIXED FOOTER */
+        /* FOOTER TETAP DI BAWAH & TAMPIL TERUS */
         footer {
             background: var(--white);
-            height: 45px;
+            height: 40px;
             border-top: 3px solid var(--primary);
             display: flex;
             align-items: center;
             overflow: hidden;
             z-index: 100;
+            flex-shrink: 0; /* Mencegah footer mengecil */
         }
 
         .marquee-container {
             display: flex;
             white-space: nowrap;
-            animation: marquee-scroll 40s linear infinite;
+            animation: marquee-scroll 35s linear infinite;
         }
 
         .marquee-item {
-            padding: 0 40px;
-            font-size: 0.8rem;
+            padding: 0 30px;
+            font-size: 0.75rem;
             font-weight: 700;
             color: var(--primary);
         }
@@ -169,18 +172,13 @@
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
-
-        @media (max-width: 600px) {
-            .header-title h1 { font-size: 0.9rem; }
-            td, th { padding: 10px 8px; }
-        }
     </style>
 </head>
 <body>
 
     <header>
         <div class="header-title">
-            <h1>Logistics Monitor</h1>
+            <h1>Logistik Monitor</h1>
             <p id="targetDateText">SYNCING...</p>
         </div>
         <div class="live-badge">
@@ -195,13 +193,13 @@
                 <thead>
                     <tr>
                         <th width="45%">Tujuan</th>
-                        <th width="30%">Armada / Sopir</th>
+                        <th width="30%">Nopol / Sopir</th>
                         <th width="15%" style="text-align: right;">QTY</th>
-                        <th width="10%" style="text-align: center;">Status</th>
+                        <th width="10%" style="text-align: center;">ST</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="4" style="text-align:center; padding:50px;">Memuat Data...</td></tr>
+                    <tr><td colspan="4" style="text-align:center; padding:50px;">Menghubungkan...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -222,10 +220,10 @@
 
         function setupMarquee() {
             const msgs = [
-                "<b>INFO:</b> Tujuan LANGSIR atau NOPOL GANDA otomatis menjadi RIT KEDUA (MERAH).",
-                "<b>SAFETY:</b> Cek tekanan ban dan rem sebelum keberangkatan.",
-                "<b>DOKUMEN:</b> Pastikan nomor Surat Jalan tervalidasi di sistem.",
-                "<b>REST:</b> Istirahat jika lelah, keselamatan adalah prioritas utama."
+                "<b>SOPIR:</b> Tujuan LANGSIR atau NOPOL GANDA otomatis menjadi RIT KEDUA (MERAH).",
+                "<b>WARNING:</b> Cek tekanan ban dan pengereman sebelum jalan.",
+                "<b>INFO:</b> Pastikan Surat Jalan sudah tervalidasi di sistem.",
+                "<b>SAFETY:</b> Keselamatan adalah prioritas utama kami."
             ];
             const box = document.getElementById('marqueeBox');
             const content = msgs.map(m => `<div class="marquee-item">${m}</div>`).join('');
@@ -238,14 +236,14 @@
             const isoBesok = besok.toISOString().split('T')[0];
             
             document.getElementById('targetDateText').innerText = besok.toLocaleDateString('id-ID', { 
-                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+                weekday: 'long', day: 'numeric', month: 'long'
             }).toUpperCase();
 
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
                 .eq('tanggal', isoBesok)
-                .order('id', { ascending: true }); // URUTAN DARI ATAS
+                .order('id', { ascending: true }); // TETAP DARI ATAS
 
             if (error) return;
 
@@ -266,13 +264,13 @@
 
             const grouped = {};
             data.forEach(item => {
-                const k = item.supplier || 'DEPO PUSAT';
+                const k = item.supplier || 'DEPO UTAMA';
                 if (!grouped[k]) grouped[k] = [];
                 grouped[k].push(item);
             });
 
             tbody.innerHTML = '';
-            const nopolTracker = {};
+            const globalNopolTracker = {};
 
             for (const supplier in grouped) {
                 const hRow = document.createElement('tr');
@@ -283,13 +281,11 @@
                     const nopol = row.nopol || '-';
                     const tujuan = (row.delivery_to || "").toUpperCase();
                     
-                    // Hitung kemunculan Nopol
-                    nopolTracker[nopol] = (nopolTracker[nopol] || 0) + 1;
-                    const ritCount = nopolTracker[nopol];
+                    globalNopolTracker[nopol] = (globalNopolTracker[nopol] || 0) + 1;
+                    const ritKe = globalNopolTracker[nopol];
                     
-                    // LOGIKA RIT: Jika nopol muncul ke-2x ATAU tujuan mengandung kata "LANGSIR"
                     const isLangsir = tujuan.includes("LANGSIR");
-                    const isSecondRit = ritCount >= 2 || isLangsir;
+                    const isSecondRit = ritKe >= 2 || isLangsir;
 
                     const isWait = (row.status || "").toUpperCase().includes("TUNGGU");
                     const tr = document.createElement('tr');
@@ -297,17 +293,17 @@
                     tr.innerHTML = `
                         <td>
                             <div style="font-weight:800">Ke: ${row.delivery_to || '-'}</div>
-                            <div style="font-size:0.75rem; color:#64748b">${row.lokasi || '-'}</div>
+                            <div style="font-size:0.7rem; color:#64748b">${row.lokasi || '-'}</div>
                         </td>
                         <td>
                             <span class="nopol-badge ${isSecondRit ? 'rit-warning' : ''}">${nopol}</span>
                             <span class="driver-text">${row.sopir || '-'}</span>
-                            ${isSecondRit ? `<span style="font-size:0.7rem; color:red; font-weight:900">RIT ${isLangsir && ritCount < 2 ? 'KEDUA (LANGSIR)' : 'KEDUA'}</span>` : ''}
+                            ${isSecondRit ? `<span style="font-size:0.65rem; color:red; font-weight:900">RIT ${isLangsir && ritKe < 2 ? 'KEDUA (LANGSIR)' : 'KEDUA'}</span>` : ''}
                         </td>
                         <td style="text-align: right;" class="qty-val">${(row.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
                         <td style="text-align: center;">
                             <span class="status-pill ${isWait ? 'st-wait' : 'st-ready'}">
-                                ${isWait ? 'WAITING' : 'READY'}
+                                ${isWait ? 'WAIT' : 'RDY'}
                             </span>
                         </td>
                     `;
@@ -320,14 +316,14 @@
             document.getElementById('clock').innerText = getWIBDate().toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        _supabase.channel('monitor-v6').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
+        _supabase.channel('monitor-hp').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
             loadData();
         }).subscribe();
 
         setupMarquee();
         loadData();
         setInterval(updateClock, 1000);
-        setInterval(loadData, 300000);
+        setInterval(loadData, 300000); // Auto-refresh 5 menit
     </script>
 </body>
 </html>

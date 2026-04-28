@@ -3,215 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corporate Logistics Dashboard - Fuel Distribution</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+    <title>Dashboard Jadwal Pengiriman - Live</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --primary-dark: #064e3b; 
-            --accent-tosca: #0d9488; 
-            --light-tosca: #f0fdfa;
-            --text-slate: #334155;
+            --primary: #004d40;
+            --secondary: #00796b;
+            --bg: #f4f7f6;
             --white: #ffffff;
-            --border-color: #cbd5e1;
+            --text: #333;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
-        body { background-color: #f8fafc; color: var(--text-slate); padding: 25px; }
-        .container { max-width: 1300px; margin: 0 auto; }
-
-        header {
-            display: flex; justify-content: space-between; align-items: center;
-            background: var(--primary-dark); padding: 30px; border-radius: 16px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); margin-bottom: 30px;
-            color: var(--white); border-bottom: 5px solid var(--accent-tosca);
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            background-color: var(--bg); 
+            color: var(--text);
         }
 
-        .header-title h1 { font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; }
-        .header-title p { opacity: 0.8; font-size: 0.95rem; }
-
-        .date-container {
-            background: var(--accent-tosca); padding: 12px 20px; border-radius: 10px;
-            text-align: right; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        /* Header Styling */
+        .dashboard-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        .date-label { font-size: 0.75rem; text-transform: uppercase; opacity: 0.9; font-weight: bold; }
-        .date-value { font-size: 1.1rem; font-weight: 600; display: block; }
+        .header-title h1 { margin: 0; font-size: 18px; letter-spacing: 1px; }
+        .header-title p { margin: 0; font-size: 12px; opacity: 0.8; }
 
-        .dashboard-wrapper {
-            background: var(--white); border-radius: 16px; border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            background: rgba(255,255,255,0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
         }
 
-        table { width: 100%; border-collapse: collapse; }
-        thead { background-color: #f1f5f9; }
-        th { 
-            padding: 20px; text-align: left; font-size: 0.8rem; color: var(--primary-dark); 
-            text-transform: uppercase; font-weight: 800; border-bottom: 2px solid var(--border-color);
+        .dot {
+            height: 8px;
+            width: 8px;
+            background-color: #4dfa4d;
+            border-radius: 50%;
+            display: inline-block;
+            animation: blink 1.5s infinite;
         }
 
-        .group-row { background: var(--light-tosca); }
-        .group-row td { font-weight: 800; color: var(--accent-tosca); padding: 15px 20px; font-size: 0.95rem; }
-        td { padding: 18px 20px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-        .nopol-highlight { color: var(--primary-dark); font-weight: 700; font-size: 1.1rem; }
-        .sopir-name { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
-        .tag-supplier { color: var(--accent-tosca); font-weight: 600; font-size: 0.8rem; }
-        
-        .status-pill {
-            background: #dcfce7; color: #166534; padding: 6px 14px; border-radius: 50px;
-            font-size: 0.75rem; font-weight: 700; border: 1px solid #bbf7d0; display: inline-block;
+        /* Content Container */
+        .container { padding: 15px; max-width: 1400px; margin: auto; }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        .qty-text { text-align: right; font-family: 'Monaco', monospace; font-weight: 700; color: var(--primary-dark); font-size: 1.1rem; }
-
-        .marquee-footer {
-            margin-top: 25px; background: var(--primary-dark); color: var(--white);
-            padding: 18px 0; border-radius: 12px; overflow: hidden;
+        .stat-card {
+            background: var(--white);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid var(--secondary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        .marquee-inner {
-            display: inline-block; white-space: nowrap; padding-left: 100%;
-            animation: marquee-scroll 60s linear infinite; font-size: 1rem;
+        .stat-card small { color: #666; font-size: 11px; text-transform: uppercase; font-weight: bold; }
+        .stat-card div { font-size: 20px; font-weight: bold; color: var(--primary); margin-top: 5px; }
+
+        /* Table Area */
+        .card-table {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
 
-        @keyframes marquee-scroll { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
-        .loading-overlay { padding: 100px; text-align: center; color: var(--accent-tosca); font-weight: 600; }
+        .table-header {
+            padding: 15px;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-responsive { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { background-color: #f8f9fa; color: #555; padding: 12px 10px; text-align: left; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #eee; }
+        td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; font-weight: 500; }
+
+        /* Badge Styles */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+        .bg-delivered { background: #e8f5e9; color: #2e7d32; }
+        .bg-proses { background: #e3f2fd; color: #1565c0; }
+        .bg-terjadwal { background: #f3e5f5; color: #7b1fa2; }
+        .bg-tunggu { background: #ffebee; color: #c62828; }
+
+        .today-highlight { background-color: #fff9c4 !important; }
+        .row-separator { background-color: #eceff1; height: 10px; }
+
+        @media (max-width: 600px) {
+            .dashboard-header { flex-direction: column; text-align: center; gap: 10px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
+    <div class="dashboard-header">
         <div class="header-title">
-            <h1>Jadwal Pengiriman BBM</h1>
-            <p>Sistem Pemantauan Distribusi Real-Time & Armada</p>
+            <h1>MONITORING JADWAL PENGIRIMAN</h1>
+            <p id="currentDate">Memuat tanggal...</p>
         </div>
-        <div class="date-container">
-            <span class="date-label">Rencana Pengiriman Besok:</span>
-            <span id="targetDate" class="date-value">Memuat tanggal...</span>
+        <div class="live-indicator">
+            <span class="dot"></span> LIVE DATA CLOUD
         </div>
-    </header>
-
-    <div class="dashboard-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th width="60">No</th>
-                    <th>Info Armada</th>
-                    <th>Asal, Delivery & Lokasi</th>
-                    <th>Status</th>
-                    <th style="text-align: right;">Jumlah Keluar (L)</th>
-                </tr>
-            </thead>
-            <tbody id="mainTable">
-                <tr><td colspan="5" class="loading-overlay">Menghubungkan ke Server Supabase...</td></tr>
-            </tbody>
-        </table>
     </div>
 
-    <div class="marquee-footer">
-        <div class="marquee-inner" id="marqueeContent">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <small>Total In (KL)</small>
+                <div id="summaryIn">0</div>
             </div>
+            <div class="stat-card">
+                <small>Total Out (KL)</small>
+                <div id="summaryOut">0</div>
+            </div>
+            <div class="stat-card">
+                <small>Sisa Stok (KL)</small>
+                <div id="summaryStok">0</div>
+            </div>
+            <div class="stat-card">
+                <small>Unit Beroperasi</small>
+                <div id="summaryUnit">0</div>
+            </div>
+        </div>
+
+        <div class="card-table">
+            <div class="table-header">
+                <div style="font-weight: bold; color: var(--primary);">JADWAL OPERASIONAL (H-1 s/d H+7)</div>
+                <div id="lastUpdate" style="font-size: 11px; color: #888;">Update: -</div>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>TGL/HARI</th>
+                            <th>SUPPLIER</th>
+                            <th>CUSTOMER / TUJUAN</th>
+                            <th>LOKASI</th>
+                            <th>NOPOL</th>
+                            <th>SOPIR</th>
+                            <th>QTY</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleBody">
+                        <tr><td colspan="8" style="text-align:center; padding:50px;">Mengambil data dari Cloud...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</div>
 
-<script>
-    const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <script>
+        // Konfigurasi Supabase (Harus sama dengan file Planning)
+        const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Ambil tanggal besok format YYYY-MM-DD untuk query
-    function getTomorrowISO() {
-        const d = new Date();
-        d.setDate(d.getDate() + 1);
-        return d.toISOString().split('T')[0];
-    }
+        function getWIBDate() {
+            return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+        }
 
-    async function loadLogisticsData() {
-        try {
-            const tglBesok = getTomorrowISO();
+        async function fetchJadwal() {
+            const now = getWIBDate();
             
-            // Query filter: Status Terjadwal DAN Tanggal Besok
+            // Format pencarian (H-1 sampai H+7)
+            const datesToFetch = [];
+            for(let i = -1; i <= 7; i++) {
+                const d = new Date(now);
+                d.setDate(now.getDate() + i);
+                datesToFetch.push(d.toISOString().split('T')[0]);
+            }
+
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
-                .eq('tanggal', tglBesok)
-                .order('delivery_to', { ascending: true });
+                .in('tanggal', datesToFetch)
+                .order('tanggal', { ascending: true });
 
-            if (error) throw error;
-            renderUI(data);
-        } catch (err) {
-            console.error('Error:', err);
-            document.getElementById('mainTable').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:50px; color:red;">Gagal memuat data: ${err.message}</td></tr>`;
-        }
-    }
-
-    function renderUI(list) {
-        const tableBody = document.getElementById('mainTable');
-        if (!list || list.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:100px;">Tidak ada data ditemukan untuk tanggal pengiriman besok.</td></tr>';
-            return;
-        }
-
-        let html = '';
-        let currentGroup = '';
-        let no = 1;
-
-        list.forEach(item => {
-            if (currentGroup !== item.delivery_to) {
-                currentGroup = item.delivery_to;
-                html += `<tr class="group-row"><td colspan="5"><i data-lucide="map-pin" style="width:16px; vertical-align:middle; margin-right:8px;"></i> TUJUAN: ${currentGroup}</td></tr>`;
+            if (error) {
+                console.error("Gagal ambil data:", error);
+                return;
             }
 
-            html += `
-                <tr>
-                    <td>${no++}</td>
-                    <td>
-                        <div class="nopol-highlight">${item.nopol || '-'}</div>
-                        <div class="sopir-name"><i data-lucide="user" style="width:12px;"></i> ${item.sopir || 'Driver Belum Input'}</div>
-                    </td>
-                    <td>
-                        <div class="route-info">
-                            <span class="tag-supplier">Supplier: ${item.supplier || '-'}</span>
-                            <div style="font-weight:600;">Ke: ${item.delivery_to || '-'}</div>
-                            <div style="font-size:0.8rem; color:#64748b;">Lokasi: ${item.lokasi || '-'}</div>
-                        </div>
-                    </td>
-                    <td><span class="status-pill">${(item.status || 'PROSES').toUpperCase()}</span></td>
-                    <td class="qty-text">${(item.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
-                </tr>
-            `;
-        });
-        tableBody.innerHTML = html;
-        lucide.createIcons();
-    }
+            renderTable(data);
+            updateSummary(data);
+            
+            const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('lastUpdate').innerText = "Terakhir Update: " + timeStr + " WIB";
+        }
 
-    function setupMarquee() {
-        const msgs = [
-            "🚛 <b>SAFETY FIRST:</b> Cek tekanan ban, rem, dan lampu sebelum keberangkatan.",
-            "🛑 <b>ANTI-NGANTUK:</b> Istirahat 15 menit setiap 4 jam mengemudi. Jangan paksakan!",
-            "⚠️ <b>KEAMANAN:</b> Pastikan segel tangki utuh dan tidak bocor saat tiba di tujuan.",
-            "✨ <b>KELUARGA:</b> Ingat, ada keluarga menanti Anda di rumah dengan selamat.",
-            "📱 <b>DILARANG:</b> Jangan menggunakan handphone saat kemudi sedang berjalan.",
-            "⛽ <b>OPERASIONAL:</b> Laporkan segera jika ada kendala mesin di perjalanan.",
-            "📏 <b>JARAK AMAN:</b> Selalu jaga jarak aman dengan kendaraan di depan Anda."
-        ];
-        document.getElementById('marqueeContent').innerHTML = msgs.join(" &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ");
-    }
+        function renderTable(data) {
+            const tbody = document.getElementById('scheduleBody');
+            const todayStr = getWIBDate().toISOString().split('T')[0];
+            
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">Tidak ada jadwal pengiriman dalam periode ini.</td></tr>';
+                return;
+            }
 
-    function setupDate() {
-        const d = new Date();
-        d.setDate(d.getDate() + 1);
-        document.getElementById('targetDate').innerText = d.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    }
+            tbody.innerHTML = '';
+            let currentGroupDate = '';
 
-    window.onload = () => {
-        setupDate();
-        setupMarquee();
-        loadLogisticsData();
-        setInterval(loadLogisticsData, 120000); // Auto-refresh 2 menit
-    };
-</script>
+            data.forEach(row => {
+                // Tambahkan separator jika ganti tanggal
+                if (currentGroupDate !== row.tanggal) {
+                    currentGroupDate = row.tanggal;
+                    const sep = document.createElement('tr');
+                    sep.className = 'row-separator';
+                    sep.innerHTML = `<td colspan="8"></td>`;
+                    tbody.appendChild(sep);
+                }
+
+                const tr = document.createElement('tr');
+                if (row.tanggal === todayStr) tr.className = 'today-highlight';
+
+                const statusClass = getStatusClass(row.status);
+                
+                tr.innerHTML = `
+                    <td style="font-size:11px;"><b>${formatDate(row.tanggal)}</b><br><small>${row.hari}</small></td>
+                    <td>${row.supplier || '-'}</td>
+                    <td>${row.delivery_to || '-'}</td>
+                    <td>${row.lokasi || '-'}</td>
+                    <td style="color:#1b5e20; font-weight:bold;">${row.nopol || '-'}</td>
+                    <td>${row.sopir || '-'}</td>
+                    <td style="text-align:center;"><b>${row.jumlah_keluar || 0}</b></td>
+                    <td><span class="badge ${statusClass}">${row.status || 'PLANNING'}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getStatusClass(status) {
+            if (!status) return 'bg-terjadwal';
+            const s = status.toUpperCase();
+            if (s.includes('DELIVERED')) return 'bg-delivered';
+            if (s.includes('PROSES')) return 'bg-proses';
+            if (s.includes('TERJADWAL')) return 'bg-terjadwal';
+            if (s.includes('TUNGGU')) return 'bg-tunggu';
+            return 'bg-terjadwal';
+        }
+
+        function updateSummary(data) {
+            let tin = 0, tout = 0, unitSet = new Set();
+            const todayStr = getWIBDate().toISOString().split('T')[0];
+
+            data.forEach(r => {
+                tin += parseFloat(r.jumlah_masuk) || 0;
+                tout += parseFloat(r.jumlah_keluar) || 0;
+                if (r.tanggal === todayStr && r.nopol) unitSet.add(r.nopol);
+            });
+
+            document.getElementById('summaryIn').innerText = tin.toLocaleString() + " KL";
+            document.getElementById('summaryOut').innerText = tout.toLocaleString() + " KL";
+            document.getElementById('summaryStok').innerText = (tin - tout).toLocaleString() + " KL";
+            document.getElementById('summaryUnit').innerText = unitSet.size + " Unit";
+        }
+
+        function formatDate(iso) {
+            const d = new Date(iso);
+            return d.getDate().toString().padStart(2, '0') + '/' + (d.getMonth() + 1).toString().padStart(2, '0');
+        }
+
+        function updateHeaderDate() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').innerText = getWIBDate().toLocaleDateString('id-ID', options).toUpperCase();
+        }
+
+        // Jalankan Real-time Listener
+        function subscribeData() {
+            _supabase
+                .channel('schema-db-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, (payload) => {
+                    console.log('Ada perubahan data di Cloud, refreshing...');
+                    fetchJadwal();
+                })
+                .subscribe();
+        }
+
+        // Inisialisasi
+        updateHeaderDate();
+        fetchJadwal();
+        subscribeData();
+
+        // Refresh data setiap 5 menit sebagai backup
+        setInterval(fetchJadwal, 300000);
+    </script>
 </body>
 </html>

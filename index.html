@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Jadwal Pengiriman BBM - Corporate View</title>
+    <title>Dashboard Logistik BBM</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -14,86 +14,56 @@
             --bg-body: #f8fafc;
             --text-main: #1e293b;
             --border-color: #e2e8f0;
-            --success: #22c55e;
-            --warning: #f59e0b;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: var(--bg-body); color: var(--text-main); padding: 20px; }
-
         .container { max-width: 1200px; margin: 0 auto; }
 
         header {
             display: flex; justify-content: space-between; align-items: center;
-            background: white; padding: 24px; border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-bottom: 24px;
+            background: white; padding: 20px; border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-bottom: 20px;
             border-left: 6px solid var(--accent-color);
         }
-
-        .header-title h1 { font-size: 1.5rem; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; }
-        .header-title p { color: #64748b; font-size: 0.9rem; margin-top: 4px; }
 
         .date-badge {
             background: var(--primary-color); color: white; padding: 8px 16px;
             border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px;
         }
 
-        /* Dashboard Table */
         .dashboard-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); overflow: hidden; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
+        table { width: 100%; border-collapse: collapse; }
         thead { background-color: var(--secondary-color); color: white; }
-        th { padding: 16px; font-size: 0.85rem; text-transform: uppercase; }
-        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; }
+        th { padding: 16px; text-align: left; font-size: 0.8rem; text-transform: uppercase; }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
 
         .group-header { background-color: #f1f5f9; font-weight: bold; color: var(--accent-color); }
-        .row-nopol { font-weight: 600; color: var(--primary-color); }
-
-        .status-badge {
-            padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;
-            font-weight: bold; display: inline-block; background: #dcfce7; color: #166534;
-        }
-
-        .qty-cell { font-family: 'Courier New', monospace; font-weight: bold; text-align: right; }
-
-        /* Running Text Styles */
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; background: #dcfce7; color: #166534; }
+        
+        /* Running Text */
         .marquee-container {
-            background: var(--primary-color);
-            color: white;
-            padding: 12px 0;
-            border-radius: 8px;
-            overflow: hidden;
-            white-space: nowrap;
-            position: relative;
+            background: #b91c1c; color: white; padding: 12px 0; border-radius: 8px;
+            overflow: hidden; white-space: nowrap;
         }
-
         .marquee-content {
-            display: inline-block;
-            padding-left: 100%;
-            animation: marquee 30s linear infinite;
-            font-weight: 500;
-            font-size: 1.1rem;
+            display: inline-block; padding-left: 100%;
+            animation: marquee 25s linear infinite; font-weight: bold;
         }
-
-        @keyframes marquee {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
-
-        .loading { padding: 40px; text-align: center; color: #64748b; }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <div class="header-title">
+        <div>
             <h1>Logistik Pengiriman BBM</h1>
-            <p>Sistem Pemantauan Distribusi Real-Time</p>
+            <p>Monitoring Real-Time Jadwal Distribusi</p>
         </div>
         <div class="date-badge">
             <i data-lucide="calendar"></i>
-            <span id="targetDateText">Memuat Tanggal...</span>
+            <span id="targetDateText">...</span>
         </div>
     </header>
 
@@ -102,26 +72,23 @@
             <thead>
                 <tr>
                     <th width="50">No</th>
-                    <th>Detail Armada</th>
-                    <th>Asal & Tujuan</th>
+                    <th>Armada & Driver</th>
+                    <th>Rute (Asal & Tujuan)</th>
                     <th>Status</th>
-                    <th style="text-align: right;">Quantity (L)</th>
+                    <th style="text-align: right;">Volume (L)</th>
                 </tr>
             </thead>
             <tbody id="shippingTableBody">
-                <tr>
-                    <td colspan="5" class="loading">Mengambil data dari server...</td>
-                </tr>
+                <tr><td colspan="5" style="text-align:center; padding:20px;">Menghubungkan ke database...</td></tr>
             </tbody>
         </table>
     </div>
 
     <div class="marquee-container">
         <div class="marquee-content">
-            ⚠️ JADWAL PENGIRIMAN DAPAT BERUBAH SEWAKTU-WAKTU TERGANTUNG KONDISI OPERASIONAL DI LAPANGAN. 
-            &nbsp;&nbsp;&nbsp;&nbsp; 🚛 UTAMAKAN KESELAMATAN BERKENDARA: "KELUARGA MENANTI ANDA DI RUMAH". 
-            &nbsp;&nbsp;&nbsp;&nbsp; 🛑 PATUHI BATAS KECEPATAN DAN ISTIRAHAT JIKA MERASA LELAH. 
-            &nbsp;&nbsp;&nbsp;&nbsp; ✨ ZERO ACCIDENT ADALAH PRIORITAS UTAMA KITA SEMUA.
+            ⚠️ PERHATIAN: JADWAL PENGIRIMAN DAPAT BERUBAH SEWAKTU-WAKTU TERGANTUNG KONDISI STOK DEPOT DAN OPERASIONAL JALAN. 
+            &nbsp;&nbsp;&nbsp;&nbsp; 🚛 SAFETY FIRST: PATUHI BATAS KECEPATAN DAN ISTIRAHATLAH JIKA MENGANTUK. 
+            &nbsp;&nbsp;&nbsp;&nbsp; 🛑 PASTIKAN SEGEL TANGKI DALAM KONDISI AMAN SEBELUM DAN SESUDAH BONGKAR.
         </div>
     </div>
 </div>
@@ -134,84 +101,82 @@
 
     async function fetchData() {
         try {
+            // Mengambil data dari tabel data_pengiriman
             const { data, error } = await _supabase
                 .from('data_pengiriman')
-                .select('*')
-                .eq('status', 'Terjadwal');
+                .select('*') 
+                .eq('status', 'Terjadwal')
+                .order('tujuan', { ascending: true }); // Mengurutkan berdasarkan tujuan
 
             if (error) throw error;
             renderTable(data);
         } catch (error) {
-            console.error('Error fetching data:', error);
-            document.getElementById('shippingTableBody').innerHTML = 
-                `<tr><td colspan="5" style="text-align:center; color:red; padding:20px;">Gagal memuat data: ${error.message}</td></tr>`;
+            console.error('Kesalahan:', error);
+            document.getElementById('shippingTableBody').innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Gagal memuat data: ${error.message}</td></tr>`;
         }
     }
 
     function renderTable(data) {
         const tableBody = document.getElementById('shippingTableBody');
         if (!data || data.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Tidak ada jadwal pengiriman untuk saat ini.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Tidak ada data pengiriman terjadwal hari ini.</td></tr>';
             return;
         }
 
         let html = '';
-        
-        // Group by Tujuan
-        const groupedByTujuan = data.reduce((acc, item) => {
-            if (!acc[item.tujuan]) acc[item.tujuan] = [];
-            acc[item.tujuan].push(item);
-            return acc;
-        }, {});
+        let currentTujuan = '';
+        let no = 1;
 
-        let mainCounter = 1;
-
-        for (const tujuan in groupedByTujuan) {
-            // Header Group
-            html += `
-                <tr class="group-header">
-                    <td colspan="5"><i data-lucide="map-pin" style="width:14px; height:14px; vertical-align:middle"></i> TUJUAN: ${tujuan}</td>
-                </tr>
-            `;
-
-            groupedByTujuan[tujuan].forEach(d => {
+        data.forEach(item => {
+            // Logika Grouping berdasarkan Tujuan
+            if (currentTujuan !== item.tujuan) {
+                currentTujuan = item.tujuan;
                 html += `
-                    <tr>
-                        <td>${mainCounter++}</td>
-                        <td>
-                            <div class="row-nopol">${d.nopol || '-'}</div>
-                            <div style="font-size:0.8rem; color:#64748b">${d.sopir || 'Tanpa Sopir'}</div>
-                        </td>
-                        <td>
-                            <div style="font-size:0.8rem; color:#64748b">Dari: ${d.asal || '-'}</div>
-                            <div>Ke: ${d.tujuan || '-'}</div>
-                        </td>
-                        <td>
-                            <span class="status-badge">${d.status.toUpperCase()}</span>
-                        </td>
-                        <td class="qty-cell">${(d.qty || 0).toLocaleString('id-ID')}</td>
+                    <tr class="group-header">
+                        <td colspan="5"><i data-lucide="map-pin" style="width:14px; vertical-align:middle"></i> TUJUAN: ${currentTujuan}</td>
                     </tr>
                 `;
-            });
-        }
+            }
+
+            // Sesuaikan nama field di bawah ini dengan nama kolom di tabel Supabase Anda
+            const nopol = item.nopol || 'N/A';
+            const sopir = item.sopir || 'N/A';
+            const asal = item.asal || 'Depot';
+            const qty = item.qty || 0;
+            const status = item.status || 'Terjadwal';
+
+            html += `
+                <tr>
+                    <td>${no++}</td>
+                    <td>
+                        <strong>${nopol}</strong><br>
+                        <small style="color:#64748b">${sopir}</small>
+                    </td>
+                    <td>
+                        <div style="font-size:0.75rem; color:#64748b">Dari: ${asal}</div>
+                        <div>Ke: ${currentTujuan}</div>
+                    </td>
+                    <td><span class="status-badge">${status}</span></td>
+                    <td style="text-align: right; font-family: monospace; font-weight: bold;">
+                        ${qty.toLocaleString('id-ID')} L
+                    </td>
+                </tr>
+            `;
+        });
 
         tableBody.innerHTML = html;
         lucide.createIcons();
     }
 
-    function setDate() {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('targetDateText').innerText = tomorrow.toLocaleDateString('id-ID', options);
-    }
+    // Set Tanggal Otomatis
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('targetDateText').innerText = tomorrow.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-    window.onload = () => {
-        setDate();
-        fetchData();
-        // Refresh data setiap 5 menit secara otomatis
-        setInterval(fetchData, 300000);
-    };
+    // Jalankan saat load
+    fetchData();
+    // Auto refresh setiap 2 menit
+    setInterval(fetchData, 120000);
 </script>
 
 </body>

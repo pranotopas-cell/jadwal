@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Corporate Logistics - Monitoring v4</title>
+    <title>Corporate Logistics - Monitoring v5</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #0f172a;    
             --accent: #2563eb;     
             --success: #22c55e;    
+            --danger-blink: #ff0000;
             --bg-body: #f1f5f9;
             --white: #ffffff;
             --text-main: #1e293b;
-            --rit-second: #1d4ed8; 
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
             background-color: var(--bg-body); 
             color: var(--text-main);
             height: 100vh;
@@ -28,6 +28,7 @@
             overflow: hidden; 
         }
 
+        /* HEADER FIXED */
         header {
             background: var(--white);
             padding: 16px 20px;
@@ -40,7 +41,7 @@
         }
 
         .header-title h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); }
-        .header-title p { font-size: 0.7rem; color: #64748b; font-weight: 600; }
+        .header-title p { font-size: 0.7rem; color: #64748b; font-weight: 800; }
 
         .live-badge {
             background: var(--primary);
@@ -58,15 +59,16 @@
             width: 8px; height: 8px;
             background: var(--success);
             border-radius: 50%;
-            animation: pulse 1.5s infinite;
+            animation: pulse-green 1.5s infinite;
         }
 
-        @keyframes pulse {
+        @keyframes pulse-green {
             0% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.5); opacity: 0.5; }
             100% { transform: scale(1); opacity: 1; }
         }
 
+        /* SCROLLABLE TABLE AREA */
         main {
             flex: 1;
             overflow-y: auto; 
@@ -97,26 +99,35 @@
 
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; vertical-align: top; }
 
+        /* BADGE NOPOL & ANIMASI KEDIP */
         .nopol-badge {
             background: #334155; 
             color: white;
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 4px;
             font-family: 'Courier New', monospace;
-            font-weight: 700;
+            font-weight: 900;
             display: inline-block;
             margin-bottom: 4px;
+            border: 1px solid transparent;
         }
 
-        .nopol-blue {
-            background: var(--rit-second) !important;
-            box-shadow: 0 0 5px rgba(37, 99, 235, 0.4);
+        .nopol-rit-multi {
+            background: var(--danger-blink) !important;
+            animation: blink-red 0.8s infinite;
+            box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
         }
 
-        .driver-name {
+        @keyframes blink-red {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        .driver-text {
             font-size: 0.75rem;
             color: #475569;
-            font-weight: 600;
+            font-weight: 700;
             display: block;
         }
 
@@ -125,38 +136,37 @@
             border-radius: 12px;
             font-size: 0.65rem;
             font-weight: 800;
-            text-align: center;
-            display: inline-block;
         }
         .st-ready { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .st-wait { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
-        .qty-text { font-family: 'Roboto Mono', monospace; font-weight: 800; color: var(--primary); font-size: 1rem; }
+        .qty-val { font-family: 'Roboto Mono', monospace; font-weight: 800; color: var(--primary); font-size: 1rem; }
 
+        /* FOOTER FIXED RUNNING TEXT */
         footer {
             background: var(--white);
             height: 45px;
-            border-top: 2px solid var(--primary);
+            border-top: 3px solid var(--primary);
             display: flex;
             align-items: center;
             overflow: hidden;
             z-index: 100;
         }
 
-        .marquee-box {
+        .marquee-container {
             display: flex;
             white-space: nowrap;
-            animation: scroll-text 40s linear infinite;
+            animation: marquee-scroll 40s linear infinite;
         }
 
         .marquee-item {
             padding: 0 40px;
             font-size: 0.8rem;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--primary);
         }
 
-        @keyframes scroll-text {
+        @keyframes marquee-scroll {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
@@ -171,8 +181,8 @@
 
     <header>
         <div class="header-title">
-            <h1>Sistem Monitoring Logistik</h1>
-            <p id="targetDateText">MENGAMBIL DATA...</p>
+            <h1>Logistics Monitor</h1>
+            <p id="targetDateText">SYNCHRONIZING DATA...</p>
         </div>
         <div class="live-badge">
             <div class="pulse-dot"></div>
@@ -185,21 +195,21 @@
             <table>
                 <thead>
                     <tr>
-                        <th width="45%">Detail Tujuan</th>
-                        <th width="30%">Armada & Sopir</th>
+                        <th width="45%">Tujuan</th>
+                        <th width="30%">Armada / Sopir</th>
                         <th width="15%" style="text-align: right;">QTY</th>
                         <th width="10%" style="text-align: center;">Status</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="4" style="text-align:center; padding:50px;">Sinkronisasi Server...</td></tr>
+                    <tr><td colspan="4" style="text-align:center; padding:50px;">Mengakses Server...</td></tr>
                 </tbody>
             </table>
         </div>
     </main>
 
     <footer>
-        <div class="marquee-box" id="marqueeBox"></div>
+        <div class="marquee-container" id="marqueeBox"></div>
     </footer>
 
     <script>
@@ -213,10 +223,10 @@
 
         function setupMarquee() {
             const msgs = [
-                "<b>SAFETY FIRST:</b> Cek kondisi ban dan rem sebelum keberangkatan.",
-                "<b>REST:</b> Gunakan waktu istirahat yang cukup untuk keselamatan.",
-                "<b>DOKUMEN:</b> Pastikan Surat Jalan & BA sudah sesuai.",
-                "<b>REMINDER:</b> Dilarang menggunakan HP saat sedang mengemudi."
+                "<b>PERHATIAN:</b> RIT kedua/lebih ditandai warna MERAH KEDIP.",
+                "<b>SAFETY:</b> Cek tekanan ban dan pengereman sebelum jalan.",
+                "<b>DOKUMEN:</b> Pastikan nomor Surat Jalan sudah sesuai sistem.",
+                "<b>REST:</b> Utamakan keselamatan, istirahat jika lelah."
             ];
             const box = document.getElementById('marqueeBox');
             const content = msgs.map(m => `<div class="marquee-item">${m}</div>`).join('');
@@ -232,12 +242,12 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
             }).toUpperCase();
 
-            // LOGIKA: Ambil urutan dari bawah (ID terbaru dulu)
+            // URUTAN DARI ATAS (Ascending)
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
                 .eq('tanggal', isoBesok)
-                .order('id', { ascending: false });
+                .order('id', { ascending: true });
 
             if (error) return;
 
@@ -252,19 +262,19 @@
         function render(data) {
             const tbody = document.getElementById('tableBody');
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px;">TIDAK ADA JADWAL</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px;">ANTRIAN KOSONG</td></tr>';
                 return;
             }
 
             const grouped = {};
             data.forEach(item => {
-                const k = item.supplier || 'DEPO PUSAT';
+                const k = item.supplier || 'DEPO UTAMA';
                 if (!grouped[k]) grouped[k] = [];
                 grouped[k].push(item);
             });
 
             tbody.innerHTML = '';
-            const globalNopolTracker = {};
+            const nopolTracker = {};
 
             for (const supplier in grouped) {
                 const hRow = document.createElement('tr');
@@ -273,24 +283,26 @@
 
                 grouped[supplier].forEach(row => {
                     const nopol = row.nopol || '-';
-                    globalNopolTracker[nopol] = (globalNopolTracker[nopol] || 0) + 1;
-                    const ritKe = globalNopolTracker[nopol];
-                    const isSecondRit = ritKe >= 2; 
+                    
+                    // Logika Hitung RIT berdasarkan urutan ATAS ke BAWAH
+                    nopolTracker[nopol] = (nopolTracker[nopol] || 0) + 1;
+                    const currentRit = nopolTracker[nopol];
+                    const isMultiRit = currentRit >= 2;
 
                     const isWait = (row.status || "").toUpperCase().includes("TUNGGU");
                     const tr = document.createElement('tr');
                     
                     tr.innerHTML = `
                         <td>
-                            <div style="font-weight:700">Ke: ${row.delivery_to || '-'}</div>
+                            <div style="font-weight:800">Ke: ${row.delivery_to || '-'}</div>
                             <div style="font-size:0.75rem; color:#64748b">${row.lokasi || '-'}</div>
                         </td>
                         <td>
-                            <span class="nopol-badge ${isSecondRit ? 'nopol-blue' : ''}">${nopol}</span>
-                            <span class="driver-name">${row.sopir || '-'}</span>
-                            ${isSecondRit ? `<span style="font-size:0.7rem; color:var(--rit-second); font-weight:800">RIT ${ritKe}</span>` : ''}
+                            <span class="nopol-badge ${isMultiRit ? 'nopol-rit-multi' : ''}">${nopol}</span>
+                            <span class="driver-text">${row.sopir || '-'}</span>
+                            ${isMultiRit ? `<span style="font-size:0.7rem; color:red; font-weight:900">RIT ${currentRit}</span>` : ''}
                         </td>
-                        <td style="text-align: right;" class="qty-text">${(row.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
+                        <td style="text-align: right;" class="qty-val">${(row.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
                         <td style="text-align: center;">
                             <span class="status-pill ${isWait ? 'st-wait' : 'st-ready'}">
                                 ${isWait ? 'WAITING' : 'READY'}
@@ -306,7 +318,7 @@
             document.getElementById('clock').innerText = getWIBDate().toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        _supabase.channel('monitor-v4').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
+        _supabase.channel('monitor-v5').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
             loadData();
         }).subscribe();
 

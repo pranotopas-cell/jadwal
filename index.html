@@ -19,6 +19,8 @@
             --color-langsir: #ffeb3b;
         }
 
+        * { box-sizing: border-box; }
+
         body { 
             font-family: 'Arial', sans-serif;
             margin: 0; 
@@ -27,7 +29,7 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden; 
+            overflow: hidden; /* Mencegah seluruh halaman scroll di desktop */
         }
 
         /* Header Tetap */
@@ -39,12 +41,13 @@
             align-items: center;
             border-bottom: 3px solid var(--text-yellow);
             flex-shrink: 0;
+            z-index: 100;
         }
         .header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; }
-        #targetDate { font-size: 1rem; color: var(--text-yellow); font-weight: bold; }
+        #targetDate { font-size: 0.9rem; color: var(--text-yellow); font-weight: bold; }
         
         .clock-container { text-align: right; }
-        #clock { font-size: 1.4rem; font-weight: bold; }
+        #clock { font-size: 1.3rem; font-weight: bold; }
         
         .cloud-status {
             font-size: 9px;
@@ -55,62 +58,70 @@
             color: var(--green-fids);
         }
         .dot {
-            height: 8px; width: 8px;
+            height: 7px; width: 7px;
             background-color: var(--green-fids);
             border-radius: 50%;
             animation: pulse 1.5s infinite;
         }
 
-        /* Area Tabel Dinamis */
+        /* Area Konten Utama */
         .main-content { 
             flex: 1; 
             width: 100%;
+            overflow-y: auto; /* Aktifkan scroll hanya di sini untuk HP */
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Mengunci agar tidak scroll */
         }
         
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            table-layout: fixed; 
-            flex: 1;
+            table-layout: fixed;
             display: flex;
             flex-direction: column;
+            height: 100%;
         }
 
-        thead { flex-shrink: 0; width: 100%; }
+        thead { 
+            flex-shrink: 0; 
+            position: sticky; 
+            top: 0; 
+            z-index: 10;
+            background: var(--header-bg);
+        }
+
         tbody { 
             flex: 1; 
             display: flex; 
-            flex-direction: column; 
-            width: 100%;
+            flex-direction: column;
+            min-height: min-content;
         }
 
-        /* Logic: Baris tabel akan mengecil otomatis jika data banyak */
+        /* Desktop Mode: Baris berbagi ruang agar muat 1 layar */
+        @media (min-width: 769px) {
+            .main-content { overflow: hidden; } /* Matikan scroll di desktop */
+            tr:not(.date-divider) { 
+                flex: 1; 
+                min-height: 0; 
+            }
+        }
+
         tr { 
             display: flex; 
             width: 100%; 
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            min-height: 0; /* Penting agar bisa mengecil */
-            flex: 1; /* Baris akan berbagi ruang yang tersedia */
             align-items: center;
         }
 
-        th, td { 
-            padding: 2px 5px; 
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-        }
+        th, td { padding: 4px 8px; overflow: hidden; display: flex; align-items: center; }
 
-        /* Kolom width disesuaikan */
-        .col-unit { width: 45%; flex-direction: column; align-items: flex-start; justify-content: center; }
-        .col-qty { width: 15%; justify-content: center; font-size: 1.2em; color: var(--text-yellow); }
-        .col-storage { width: 22%; flex-direction: column; align-items: flex-start; justify-content: center; }
-        .col-status { width: 18%; justify-content: flex-end; text-align: right; font-size: 0.8em; }
+        /* Ukuran Kolom */
+        .col-unit { width: 45%; flex-direction: column; align-items: flex-start; }
+        .col-qty { width: 15%; justify-content: center; font-size: 1.1em; color: var(--text-yellow); }
+        .col-storage { width: 22%; flex-direction: column; align-items: flex-start; }
+        .col-status { width: 18%; justify-content: flex-end; text-align: right; font-size: 0.75rem; }
 
-        th { background: var(--header-bg); color: var(--text-yellow); font-size: 0.8rem; padding: 10px 5px; }
+        th { background: var(--header-bg); color: var(--text-yellow); font-size: 0.75rem; padding: 8px; text-transform: uppercase; }
 
         .date-divider {
             background: #1a3a6e;
@@ -119,42 +130,47 @@
             font-size: 0.7rem;
             width: 100%;
             justify-content: center;
-            flex: 0 0 25px; /* Divider punya tinggi tetap */
+            flex: 0 0 24px; /* Tinggi divider tetap */
+            font-weight: bold;
         }
 
-        /* Status & Typography */
+        /* Status Styles */
         .st-proses { color: var(--color-proses); animation: blink 1s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); }
 
-        .flight-cell { display: flex; align-items: center; gap: 8px; width: 100%; }
+        .flight-cell { display: flex; align-items: center; gap: 6px; width: 100%; margin-bottom: 2px; }
         .nopol-block { 
             background: white; color: black; 
             padding: 2px 4px; border-radius: 3px; 
-            font-weight: 900; font-size: 0.75rem;
-            min-width: 75px; text-align: center;
+            font-weight: 900; font-size: 0.7rem;
+            min-width: 70px; text-align: center;
         }
-        .sopir-name { color: var(--blue-light); font-size: 0.85rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-        .dest-label { font-size: 0.85rem; color: #eee; font-weight: bold; }
-        .depo-text { color: var(--green-fids); font-size: 0.75rem; }
+        .sopir-name { color: var(--blue-light); font-size: 0.8rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        .dest-label { font-size: 0.8rem; color: #eee; font-weight: bold; }
+        .depo-text { color: var(--green-fids); font-size: 0.7rem; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
 
+        /* Footer Tetap di Bawah */
         .footer-marquee {
-            background: #000; color: var(--text-yellow);
-            height: 30px; line-height: 30px; font-size: 13px;
-            font-weight: bold; border-top: 2px solid var(--text-yellow);
+            background: #000; 
+            color: var(--text-yellow);
+            height: 30px; 
+            line-height: 30px; 
+            font-size: 12px;
+            font-weight: bold; 
+            border-top: 2px solid var(--text-yellow);
             flex-shrink: 0;
+            z-index: 100;
         }
 
-        /* Penyesuaian HP: Aktifkan scroll kembali */
+        /* Khusus HP */
         @media (max-width: 768px) {
-            body { overflow-y: auto; height: auto; }
-            .main-content { height: auto; overflow: visible; }
-            tr { flex: none; height: 80px; }
-            tbody { flex: none; }
+            tr:not(.date-divider) { min-height: 70px; }
+            .nopol-block { min-width: 60px; font-size: 0.65rem; }
         }
     </style>
 </head>
@@ -219,6 +235,7 @@
 
             if (error) return;
 
+            // Filter status DELIVERED
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
             const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };

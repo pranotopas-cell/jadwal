@@ -38,6 +38,7 @@
             flex-direction: column;
             width: 100%;
             transform-origin: top center; /* Titik tumpu zoom di atas */
+            transition: transform 0.3s ease;
         }
 
         /* Header */
@@ -109,6 +110,7 @@
             font-weight: bold; 
             border-bottom: 1px solid rgba(255,255,255,0.1);
             vertical-align: top;
+            word-wrap: break-word;
         }
 
         .date-divider {
@@ -169,7 +171,7 @@
         /* Penyesuaian khusus HP */
         @media (max-width: 768px) {
             body { overflow-y: auto; height: auto; }
-            #zoomContainer { transform: none !important; }
+            #zoomContainer { transform: none !important; width: 100% !important; }
         }
     </style>
 </head>
@@ -219,22 +221,26 @@
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }
 
-        // Fungsi Auto-Scale untuk Desktop
+        // Fungsi Auto-Scale agar muat di satu layar laptop
         function applyAutoZoom() {
-            if (window.innerWidth <= 768) return; // Lewati jika HP
+            if (window.innerWidth <= 768) return; 
 
             const container = document.getElementById('zoomContainer');
-            const footerHeight = 30;
-            const availableHeight = window.innerHeight - footerHeight;
+            const footer = document.querySelector('.footer-marquee');
+            
+            // Reset dulu ke normal untuk kalkulasi akurat
+            container.style.transform = "scale(1)";
+            container.style.width = "100%";
+
+            const availableHeight = window.innerHeight - footer.offsetHeight;
             const contentHeight = container.scrollHeight;
 
             if (contentHeight > availableHeight) {
-                const scale = availableHeight / contentHeight;
+                // Hitung rasio pengecilan (dikurangi sedikit buffer 0.98)
+                const scale = (availableHeight / contentHeight) * 0.98;
                 container.style.transform = `scale(${scale})`;
-                container.style.width = (100 / scale) + "%"; // Menjaga lebar tetap penuh
-            } else {
-                container.style.transform = "scale(1)";
-                container.style.width = "100%";
+                // Lebar harus dikompensasi karena efek scale
+                container.style.width = (100 / scale) + "%";
             }
         }
 
@@ -250,7 +256,6 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
-            // Mengambil SEMUA data hari ini dan besok tanpa limit
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
@@ -317,8 +322,8 @@
                 tbody.appendChild(tr);
             });
             
-            // Terapkan scaling setelah data dirender
-            setTimeout(applyAutoZoom, 100);
+            // Panggil scaling setelah data selesai dirender ke DOM
+            setTimeout(applyAutoZoom, 200);
         }
 
         function updateClock() {
@@ -326,13 +331,10 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        // Real-time Listener
         const channel = _supabase.channel('schema-db-changes')
             .on('postgres_changes', 
                 { event: '*', schema: 'public', table: 'data_pengiriman' }, 
-                (payload) => {
-                    loadDashboard();
-                }
+                (payload) => { loadDashboard(); }
             )
             .subscribe();
 

@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>JADWAL PENGIRIMAN</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -20,7 +20,7 @@
             --color-langsir: #ffeb3b;   /* Kuning */
         }
 
-        /* Perbaikan Kompatibilitas HP (iOS & Android) */
+        /* Perbaikan Kompatibilitas HP */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body { 
@@ -29,11 +29,11 @@
             background-color: var(--bg-airport); 
             color: var(--text-white);
             height: 100vh;
-            /* Mengunci layar agar tidak bounce di iOS namun tetap bisa scroll di area main */
             display: flex;
             flex-direction: column;
             overflow: hidden; 
-            position: fixed; 
+            /* Perubahan: Menggunakan position relative agar fungsi zoom browser bekerja lebih alami */
+            position: relative; 
             width: 100%;
         }
 
@@ -83,9 +83,9 @@
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
-            -webkit-overflow-scrolling: touch; /* Smooth scroll khusus iOS */
+            -webkit-overflow-scrolling: touch; 
             width: 100%;
-            padding-bottom: 60px; /* Jarak aman dari footer marquee */
+            padding-bottom: 60px; 
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -129,15 +129,14 @@
 
         .flight-cell { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
         
-        /* Update Kotak Nopol: Lebih Kecil & Bold */
         .nopol-block { 
             background: white; 
             color: black; 
             padding: 3px 6px; 
             border-radius: 3px; 
-            font-weight: 900; /* Super Bold */
-            font-size: 10px;  /* Lebih Kecil */
-            min-width: 70px;  /* Lebih Kecil */
+            font-weight: 900; 
+            font-size: 10px;  
+            min-width: 70px;  
             text-align: center;
             flex-shrink: 0;
             box-shadow: 0 1px 3px rgba(0,0,0,0.5);

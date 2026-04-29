@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>JADWAL PENGIRIMAN</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -26,9 +26,12 @@
             background-color: var(--bg-airport); 
             color: var(--text-white);
             height: 100vh;
+            /* Perbaikan scroll mobile */
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden; 
+            position: fixed; /* Mencegah bounce effect di iOS */
+            width: 100%;
         }
 
         .header {
@@ -39,6 +42,7 @@
             align-items: center;
             border-bottom: 3px solid var(--text-yellow);
             flex-shrink: 0;
+            z-index: 101;
         }
         .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: var(--text-white); }
         #targetDate { 
@@ -73,9 +77,11 @@
 
         .main-content { 
             flex: 1; 
+            /* Perbaikan Utama: Memastikan area ini bisa di-scroll */
             overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; /* Smooth scroll untuk iOS */
             width: 100%;
-            padding-bottom: 35px;
+            padding-bottom: 60px; /* Jarak agar tidak tertutup marquee */
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -99,6 +105,7 @@
             font-weight: bold; 
             border-bottom: 1px solid rgba(255,255,255,0.1);
             vertical-align: top;
+            word-wrap: break-word;
         }
 
         .date-divider {
@@ -106,7 +113,7 @@
             color: var(--text-yellow);
             text-align: center;
             font-size: 11px;
-            padding: 5px 0;
+            padding: 8px 0;
             font-weight: bold;
             letter-spacing: 2px;
         }
@@ -152,7 +159,7 @@
         .footer-marquee {
             position: fixed; bottom: 0; left: 0; width: 100%;
             background: #000; color: var(--text-yellow);
-            height: 30px; line-height: 30px; font-size: 13px;
+            height: 35px; line-height: 35px; font-size: 13px;
             font-weight: bold; border-top: 2px solid var(--text-yellow); z-index: 100;
         }
     </style>
@@ -209,7 +216,6 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
-            // Mengambil semua data yang tanggalnya >= hari ini
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
@@ -220,12 +226,10 @@
                 return;
             }
 
-            // Filter data yang belum terkirim
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
             const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
             
-            // Sortir berdasarkan tanggal terlebih dahulu, lalu prioritas status
             filtered.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                 const statusA = (a.status || "").toUpperCase();
@@ -245,7 +249,6 @@
             let lastDate = isoHariIni;
 
             data.forEach(row => {
-                // Tambahkan divider jika tanggal berubah dan bukan hari ini
                 if (row.tanggal > lastDate) {
                     const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
                         weekday: 'long', day: 'numeric', month: 'short' 

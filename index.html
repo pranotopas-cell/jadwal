@@ -18,10 +18,9 @@
             --color-terjadwal: #ffffff; /* Putih */
             --color-tunggu: #ff5252;    /* Merah */
             --color-langsir: #ffeb3b;   /* Kuning */
-            --color-delivered: #00d4ff; /* Blue Light (Baru) */
+            --color-delivered: #00d4ff; /* Blue Light */
         }
 
-        /* Perbaikan Kompatibilitas HP */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body { 
@@ -79,7 +78,6 @@
             animation: pulse 1.5s infinite;
         }
 
-        /* Area Scroll Utama */
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
@@ -122,12 +120,11 @@
             letter-spacing: 1.5px;
         }
 
-        /* Status Styling */
         .st-proses { color: var(--color-proses); animation: blink 1s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); animation: blink 1.2s infinite; }
-        .st-delivered { color: var(--color-delivered); } /* Style Baru */
+        .st-delivered { color: var(--color-delivered); }
 
         .flight-cell { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
         
@@ -228,29 +225,39 @@
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
-                .gte('tanggal', isoHariIni);
+                .gte('tanggal', isoHariIni); // Menampilkan hari ini dan berikutnya
 
             if (error) {
                 console.error('Error fetching data:', error);
                 return;
             }
 
-            // Status Delivered sekarang ditampilkan (filter dihapus)
-            let filtered = data; 
+            // Urutan Prioritas Status Baru
+            const priority = { 
+                "DELIVERED": 1, 
+                "PROSES": 2, 
+                "TERJADWAL": 3, 
+                "LANGSIR": 4, 
+                "TUNGGU": 5, 
+                "INFO": 5 
+            };
             
-            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4, "DELIVERED": 5 };
-            
-            filtered.sort((a, b) => {
+            data.sort((a, b) => {
+                // Pertama sort berdasarkan tanggal
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
+                
+                // Kedua sort berdasarkan prioritas status
                 const statusA = (a.status || "").toUpperCase();
                 const statusB = (b.status || "").toUpperCase();
                 let valA = 99, valB = 99;
+                
                 Object.keys(priority).forEach(key => { if(statusA.includes(key)) valA = priority[key]; });
                 Object.keys(priority).forEach(key => { if(statusB.includes(key)) valB = priority[key]; });
+                
                 return valA - valB;
             });
 
-            renderData(filtered, isoHariIni);
+            renderData(data, isoHariIni);
         }
 
         function renderData(data, isoHariIni) {
@@ -258,7 +265,8 @@
             tbody.innerHTML = '';
             let lastDate = isoHariIni;
 
-            data.forEach(row => {
+            data.forEach((row, index) => {
+                // Tampilkan divider jika tanggal berubah (untuk data besok dst)
                 if (row.tanggal > lastDate) {
                     const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
                         weekday: 'long', day: 'numeric', month: 'short' 
@@ -303,27 +311,15 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        // Realtime Subscribe
         const channel = _supabase.channel('schema-db-changes')
             .on('postgres_changes', 
-                { 
-                    event: '*', 
-                    schema: 'public', 
-                    table: 'data_pengiriman' 
-                }, 
-                (payload) => {
-                    loadDashboard();
-                }
+                { event: '*', schema: 'public', table: 'data_pengiriman' }, 
+                () => { loadDashboard(); }
             )
             .subscribe();
 
         setInterval(updateClock, 1000);
-        
-        // Auto Refresh data setiap 30 detik (untuk memastikan sinkronisasi)
-        setInterval(loadDashboard, 30000); 
-        
-        // Refresh Halaman penuh setiap 1 jam untuk membersihkan memory browser
-        setInterval(() => { location.reload(); }, 3600000);
+        setInterval(loadDashboard, 30000); // Auto refresh data setiap 30 detik
         
         loadDashboard();
     </script>

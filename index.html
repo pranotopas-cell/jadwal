@@ -15,9 +15,10 @@
             --green-fids: #4af54a;
             /* Status Colors */
             --color-proses: #4af54a;    /* Hijau */
-            --color-terjadwal: #ffffff; /* Update: Putih */
+            --color-terjadwal: #ffffff; /* Putih */
             --color-tunggu: #ff5252;    /* Merah */
             --color-langsir: #ffeb3b;   /* Kuning */
+            --color-delivered: #00d4ff; /* Blue Light (Baru) */
         }
 
         /* Perbaikan Kompatibilitas HP */
@@ -125,7 +126,8 @@
         .st-proses { color: var(--color-proses); animation: blink 1s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
-        .st-langsir { color: var(--color-langsir); animation: blink 1.2s infinite; } /* Update: Berkedip */
+        .st-langsir { color: var(--color-langsir); animation: blink 1.2s infinite; }
+        .st-delivered { color: var(--color-delivered); } /* Style Baru */
 
         .flight-cell { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
         
@@ -233,9 +235,10 @@
                 return;
             }
 
-            let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
+            // Status Delivered sekarang ditampilkan (filter dihapus)
+            let filtered = data; 
             
-            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
+            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4, "DELIVERED": 5 };
             
             filtered.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
@@ -273,6 +276,7 @@
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
+                else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
                 else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
 
                 const tr = document.createElement('tr');
@@ -299,6 +303,7 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
+        // Realtime Subscribe
         const channel = _supabase.channel('schema-db-changes')
             .on('postgres_changes', 
                 { 
@@ -313,7 +318,12 @@
             .subscribe();
 
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 300000); 
+        
+        // Auto Refresh data setiap 30 detik (untuk memastikan sinkronisasi)
+        setInterval(loadDashboard, 30000); 
+        
+        // Refresh Halaman penuh setiap 1 jam untuk membersihkan memory browser
+        setInterval(() => { location.reload(); }, 3600000);
         
         loadDashboard();
     </script>

@@ -7,27 +7,24 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            /* Corporate Modern Palette */
-            --bg-corporate: #0f172a;    /* Deep Navy */
-            --card-bg: #1e293b;         /* Slate Blue */
-            --header-bg: #020617;       /* Rich Black */
-            --accent-cyan: #06b6d4;     /* Modern Cyan */
-            --text-main: #f8fafc;       /* Ghost White */
-            --text-muted: #94a3b8;      /* Slate Grey */
-            --border-line: #334155;     /* Soft Border */
-            
-            /* Status Colors - Modern Tone */
-            --color-proses: #22c55e;    /* Success Green */
-            --color-terjadwal: #3b82f6; /* Business Blue */
-            --color-tunggu: #ef4444;    /* Alert Red */
-            --color-langsir: #f59e0b;   /* Warning Amber */
+            --bg-airport: #000c26;
+            --header-bg: #000511;
+            --text-yellow: #ffeb3b;
+            --text-white: #ffffff;
+            --blue-light: #00d4ff;
+            --green-fids: #4af54a;
+            /* Status Colors */
+            --color-proses: #4af54a;    /* Hijau */
+            --color-terjadwal: #00d4ff; /* Biru */
+            --color-tunggu: #ff5252;    /* Merah */
+            --color-langsir: #ffeb3b;   /* Kuning */
         }
 
         body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Arial', sans-serif;
             margin: 0; 
-            background-color: var(--bg-corporate); 
-            color: var(--text-main);
+            background-color: var(--bg-airport); 
+            color: var(--text-white);
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -36,173 +33,141 @@
 
         .header {
             background: var(--header-bg);
-            padding: 15px 25px;
+            padding: 12px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid var(--accent-cyan);
+            border-bottom: 3px solid var(--text-yellow);
             flex-shrink: 0;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
         }
-
-        .header h1 { 
-            margin: 0; 
-            font-size: 20px; 
-            letter-spacing: 1.5px; 
-            color: var(--text-main);
-            font-weight: 700;
-        }
-
+        .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: var(--text-white); }
         #targetDate { 
-            font-size: 14px; 
-            color: var(--accent-cyan); 
-            font-weight: 500; 
+            font-size: 16px; 
+            color: var(--text-yellow); 
+            font-weight: bold; 
             margin-top: 4px;
-            text-transform: uppercase;
         }
         
         .clock-container { text-align: right; }
-        #clock { 
-            font-size: 24px; 
-            font-weight: 700; 
-            color: var(--text-main); 
-            font-variant-numeric: tabular-nums;
-        }
+        #clock { font-size: 20px; font-weight: bold; color: var(--text-white); }
         
         .cloud-status {
-            font-size: 11px;
+            font-size: 10px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 6px;
-            color: var(--color-proses);
-            margin-top: 4px;
-            font-weight: 600;
+            gap: 5px;
+            color: var(--green-fids);
+            margin-top: 2px;
+            text-transform: uppercase;
+            font-weight: bold;
         }
-
         .dot {
             height: 8px;
             width: 8px;
-            background-color: var(--color-proses);
+            background-color: var(--green-fids);
             border-radius: 50%;
             display: inline-block;
-            box-shadow: 0 0 8px var(--color-proses);
-            animation: pulse 2s infinite;
+            animation: pulse 1.5s infinite;
         }
 
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
             width: 100%;
-            padding-bottom: 40px;
+            padding-bottom: 35px;
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         
         th {
-            background: var(--card-bg);
-            color: var(--text-muted);
+            background: var(--header-bg);
+            color: var(--text-yellow);
             text-align: left;
-            padding: 16px 12px;
+            padding: 12px 5px;
             font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid var(--border-line);
+            border-bottom: 1px solid #1a3a6e;
             position: sticky;
             top: 0;
             z-index: 10;
         }
 
         td { 
-            padding: 14px 12px; 
+            padding: 10px 5px; 
             font-size: 14px; 
-            border-bottom: 1px solid var(--border-line);
-            vertical-align: middle;
+            font-weight: bold; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            vertical-align: top;
         }
 
         .date-divider {
-            background: rgba(51, 65, 85, 0.4);
-            color: var(--accent-cyan);
+            background: #1a3a6e;
+            color: var(--text-yellow);
             text-align: center;
-            font-size: 12px;
-            padding: 10px 0;
-            font-weight: 600;
-            letter-spacing: 4px;
-            border-y: 1px solid var(--border-line);
+            font-size: 11px;
+            padding: 5px 0;
+            font-weight: bold;
+            letter-spacing: 2px;
         }
 
-        .st-proses { color: var(--color-proses); font-weight: bold; animation: blink 1.5s infinite; }
-        .st-terjadwal { color: var(--color-terjadwal); font-weight: bold; }
-        .st-tunggu { color: var(--color-tunggu); font-weight: bold; }
-        .st-langsir { color: var(--color-langsir); font-weight: bold; }
+        .st-proses { color: var(--color-proses); animation: blink 1s infinite; }
+        .st-terjadwal { color: var(--color-terjadwal); }
+        .st-tunggu { color: var(--color-tunggu); }
+        .st-langsir { color: var(--color-langsir); }
 
-        .flight-cell { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
-        
+        .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
         .nopol-block { 
-            background: #f1f5f9; 
-            color: #0f172a; 
-            padding: 4px 10px; 
-            border-radius: 4px; 
-            font-weight: 800; 
-            font-size: 12px;
-            min-width: 80px;
+            background: white; 
+            color: black; 
+            padding: 5px 0; 
+            border-radius: 3px; 
+            font-weight: 900; 
+            font-size: 11px;
+            min-width: 85px;
             text-align: center;
             flex-shrink: 0;
-            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
         }
-
         .sopir-name { 
-            color: var(--accent-cyan); 
+            color: var(--blue-light); 
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-size: 15px;
-            font-weight: 600;
+            font-size: 13px;
         }
-
         .dest-label { 
-            font-size: 13px; 
-            color: var(--text-muted); 
+            font-size: 14px; 
+            color: #eee; 
             display: block;
             padding-left: 2px;
-            font-weight: 500;
+            font-weight: bold;
         }
 
-        .time-cell { line-height: 1.4; }
-        .depo-text { color: #cbd5e1; display: block; font-size: 13px; font-weight: 600; }
+        .time-cell { line-height: 1.2; }
+        .depo-text { color: var(--green-fids); display: block; font-size: 12px; }
 
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-        @keyframes pulse { 0% { opacity: 0.5; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.5; transform: scale(0.9); } }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
 
         .footer-marquee {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: var(--header-bg); 
-            color: #94a3b8;
-            height: 35px; 
-            line-height: 35px; 
-            font-size: 12px;
-            font-weight: 500; 
-            border-top: 1px solid var(--border-line); 
-            z-index: 100;
+            background: #000; color: var(--text-yellow);
+            height: 30px; line-height: 30px; font-size: 13px;
+            font-weight: bold; border-top: 2px solid var(--text-yellow); z-index: 100;
         }
-
-        /* Scrollbar custom */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-corporate); }
-        ::-webkit-scrollbar-thumb { background: var(--border-line); border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div>
-            <h1>DELIVERY MANAGEMENT SYSTEM</h1>
-            <div id="targetDate">LOADING DATE...</div>
+            <h1>SCHEDULE DELIVERY</h1>
+            <div id="targetDate">MEMUAT TANGGAL...</div>
         </div>
         <div class="clock-container">
             <div id="clock">00:00:00</div>
             <div class="cloud-status">
-                <span class="dot"></span> SYSTEM ONLINE
+                <span class="dot"></span> CLOUD ONLINE
             </div>
         </div>
     </div>
@@ -211,9 +176,9 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 48%;">TRUCK UNIT / DESTINATION</th>
-                    <th style="width: 14%; text-align: center;">QTY (KL)</th>
-                    <th style="width: 20%;">SUPPLIER/STORAGE</th>
+                    <th style="width: 48%;">UNIT / DEST</th>
+                    <th style="width: 14%; text-align: center;">QTY</th>
+                    <th style="width: 20%;">STORAGE</th>
                     <th style="width: 18%; text-align: right;">STATUS</th>
                 </tr>
             </thead>
@@ -244,6 +209,7 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
+            // Mengambil semua data yang tanggalnya >= hari ini
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
@@ -254,10 +220,12 @@
                 return;
             }
 
+            // Filter data yang belum terkirim
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
             const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
             
+            // Sortir berdasarkan tanggal terlebih dahulu, lalu prioritas status
             filtered.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                 const statusA = (a.status || "").toUpperCase();
@@ -277,13 +245,14 @@
             let lastDate = isoHariIni;
 
             data.forEach(row => {
+                // Tambahkan divider jika tanggal berubah dan bukan hari ini
                 if (row.tanggal > lastDate) {
                     const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
                         weekday: 'long', day: 'numeric', month: 'short' 
                     }).toUpperCase();
                     
                     const divider = document.createElement('tr');
-                    divider.innerHTML = `<td colspan="4" class="date-divider">JADWAL OPERASIONAL: ${formattedDate}</td>`;
+                    divider.innerHTML = `<td colspan="4" class="date-divider">--- JADWAL UNTUK ${formattedDate} ---</td>`;
                     tbody.appendChild(divider);
                     lastDate = row.tanggal;
                 }
@@ -303,13 +272,13 @@
                             <div class="nopol-block">${row.nopol || '-'}</div>
                             <div class="sopir-name">${row.sopir || '-'}</div>
                         </div>
-                        <span class="dest-label">TUJUAN: ${row.delivery_to || '-'}</span>
+                        <span class="dest-label">TUJUAN PENGIRIMAN: ${row.delivery_to || '-'}</span>
                     </td>
-                    <td style="color:var(--text-main); text-align:center; font-size:18px; font-weight:700;">${row.jumlah_keluar || '0'}</td>
+                    <td style="color:var(--text-yellow); text-align:center; font-size:18px;">${row.jumlah_keluar || '0'}</td>
                     <td class="time-cell">
                         <span class="depo-text">${row.supplier || '-'}</span>
                     </td>
-                    <td class="${statusClass}" style="text-align:right; font-size:11px; letter-spacing:0.5px;">${statusRaw}</td>
+                    <td class="${statusClass}" style="text-align:right; font-size:11px;">${statusRaw}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -328,6 +297,7 @@
                     table: 'data_pengiriman' 
                 }, 
                 (payload) => {
+                    console.log('Real-time update received!');
                     loadDashboard();
                 }
             )

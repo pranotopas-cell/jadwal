@@ -28,7 +28,16 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden; /* Mencegah scroll di desktop */
+        }
+
+        /* Container Utama untuk Auto-Scaling */
+        #zoomContainer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            transform-origin: top center; /* Titik tumpu zoom di atas */
         }
 
         /* Header */
@@ -52,7 +61,6 @@
         .clock-container { text-align: right; }
         #clock { font-size: 20px; font-weight: bold; color: var(--text-white); }
         
-        /* Indikator Cloud Online */
         .cloud-status {
             font-size: 10px;
             display: flex;
@@ -76,7 +84,6 @@
         /* Table Area */
         .main-content { 
             flex: 1; 
-            overflow-y: auto; 
             width: 100%;
             padding-bottom: 35px;
         }
@@ -97,14 +104,13 @@
         }
 
         td { 
-            padding: 10px 5px; 
+            padding: 8px 5px; 
             font-size: 14px; 
             font-weight: bold; 
             border-bottom: 1px solid rgba(255,255,255,0.1);
             vertical-align: top;
         }
 
-        /* Divider Hari Esok */
         .date-divider {
             background: #1a3a6e;
             color: var(--text-yellow);
@@ -115,7 +121,6 @@
             letter-spacing: 2px;
         }
 
-        /* Status Styles */
         .st-proses { color: var(--color-proses); animation: blink 1s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
@@ -160,40 +165,48 @@
             height: 30px; line-height: 30px; font-size: 13px;
             font-weight: bold; border-top: 2px solid var(--text-yellow); z-index: 100;
         }
+
+        /* Penyesuaian khusus HP */
+        @media (max-width: 768px) {
+            body { overflow-y: auto; height: auto; }
+            #zoomContainer { transform: none !important; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div>
-            <h1>SCHEDULE DELIVERY</h1>
-            <div id="targetDate">MEMUAT TANGGAL...</div>
-        </div>
-        <div class="clock-container">
-            <div id="clock">00:00:00</div>
-            <div class="cloud-status">
-                <span class="dot"></span> CLOUD ONLINE
+    <div id="zoomContainer">
+        <div class="header">
+            <div>
+                <h1>SCHEDULE DELIVERY</h1>
+                <div id="targetDate">MEMUAT TANGGAL...</div>
+            </div>
+            <div class="clock-container">
+                <div id="clock">00:00:00</div>
+                <div class="cloud-status">
+                    <span class="dot"></span> CLOUD ONLINE
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="main-content">
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 48%;">UNIT / DEST</th>
-                    <th style="width: 14%; text-align: center;">QTY</th>
-                    <th style="width: 20%;">STORAGE</th>
-                    <th style="width: 18%; text-align: right;">STATUS</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
+        <div class="main-content">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 48%;">UNIT / DEST</th>
+                        <th style="width: 14%; text-align: center;">QTY</th>
+                        <th style="width: 20%;">STORAGE</th>
+                        <th style="width: 18%; text-align: right;">STATUS</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
     </div>
 
     <div class="footer-marquee">
         <marquee scrollamount="4">
-           Jadwal Bisa Berubah Sewaktu Waktu Pastikan Ke bagian Operasional Sebelum Berangkat • Pastikan Segel Atas Bawah Terpasang dengan Sempurna • Periksa Tekanan Ban dan Fungsi Rem aman Sebelum Berangkat • Gunakan APD Lengkap (Helm, Sepatu, Rompi)di Tempat Pengisian dan Pembongkaran • Dilarang Mengoperasikan HP Saat Mengemudi • Laporkan Segala Kendala Armada Segera Ke Bagian Operasinal  • Patuhi Rambu Rambu Lalu lintas  • Patuhi Batas Kecepatan Max.Luar Kota dan Max.Dalam Kota 
+            SAFETY FIRST: Pastikan Segel Terpasang Sempurna • Periksa Tekanan Ban dan Fungsi Rem Sebelum Berangkat • Gunakan APD Lengkap (Helm, Sepatu, Rompi) • Dilarang Mengoperasikan HP Saat Mengemudi • Laporkan Segala Kendala Armada Segera Ke Dispatcher...
         </marquee>
     </div>
 
@@ -204,6 +217,25 @@
 
         function getWIB() {
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+        }
+
+        // Fungsi Auto-Scale untuk Desktop
+        function applyAutoZoom() {
+            if (window.innerWidth <= 768) return; // Lewati jika HP
+
+            const container = document.getElementById('zoomContainer');
+            const footerHeight = 30;
+            const availableHeight = window.innerHeight - footerHeight;
+            const contentHeight = container.scrollHeight;
+
+            if (contentHeight > availableHeight) {
+                const scale = availableHeight / contentHeight;
+                container.style.transform = `scale(${scale})`;
+                container.style.width = (100 / scale) + "%"; // Menjaga lebar tetap penuh
+            } else {
+                container.style.transform = "scale(1)";
+                container.style.width = "100%";
+            }
         }
 
         async function loadDashboard() {
@@ -218,7 +250,7 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
-            // Mengambil semua data tanpa limit agar jadwal besok tampil seluruhnya
+            // Mengambil SEMUA data hari ini dan besok tanpa limit
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
@@ -231,7 +263,6 @@
 
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
-            // Priority: PROSES > TERJADWAL > LANGSIR > TUNGGU
             const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
             
             filtered.sort((a, b) => {
@@ -253,7 +284,6 @@
             let besokDividerAdded = false;
 
             data.forEach(row => {
-                // Tambah Pembatas Jika Masuk Jadwal Besok
                 if (row.tanggal === isoBesok && !besokDividerAdded) {
                     const divider = document.createElement('tr');
                     divider.innerHTML = `<td colspan="4" class="date-divider">--- SCHEDULE UNTUK BESOK ---</td>`;
@@ -286,6 +316,9 @@
                 `;
                 tbody.appendChild(tr);
             });
+            
+            // Terapkan scaling setelah data dirender
+            setTimeout(applyAutoZoom, 100);
         }
 
         function updateClock() {
@@ -293,27 +326,19 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        // REAL-TIME LISTENER (Auto update jika ada perubahan di Supabase)
+        // Real-time Listener
         const channel = _supabase.channel('schema-db-changes')
             .on('postgres_changes', 
-                { 
-                    event: '*', 
-                    schema: 'public', 
-                    table: 'data_pengiriman' 
-                }, 
+                { event: '*', schema: 'public', table: 'data_pengiriman' }, 
                 (payload) => {
-                    console.log('Real-time update received:', payload);
                     loadDashboard();
                 }
             )
             .subscribe();
 
+        window.addEventListener('resize', applyAutoZoom);
         setInterval(updateClock, 1000);
-        
-        // Backup refresh setiap 5 menit
         setInterval(loadDashboard, 300000); 
-        
-        // Initial Load
         loadDashboard();
     </script>
 </body>

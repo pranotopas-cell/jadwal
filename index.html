@@ -211,28 +211,36 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         function getWIB() {
+            // Mengambil waktu Jakarta secara presisi
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }
 
         async function loadDashboard() {
-            const hariIni = getWIB();
-            const isoHariIni = hariIni.toISOString().split('T')[0];
+            const hariIniWIB = getWIB();
             
-            document.getElementById('targetDate').innerText = hariIni.toLocaleDateString('id-ID', { 
+            // Format YYYY-MM-DD secara manual untuk menghindari pergeseran tanggal UTC
+            const y = hariIniWIB.getFullYear();
+            const m = String(hariIniWIB.getMonth() + 1).padStart(2, '0');
+            const d = String(hariIniWIB.getDate()).padStart(2, '0');
+            const isoHariIni = `${y}-${m}-${d}`;
+            
+            document.getElementById('targetDate').innerText = hariIniWIB.toLocaleDateString('id-ID', { 
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
+            // Query: Ambil data di mana tanggal >= hari ini (Jakarta)
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
-                .gte('tanggal', isoHariIni); // Menampilkan hari ini dan berikutnya
+                .gte('tanggal', isoHariIni)
+                .order('tanggal', { ascending: true });
 
             if (error) {
                 console.error('Error fetching data:', error);
                 return;
             }
 
-            // Urutan Prioritas Status Baru
+            // Urutan Prioritas Status
             const priority = { 
                 "DELIVERED": 1, 
                 "PROSES": 2, 
@@ -243,10 +251,10 @@
             };
             
             data.sort((a, b) => {
-                // Pertama sort berdasarkan tanggal
+                // Urutkan berdasarkan tanggal terlebih dahulu
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                 
-                // Kedua sort berdasarkan prioritas status
+                // Jika tanggal sama, urutkan berdasarkan status
                 const statusA = (a.status || "").toUpperCase();
                 const statusB = (b.status || "").toUpperCase();
                 let valA = 99, valB = 99;
@@ -263,11 +271,11 @@
         function renderData(data, isoHariIni) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-            let lastDate = isoHariIni;
+            let currentDisplayDate = isoHariIni;
 
-            data.forEach((row, index) => {
-                // Tampilkan divider jika tanggal berubah (untuk data besok dst)
-                if (row.tanggal > lastDate) {
+            data.forEach((row) => {
+                // Tambahkan pembatas jika data masuk ke tanggal berikutnya
+                if (row.tanggal > currentDisplayDate) {
                     const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
                         weekday: 'long', day: 'numeric', month: 'short' 
                     }).toUpperCase();
@@ -275,7 +283,7 @@
                     const divider = document.createElement('tr');
                     divider.innerHTML = `<td colspan="4" class="date-divider">--- JADWAL UNTUK ${formattedDate} ---</td>`;
                     tbody.appendChild(divider);
-                    lastDate = row.tanggal;
+                    currentDisplayDate = row.tanggal;
                 }
 
                 const statusRaw = (row.status || "").toUpperCase();
@@ -311,6 +319,7 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
+        // Realtime
         const channel = _supabase.channel('schema-db-changes')
             .on('postgres_changes', 
                 { event: '*', schema: 'public', table: 'data_pengiriman' }, 
@@ -319,7 +328,7 @@
             .subscribe();
 
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 30000); // Auto refresh data setiap 30 detik
+        setInterval(loadDashboard, 30000); 
         
         loadDashboard();
     </script>

@@ -13,6 +13,11 @@
             --text-white: #ffffff;
             --blue-light: #00d4ff;
             --green-fids: #4af54a;
+            /* Status Colors */
+            --color-proses: #4af54a;    /* Hijau */
+            --color-terjadwal: #00d4ff; /* Biru */
+            --color-tunggu: #ff5252;    /* Merah */
+            --color-langsir: #ffeb3b;   /* Kuning */
         }
 
         body { 
@@ -43,14 +48,37 @@
             font-weight: bold; 
             margin-top: 4px;
         }
+        
+        .clock-container { text-align: right; }
         #clock { font-size: 20px; font-weight: bold; color: var(--text-white); }
+        
+        /* Indikator Cloud Online */
+        .cloud-status {
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+            color: var(--green-fids);
+            margin-top: 2px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .dot {
+            height: 8px;
+            width: 8px;
+            background-color: var(--green-fids);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
 
         /* Table Area */
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
             width: 100%;
-            padding-bottom: 35px; /* Menyesuaikan footer yang lebih tipis */
+            padding-bottom: 35px;
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -76,7 +104,23 @@
             vertical-align: top;
         }
 
-        /* Flight Column */
+        /* Divider Hari Esok */
+        .date-divider {
+            background: #1a3a6e;
+            color: var(--text-yellow);
+            text-align: center;
+            font-size: 11px;
+            padding: 5px 0;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        /* Status Styles */
+        .st-proses { color: var(--color-proses); animation: blink 1s infinite; }
+        .st-terjadwal { color: var(--color-terjadwal); }
+        .st-tunggu { color: var(--color-tunggu); }
+        .st-langsir { color: var(--color-langsir); }
+
         .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
         .nopol-block { 
             background: white; 
@@ -97,37 +141,24 @@
             font-size: 13px;
         }
         .dest-label { 
-            font-size: 14px; /* Perbesar lagi sesuai request */
+            font-size: 14px; 
             color: #eee; 
             display: block;
             padding-left: 2px;
             font-weight: bold;
         }
 
-        /* Time/Depo Column */
         .time-cell { line-height: 1.2; }
         .depo-text { color: var(--green-fids); display: block; font-size: 12px; }
 
-        /* Status Remarks */
-        .st-proses { color: #ff5252; animation: blink 0.8s infinite; }
-        .st-langsir { color: #ffa726; }
-        .st-terjadwal { color: var(--text-white); }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
 
-        /* Footer Marquee - Diperkecil tingginya */
         .footer-marquee {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: #000;
-            color: var(--text-yellow);
-            height: 30px; /* Diperkecil */
-            line-height: 30px; /* Diperkecil */
-            font-size: 13px; /* Font sedikit lebih kecil agar proporsional */
-            font-weight: bold;
-            border-top: 2px solid var(--text-yellow);
-            z-index: 100;
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #000; color: var(--text-yellow);
+            height: 30px; line-height: 30px; font-size: 13px;
+            font-weight: bold; border-top: 2px solid var(--text-yellow); z-index: 100;
         }
     </style>
 </head>
@@ -138,7 +169,12 @@
             <h1>SCHEDULE DELIVERY</h1>
             <div id="targetDate">MEMUAT TANGGAL...</div>
         </div>
-        <div id="clock">00:00:00</div>
+        <div class="clock-container">
+            <div id="clock">00:00:00</div>
+            <div class="cloud-status">
+                <span class="dot"></span> CLOUD ONLINE
+            </div>
+        </div>
     </div>
 
     <div class="main-content">
@@ -192,33 +228,42 @@
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
             // Priority: PROSES > TERJADWAL > LANGSIR > TUNGGU
-            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU": 4 };
+            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
             
             filtered.sort((a, b) => {
+                if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                 const statusA = (a.status || "").toUpperCase();
                 const statusB = (b.status || "").toUpperCase();
                 let valA = 99, valB = 99;
                 Object.keys(priority).forEach(key => { if(statusA.includes(key)) valA = priority[key]; });
                 Object.keys(priority).forEach(key => { if(statusB.includes(key)) valB = priority[key]; });
-                if (valA !== valB) return valA - valB;
-                return new Date(a.tanggal) - new Date(b.tanggal);
+                return valA - valB;
             });
 
-            renderData(filtered);
+            renderData(filtered, isoBesok);
         }
 
-        function renderData(data) {
+        function renderData(data, isoBesok) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
+            let besokDividerAdded = false;
 
             data.forEach(row => {
+                // Tambah Pembatas Jika Masuk Jadwal Besok
+                if (row.tanggal === isoBesok && !besokDividerAdded) {
+                    const divider = document.createElement('tr');
+                    divider.innerHTML = `<td colspan="4" class="date-divider">--- SCHEDULE UNTUK BESOK ---</td>`;
+                    tbody.appendChild(divider);
+                    besokDividerAdded = true;
+                }
+
                 const statusRaw = (row.status || "").toUpperCase();
-                let statusDisplay = statusRaw;
                 let statusClass = "st-terjadwal";
 
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
-                // Tetap menampilkan TERJADWAL sesuai database (Tanpa ganti teks Hari Ini/Besok)
+                else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
+                else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -233,7 +278,7 @@
                     <td class="time-cell">
                         <span class="depo-text">${row.supplier || '-'}</span>
                     </td>
-                    <td class="${statusClass}" style="text-align:right; font-size:11px;">${statusDisplay}</td>
+                    <td class="${statusClass}" style="text-align:right; font-size:11px;">${statusRaw}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -244,12 +289,17 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        _supabase.channel('fids-v4').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => {
-            loadDashboard();
-        }).subscribe();
+        // REAL-TIME LISTENER (Tanpa Refresh)
+        _supabase.channel('fids-v4')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, (payload) => {
+                console.log('Perubahan terdeteksi:', payload);
+                loadDashboard();
+            })
+            .subscribe();
 
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 60000); 
+        // Interval backup setiap 5 menit jika real-time terputus
+        setInterval(loadDashboard, 300000); 
         loadDashboard();
     </script>
 </body>

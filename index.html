@@ -193,7 +193,7 @@
 
     <div class="footer-marquee">
         <marquee scrollamount="4">
-            SAFETY FIRST: Pastikan Segel Terpasang Sempurna • Periksa Tekanan Ban dan Fungsi Rem Sebelum Berangkat • Gunakan APD Lengkap (Helm, Sepatu, Rompi) • Dilarang Mengoperasikan HP Saat Mengemudi • Laporkan Segala Kendala Armada Segera Ke Dispatcher...
+           Jadwal Bisa Berubah Sewaktu Waktu Pastikan Ke bagian Operasional Sebelum Berangkat • Pastikan Segel Atas Bawah Terpasang dengan Sempurna • Periksa Tekanan Ban dan Fungsi Rem aman Sebelum Berangkat • Gunakan APD Lengkap (Helm, Sepatu, Rompi)di Tempat Pengisian dan Pembongkaran • Dilarang Mengoperasikan HP Saat Mengemudi • Laporkan Segala Kendala Armada Segera Ke Bagian Operasinal  • Patuhi Rambu Rambu Lalu lintas  • Patuhi Batas Kecepatan Max.Luar Kota dan Max.Dalam Kota 
         </marquee>
     </div>
 
@@ -218,12 +218,16 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
+            // Mengambil semua data tanpa limit agar jadwal besok tampil seluruhnya
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
                 .in('tanggal', [isoHariIni, isoBesok]);
 
-            if (error) return;
+            if (error) {
+                console.error('Error fetching data:', error);
+                return;
+            }
 
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
@@ -289,17 +293,27 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        // REAL-TIME LISTENER (Tanpa Refresh)
-        _supabase.channel('fids-v4')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, (payload) => {
-                console.log('Perubahan terdeteksi:', payload);
-                loadDashboard();
-            })
+        // REAL-TIME LISTENER (Auto update jika ada perubahan di Supabase)
+        const channel = _supabase.channel('schema-db-changes')
+            .on('postgres_changes', 
+                { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'data_pengiriman' 
+                }, 
+                (payload) => {
+                    console.log('Real-time update received:', payload);
+                    loadDashboard();
+                }
+            )
             .subscribe();
 
         setInterval(updateClock, 1000);
-        // Interval backup setiap 5 menit jika real-time terputus
+        
+        // Backup refresh setiap 5 menit
         setInterval(loadDashboard, 300000); 
+        
+        // Initial Load
         loadDashboard();
     </script>
 </body>

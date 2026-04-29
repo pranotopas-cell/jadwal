@@ -31,7 +31,6 @@
             overflow: hidden;
         }
 
-        /* Header Kembali ke Ukuran HP */
         .header {
             background: var(--header-bg);
             padding: 12px 15px;
@@ -72,7 +71,6 @@
             animation: pulse 1.5s infinite;
         }
 
-        /* Table Area HP */
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
@@ -113,7 +111,6 @@
             letter-spacing: 2px;
         }
 
-        /* Status Styles */
         .st-proses { color: var(--color-proses); animation: blink 1s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
@@ -206,30 +203,29 @@
 
         async function loadDashboard() {
             const hariIni = getWIB();
-            const besok = new Date(hariIni);
-            besok.setDate(besok.getDate() + 1);
-
             const isoHariIni = hariIni.toISOString().split('T')[0];
-            const isoBesok = besok.toISOString().split('T')[0];
             
             document.getElementById('targetDate').innerText = hariIni.toLocaleDateString('id-ID', { 
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
+            // Mengambil semua data yang tanggalnya >= hari ini
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
-                .in('tanggal', [isoHariIni, isoBesok]);
+                .gte('tanggal', isoHariIni);
 
             if (error) {
                 console.error('Error fetching data:', error);
                 return;
             }
 
+            // Filter data yang belum terkirim
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
             const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
             
+            // Sortir berdasarkan tanggal terlebih dahulu, lalu prioritas status
             filtered.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                 const statusA = (a.status || "").toUpperCase();
@@ -240,20 +236,25 @@
                 return valA - valB;
             });
 
-            renderData(filtered, isoBesok);
+            renderData(filtered, isoHariIni);
         }
 
-        function renderData(data, isoBesok) {
+        function renderData(data, isoHariIni) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-            let besokDividerAdded = false;
+            let lastDate = isoHariIni;
 
             data.forEach(row => {
-                if (row.tanggal === isoBesok && !besokDividerAdded) {
+                // Tambahkan divider jika tanggal berubah dan bukan hari ini
+                if (row.tanggal > lastDate) {
+                    const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
+                        weekday: 'long', day: 'numeric', month: 'short' 
+                    }).toUpperCase();
+                    
                     const divider = document.createElement('tr');
-                    divider.innerHTML = `<td colspan="4" class="date-divider">--- SCHEDULE UNTUK BESOK ---</td>`;
+                    divider.innerHTML = `<td colspan="4" class="date-divider">--- JADWAL UNTUK ${formattedDate} ---</td>`;
                     tbody.appendChild(divider);
-                    besokDividerAdded = true;
+                    lastDate = row.tanggal;
                 }
 
                 const statusRaw = (row.status || "").toUpperCase();
@@ -288,7 +289,6 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        // --- REAL-TIME LISTENER: UPDATE OTOMATIS SETIAP DETIK JIKA DATA BERUBAH ---
         const channel = _supabase.channel('schema-db-changes')
             .on('postgres_changes', 
                 { 
@@ -298,7 +298,7 @@
                 }, 
                 (payload) => {
                     console.log('Real-time update received!');
-                    loadDashboard(); // Langsung update tanpa refresh halaman
+                    loadDashboard();
                 }
             )
             .subscribe();

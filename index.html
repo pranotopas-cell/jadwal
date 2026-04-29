@@ -13,26 +13,25 @@
             --text-white: #ffffff;
             --blue-light: #00d4ff;
             --green-fids: #4af54a;
-            --color-proses: #4af54a;
-            --color-terjadwal: #00d4ff;
-            --color-tunggu: #ff5252;
-            --color-langsir: #ffeb3b;
+            /* Status Colors */
+            --color-proses: #4af54a;    /* Hijau */
+            --color-terjadwal: #00d4ff; /* Biru */
+            --color-tunggu: #ff5252;    /* Merah */
+            --color-langsir: #ffeb3b;   /* Kuning */
         }
-
-        * { box-sizing: border-box; }
 
         body { 
             font-family: 'Arial', sans-serif;
             margin: 0; 
             background-color: var(--bg-airport); 
             color: var(--text-white);
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
-        /* Header Tetap */
+        /* Header */
         .header {
             background: var(--header-bg);
             padding: 12px 15px;
@@ -40,74 +39,78 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 3px solid var(--text-yellow);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+            flex-shrink: 0;
         }
-        .header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; }
-        #targetDate { font-size: 0.9rem; color: var(--text-yellow); font-weight: bold; margin-top: 2px; }
+        .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: var(--text-white); }
+        #targetDate { 
+            font-size: 16px; 
+            color: var(--text-yellow); 
+            font-weight: bold; 
+            margin-top: 4px;
+        }
         
         .clock-container { text-align: right; }
-        #clock { font-size: 1.3rem; font-weight: bold; }
+        #clock { font-size: 20px; font-weight: bold; color: var(--text-white); }
         
+        /* Indikator Cloud Online */
         .cloud-status {
-            font-size: 9px;
+            font-size: 10px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
             gap: 5px;
             color: var(--green-fids);
+            margin-top: 2px;
+            text-transform: uppercase;
+            font-weight: bold;
         }
         .dot {
-            height: 7px; width: 7px;
+            height: 8px;
+            width: 8px;
             background-color: var(--green-fids);
             border-radius: 50%;
+            display: inline-block;
             animation: pulse 1.5s infinite;
         }
 
-        /* Area Konten Utama - Scroll Normal Desktop & HP */
+        /* Table Area */
         .main-content { 
             flex: 1; 
+            overflow-y: auto; 
             width: 100%;
-            padding-bottom: 50px; /* Ruang agar tidak tertutup footer marquee */
+            padding-bottom: 35px;
         }
         
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            table-layout: fixed;
-        }
-
-        thead th { 
-            background: var(--header-bg); 
-            color: var(--text-yellow); 
-            font-size: 0.75rem; 
-            padding: 12px 8px; 
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        
+        th {
+            background: var(--header-bg);
+            color: var(--text-yellow);
+            text-align: left;
+            padding: 12px 5px;
+            font-size: 12px;
             text-transform: uppercase;
-            position: sticky;
-            top: 65px; /* Menempel tepat di bawah header */
-            z-index: 999;
             border-bottom: 1px solid #1a3a6e;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
-        tr { 
+        td { 
+            padding: 10px 5px; 
+            font-size: 14px; 
+            font-weight: bold; 
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            vertical-align: top;
         }
 
-        td { padding: 12px 8px; vertical-align: middle; }
-
-        /* Ukuran Kolom */
-        .col-unit { width: 45%; }
-        .col-qty { width: 15%; text-align: center; font-size: 1.2rem; color: var(--text-yellow); font-weight: bold; }
-        .col-storage { width: 22%; }
-        .col-status { width: 18%; text-align: right; font-size: 0.8rem; font-weight: bold; }
-
+        /* Divider Hari Esok */
         .date-divider {
             background: #1a3a6e;
             color: var(--text-yellow);
             text-align: center;
-            font-size: 0.75rem;
-            padding: 8px 0;
+            font-size: 11px;
+            padding: 5px 0;
             font-weight: bold;
             letter-spacing: 2px;
         }
@@ -118,47 +121,44 @@
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); }
 
-        .flight-cell { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+        .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
         .nopol-block { 
-            background: white; color: black; 
-            padding: 4px 6px; border-radius: 3px; 
-            font-weight: 900; font-size: 0.75rem;
-            min-width: 85px; text-align: center;
+            background: white; 
+            color: black; 
+            padding: 5px 0; 
+            border-radius: 3px; 
+            font-weight: 900; 
+            font-size: 11px;
+            min-width: 85px;
+            text-align: center;
+            flex-shrink: 0;
         }
-        .sopir-name { color: var(--blue-light); font-size: 0.9rem; font-weight: bold; }
-        .dest-label { font-size: 0.9rem; color: #eee; font-weight: bold; display: block; margin-left: 2px; }
-        .depo-text { color: var(--green-fids); font-size: 0.8rem; font-weight: bold; }
+        .sopir-name { 
+            color: var(--blue-light); 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 13px;
+        }
+        .dest-label { 
+            font-size: 14px; 
+            color: #eee; 
+            display: block;
+            padding-left: 2px;
+            font-weight: bold;
+        }
+
+        .time-cell { line-height: 1.2; }
+        .depo-text { color: var(--green-fids); display: block; font-size: 12px; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
 
-        /* Footer Marquee - Tetap tampil di bawah di HP & Desktop */
         .footer-marquee {
-            background: #000; 
-            color: var(--text-yellow);
-            height: 35px; 
-            line-height: 35px; 
-            font-size: 13px;
-            font-weight: bold; 
-            border-top: 2px solid var(--text-yellow);
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1001;
-            display: block !important; /* Memastikan tampil */
-        }
-
-        marquee { width: 100%; display: block; }
-
-        /* Penyesuaian HP */
-        @media (max-width: 768px) {
-            .header h1 { font-size: 1rem; }
-            #clock { font-size: 1.1rem; }
-            .nopol-block { min-width: 70px; font-size: 0.7rem; }
-            .sopir-name { font-size: 0.8rem; }
-            .col-qty { font-size: 1rem; }
-            .footer-marquee { font-size: 11px; height: 30px; line-height: 30px; }
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #000; color: var(--text-yellow);
+            height: 30px; line-height: 30px; font-size: 13px;
+            font-weight: bold; border-top: 2px solid var(--text-yellow); z-index: 100;
         }
     </style>
 </head>
@@ -167,11 +167,13 @@
     <div class="header">
         <div>
             <h1>SCHEDULE DELIVERY</h1>
-            <div id="targetDate">...</div>
+            <div id="targetDate">MEMUAT TANGGAL...</div>
         </div>
         <div class="clock-container">
             <div id="clock">00:00:00</div>
-            <div class="cloud-status"><span class="dot"></span> CLOUD ONLINE</div>
+            <div class="cloud-status">
+                <span class="dot"></span> CLOUD ONLINE
+            </div>
         </div>
     </div>
 
@@ -179,10 +181,10 @@
         <table>
             <thead>
                 <tr>
-                    <th class="col-unit">UNIT / DEST</th>
-                    <th class="col-qty">QTY</th>
-                    <th class="col-storage">STORAGE</th>
-                    <th class="col-status">STATUS</th>
+                    <th style="width: 48%;">UNIT / DEST</th>
+                    <th style="width: 14%; text-align: center;">QTY</th>
+                    <th style="width: 20%;">STORAGE</th>
+                    <th style="width: 18%; text-align: right;">STATUS</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -190,7 +192,7 @@
     </div>
 
     <div class="footer-marquee">
-        <marquee scrollamount="5" behavior="scroll" direction="left">
+        <marquee scrollamount="4">
             SAFETY FIRST: Pastikan Segel Terpasang Sempurna • Periksa Tekanan Ban dan Fungsi Rem Sebelum Berangkat • Gunakan APD Lengkap (Helm, Sepatu, Rompi) • Dilarang Mengoperasikan HP Saat Mengemudi • Laporkan Segala Kendala Armada Segera Ke Dispatcher...
         </marquee>
     </div>
@@ -216,16 +218,22 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
+            // Mengambil semua data tanpa limit agar jadwal besok tampil seluruhnya
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
                 .in('tanggal', [isoHariIni, isoBesok]);
 
-            if (error) return;
+            if (error) {
+                console.error('Error fetching data:', error);
+                return;
+            }
 
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
+            // Priority: PROSES > TERJADWAL > LANGSIR > TUNGGU
             const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
+            
             filtered.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                 const statusA = (a.status || "").toUpperCase();
@@ -245,6 +253,7 @@
             let besokDividerAdded = false;
 
             data.forEach(row => {
+                // Tambah Pembatas Jika Masuk Jadwal Besok
                 if (row.tanggal === isoBesok && !besokDividerAdded) {
                     const divider = document.createElement('tr');
                     divider.innerHTML = `<td colspan="4" class="date-divider">--- SCHEDULE UNTUK BESOK ---</td>`;
@@ -254,39 +263,57 @@
 
                 const statusRaw = (row.status || "").toUpperCase();
                 let statusClass = "st-terjadwal";
+
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
+                else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="col-unit">
+                    <td>
                         <div class="flight-cell">
                             <div class="nopol-block">${row.nopol || '-'}</div>
                             <div class="sopir-name">${row.sopir || '-'}</div>
                         </div>
                         <span class="dest-label">TO: ${row.delivery_to || '-'}</span>
                     </td>
-                    <td class="col-qty">${row.jumlah_keluar || '0'}</td>
-                    <td class="col-storage">
+                    <td style="color:var(--text-yellow); text-align:center; font-size:18px;">${row.jumlah_keluar || '0'}</td>
+                    <td class="time-cell">
                         <span class="depo-text">${row.supplier || '-'}</span>
                     </td>
-                    <td class="col-status ${statusClass}">${statusRaw}</td>
+                    <td class="${statusClass}" style="text-align:right; font-size:11px;">${statusRaw}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
         function updateClock() {
-            document.getElementById('clock').innerText = getWIB().toLocaleTimeString('id-ID', {hour12:false});
+            const now = getWIB();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        _supabase.channel('schema-db-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
+        // REAL-TIME LISTENER (Auto update jika ada perubahan di Supabase)
+        const channel = _supabase.channel('schema-db-changes')
+            .on('postgres_changes', 
+                { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'data_pengiriman' 
+                }, 
+                (payload) => {
+                    console.log('Real-time update received:', payload);
+                    loadDashboard();
+                }
+            )
             .subscribe();
 
         setInterval(updateClock, 1000);
+        
+        // Backup refresh setiap 5 menit
         setInterval(loadDashboard, 300000); 
+        
+        // Initial Load
         loadDashboard();
     </script>
 </body>

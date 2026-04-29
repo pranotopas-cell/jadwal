@@ -15,7 +15,7 @@
             --green-fids: #4af54a;
             /* Status Colors */
             --color-proses: #4af54a;    /* Hijau */
-            --color-terjadwal: #00d4ff; /* Biru */
+            --color-terjadwal: #ffffff; /* Update: Putih */
             --color-tunggu: #ff5252;    /* Merah */
             --color-langsir: #ffeb3b;   /* Kuning */
         }
@@ -32,7 +32,6 @@
             display: flex;
             flex-direction: column;
             overflow: hidden; 
-            /* Perubahan: Menggunakan position relative agar fungsi zoom browser bekerja lebih alami */
             position: relative; 
             width: 100%;
         }
@@ -122,10 +121,11 @@
             letter-spacing: 1.5px;
         }
 
+        /* Status Styling */
         .st-proses { color: var(--color-proses); animation: blink 1s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
-        .st-langsir { color: var(--color-langsir); }
+        .st-langsir { color: var(--color-langsir); animation: blink 1.2s infinite; } /* Update: Berkedip */
 
         .flight-cell { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
         
@@ -160,7 +160,7 @@
         .time-cell { line-height: 1.2; }
         .depo-text { color: var(--green-fids); display: block; font-size: 11px; }
 
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
         @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
 
         .footer-marquee {

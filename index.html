@@ -13,11 +13,10 @@
             --text-white: #ffffff;
             --blue-light: #00d4ff;
             --green-fids: #4af54a;
-            /* Status Colors */
-            --color-proses: #4af54a;    /* Hijau */
-            --color-terjadwal: #00d4ff; /* Biru */
-            --color-tunggu: #ff5252;    /* Merah */
-            --color-langsir: #ffeb3b;   /* Kuning */
+            --color-proses: #4af54a;
+            --color-terjadwal: #00d4ff;
+            --color-tunggu: #ff5252;
+            --color-langsir: #ffeb3b;
         }
 
         body { 
@@ -28,182 +27,162 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Mencegah scroll di desktop */
+            overflow: hidden; 
         }
 
-        /* Container Utama untuk Auto-Scaling */
-        #zoomContainer {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            transform-origin: top center; /* Titik tumpu zoom di atas */
-            transition: transform 0.3s ease;
-        }
-
-        /* Header */
+        /* Header Tetap */
         .header {
             background: var(--header-bg);
-            padding: 12px 15px;
+            padding: 10px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 3px solid var(--text-yellow);
             flex-shrink: 0;
         }
-        .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: var(--text-white); }
-        #targetDate { 
-            font-size: 16px; 
-            color: var(--text-yellow); 
-            font-weight: bold; 
-            margin-top: 4px;
-        }
+        .header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; }
+        #targetDate { font-size: 1rem; color: var(--text-yellow); font-weight: bold; }
         
         .clock-container { text-align: right; }
-        #clock { font-size: 20px; font-weight: bold; color: var(--text-white); }
+        #clock { font-size: 1.4rem; font-weight: bold; }
         
         .cloud-status {
-            font-size: 10px;
+            font-size: 9px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
             gap: 5px;
             color: var(--green-fids);
-            margin-top: 2px;
-            text-transform: uppercase;
-            font-weight: bold;
         }
         .dot {
-            height: 8px;
-            width: 8px;
+            height: 8px; width: 8px;
             background-color: var(--green-fids);
             border-radius: 50%;
-            display: inline-block;
             animation: pulse 1.5s infinite;
         }
 
-        /* Table Area */
+        /* Area Tabel Dinamis */
         .main-content { 
             flex: 1; 
             width: 100%;
-            padding-bottom: 35px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Mengunci agar tidak scroll */
         }
         
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        
-        th {
-            background: var(--header-bg);
-            color: var(--text-yellow);
-            text-align: left;
-            padding: 12px 5px;
-            font-size: 12px;
-            text-transform: uppercase;
-            border-bottom: 1px solid #1a3a6e;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            table-layout: fixed; 
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        td { 
-            padding: 8px 5px; 
-            font-size: 14px; 
-            font-weight: bold; 
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            vertical-align: top;
-            word-wrap: break-word;
+        thead { flex-shrink: 0; width: 100%; }
+        tbody { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            width: 100%;
         }
+
+        /* Logic: Baris tabel akan mengecil otomatis jika data banyak */
+        tr { 
+            display: flex; 
+            width: 100%; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            min-height: 0; /* Penting agar bisa mengecil */
+            flex: 1; /* Baris akan berbagi ruang yang tersedia */
+            align-items: center;
+        }
+
+        th, td { 
+            padding: 2px 5px; 
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Kolom width disesuaikan */
+        .col-unit { width: 45%; flex-direction: column; align-items: flex-start; justify-content: center; }
+        .col-qty { width: 15%; justify-content: center; font-size: 1.2em; color: var(--text-yellow); }
+        .col-storage { width: 22%; flex-direction: column; align-items: flex-start; justify-content: center; }
+        .col-status { width: 18%; justify-content: flex-end; text-align: right; font-size: 0.8em; }
+
+        th { background: var(--header-bg); color: var(--text-yellow); font-size: 0.8rem; padding: 10px 5px; }
 
         .date-divider {
             background: #1a3a6e;
             color: var(--text-yellow);
             text-align: center;
-            font-size: 11px;
-            padding: 5px 0;
-            font-weight: bold;
-            letter-spacing: 2px;
+            font-size: 0.7rem;
+            width: 100%;
+            justify-content: center;
+            flex: 0 0 25px; /* Divider punya tinggi tetap */
         }
 
+        /* Status & Typography */
         .st-proses { color: var(--color-proses); animation: blink 1s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); }
 
-        .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .flight-cell { display: flex; align-items: center; gap: 8px; width: 100%; }
         .nopol-block { 
-            background: white; 
-            color: black; 
-            padding: 5px 0; 
-            border-radius: 3px; 
-            font-weight: 900; 
-            font-size: 11px;
-            min-width: 85px;
-            text-align: center;
-            flex-shrink: 0;
+            background: white; color: black; 
+            padding: 2px 4px; border-radius: 3px; 
+            font-weight: 900; font-size: 0.75rem;
+            min-width: 75px; text-align: center;
         }
-        .sopir-name { 
-            color: var(--blue-light); 
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: 13px;
-        }
-        .dest-label { 
-            font-size: 14px; 
-            color: #eee; 
-            display: block;
-            padding-left: 2px;
-            font-weight: bold;
-        }
-
-        .time-cell { line-height: 1.2; }
-        .depo-text { color: var(--green-fids); display: block; font-size: 12px; }
+        .sopir-name { color: var(--blue-light); font-size: 0.85rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        .dest-label { font-size: 0.85rem; color: #eee; font-weight: bold; }
+        .depo-text { color: var(--green-fids); font-size: 0.75rem; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
 
         .footer-marquee {
-            position: fixed; bottom: 0; left: 0; width: 100%;
             background: #000; color: var(--text-yellow);
             height: 30px; line-height: 30px; font-size: 13px;
-            font-weight: bold; border-top: 2px solid var(--text-yellow); z-index: 100;
+            font-weight: bold; border-top: 2px solid var(--text-yellow);
+            flex-shrink: 0;
         }
 
-        /* Penyesuaian khusus HP */
+        /* Penyesuaian HP: Aktifkan scroll kembali */
         @media (max-width: 768px) {
             body { overflow-y: auto; height: auto; }
-            #zoomContainer { transform: none !important; width: 100% !important; }
+            .main-content { height: auto; overflow: visible; }
+            tr { flex: none; height: 80px; }
+            tbody { flex: none; }
         }
     </style>
 </head>
 <body>
 
-    <div id="zoomContainer">
-        <div class="header">
-            <div>
-                <h1>SCHEDULE DELIVERY</h1>
-                <div id="targetDate">MEMUAT TANGGAL...</div>
-            </div>
-            <div class="clock-container">
-                <div id="clock">00:00:00</div>
-                <div class="cloud-status">
-                    <span class="dot"></span> CLOUD ONLINE
-                </div>
-            </div>
+    <div class="header">
+        <div>
+            <h1>SCHEDULE DELIVERY</h1>
+            <div id="targetDate">...</div>
         </div>
+        <div class="clock-container">
+            <div id="clock">00:00:00</div>
+            <div class="cloud-status"><span class="dot"></span> CLOUD ONLINE</div>
+        </div>
+    </div>
 
-        <div class="main-content">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 48%;">UNIT / DEST</th>
-                        <th style="width: 14%; text-align: center;">QTY</th>
-                        <th style="width: 20%;">STORAGE</th>
-                        <th style="width: 18%; text-align: right;">STATUS</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
+    <div class="main-content">
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-unit">UNIT / DEST</th>
+                    <th class="col-qty">QTY</th>
+                    <th class="col-storage">STORAGE</th>
+                    <th class="col-status">STATUS</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
     </div>
 
     <div class="footer-marquee">
@@ -219,29 +198,6 @@
 
         function getWIB() {
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
-        }
-
-        // Fungsi Auto-Scale agar muat di satu layar laptop
-        function applyAutoZoom() {
-            if (window.innerWidth <= 768) return; 
-
-            const container = document.getElementById('zoomContainer');
-            const footer = document.querySelector('.footer-marquee');
-            
-            // Reset dulu ke normal untuk kalkulasi akurat
-            container.style.transform = "scale(1)";
-            container.style.width = "100%";
-
-            const availableHeight = window.innerHeight - footer.offsetHeight;
-            const contentHeight = container.scrollHeight;
-
-            if (contentHeight > availableHeight) {
-                // Hitung rasio pengecilan (dikurangi sedikit buffer 0.98)
-                const scale = (availableHeight / contentHeight) * 0.98;
-                container.style.transform = `scale(${scale})`;
-                // Lebar harus dikompensasi karena efek scale
-                container.style.width = (100 / scale) + "%";
-            }
         }
 
         async function loadDashboard() {
@@ -261,15 +217,11 @@
                 .select('*')
                 .in('tanggal', [isoHariIni, isoBesok]);
 
-            if (error) {
-                console.error('Error fetching data:', error);
-                return;
-            }
+            if (error) return;
 
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
             const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
-            
             filtered.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                 const statusA = (a.status || "").toUpperCase();
@@ -291,54 +243,45 @@
             data.forEach(row => {
                 if (row.tanggal === isoBesok && !besokDividerAdded) {
                     const divider = document.createElement('tr');
-                    divider.innerHTML = `<td colspan="4" class="date-divider">--- SCHEDULE UNTUK BESOK ---</td>`;
+                    divider.className = "date-divider";
+                    divider.innerHTML = `--- SCHEDULE UNTUK BESOK ---`;
                     tbody.appendChild(divider);
                     besokDividerAdded = true;
                 }
 
                 const statusRaw = (row.status || "").toUpperCase();
                 let statusClass = "st-terjadwal";
-
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
-                else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>
+                    <td class="col-unit">
                         <div class="flight-cell">
                             <div class="nopol-block">${row.nopol || '-'}</div>
                             <div class="sopir-name">${row.sopir || '-'}</div>
                         </div>
                         <span class="dest-label">TO: ${row.delivery_to || '-'}</span>
                     </td>
-                    <td style="color:var(--text-yellow); text-align:center; font-size:18px;">${row.jumlah_keluar || '0'}</td>
-                    <td class="time-cell">
+                    <td class="col-qty">${row.jumlah_keluar || '0'}</td>
+                    <td class="col-storage">
                         <span class="depo-text">${row.supplier || '-'}</span>
                     </td>
-                    <td class="${statusClass}" style="text-align:right; font-size:11px;">${statusRaw}</td>
+                    <td class="col-status ${statusClass}">${statusRaw}</td>
                 `;
                 tbody.appendChild(tr);
             });
-            
-            // Panggil scaling setelah data selesai dirender ke DOM
-            setTimeout(applyAutoZoom, 200);
         }
 
         function updateClock() {
-            const now = getWIB();
-            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
+            document.getElementById('clock').innerText = getWIB().toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        const channel = _supabase.channel('schema-db-changes')
-            .on('postgres_changes', 
-                { event: '*', schema: 'public', table: 'data_pengiriman' }, 
-                (payload) => { loadDashboard(); }
-            )
+        _supabase.channel('schema-db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
             .subscribe();
 
-        window.addEventListener('resize', applyAutoZoom);
         setInterval(updateClock, 1000);
         setInterval(loadDashboard, 300000); 
         loadDashboard();

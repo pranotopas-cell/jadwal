@@ -202,6 +202,31 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // --- FITUR KHUSUS TV ---
+        
+        // 1. Fullscreen Otomatis saat layar diklik (Guna memudahkan di Smart TV)
+        document.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => console.log(e));
+            }
+        });
+
+        // 2. Cegah TV Sleep (Screen Wake Lock)
+        let wakeLock = null;
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock aktif: Layar tidak akan mati.');
+                }
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+            }
+        }
+        requestWakeLock();
+
+        // --- LOGIKA UTAMA DASHBOARD ---
+
         function getWIB() {
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }
@@ -218,7 +243,6 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
-            // Mengambil semua data tanpa limit agar jadwal besok tampil seluruhnya
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
@@ -231,7 +255,6 @@
 
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
-            // Priority: PROSES > TERJADWAL > LANGSIR > TUNGGU
             const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
             
             filtered.sort((a, b) => {
@@ -253,7 +276,6 @@
             let besokDividerAdded = false;
 
             data.forEach(row => {
-                // Tambah Pembatas Jika Masuk Jadwal Besok
                 if (row.tanggal === isoBesok && !besokDividerAdded) {
                     const divider = document.createElement('tr');
                     divider.innerHTML = `<td colspan="4" class="date-divider">--- SCHEDULE UNTUK BESOK ---</td>`;
@@ -293,7 +315,7 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        // REAL-TIME LISTENER (Auto update jika ada perubahan di Supabase)
+        // --- REAL-TIME LISTENER ---
         const channel = _supabase.channel('schema-db-changes')
             .on('postgres_changes', 
                 { 
@@ -303,17 +325,14 @@
                 }, 
                 (payload) => {
                     console.log('Real-time update received:', payload);
-                    loadDashboard();
+                    loadDashboard(); // Auto update data saat ada perubahan
                 }
             )
             .subscribe();
 
         setInterval(updateClock, 1000);
+        setInterval(loadDashboard, 300000); // Backup refresh tiap 5 menit
         
-        // Backup refresh setiap 5 menit
-        setInterval(loadDashboard, 300000); 
-        
-        // Initial Load
         loadDashboard();
     </script>
 </body>

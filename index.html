@@ -26,25 +26,26 @@
             margin: 0; 
             background-color: var(--bg-airport); 
             color: var(--text-white);
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Mencegah seluruh halaman scroll di desktop */
+            overflow-x: hidden;
         }
 
         /* Header Tetap */
         .header {
             background: var(--header-bg);
-            padding: 10px 15px;
+            padding: 12px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 3px solid var(--text-yellow);
-            flex-shrink: 0;
-            z-index: 100;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
         .header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; }
-        #targetDate { font-size: 0.9rem; color: var(--text-yellow); font-weight: bold; }
+        #targetDate { font-size: 0.9rem; color: var(--text-yellow); font-weight: bold; margin-top: 2px; }
         
         .clock-container { text-align: right; }
         #clock { font-size: 1.3rem; font-weight: bold; }
@@ -64,74 +65,51 @@
             animation: pulse 1.5s infinite;
         }
 
-        /* Area Konten Utama */
+        /* Area Konten Utama - Scroll Normal Desktop & HP */
         .main-content { 
             flex: 1; 
             width: 100%;
-            overflow-y: auto; /* Aktifkan scroll hanya di sini untuk HP */
-            display: flex;
-            flex-direction: column;
+            padding-bottom: 50px; /* Ruang agar tidak tertutup footer marquee */
         }
         
         table { 
             width: 100%; 
             border-collapse: collapse; 
             table-layout: fixed;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
         }
 
-        thead { 
-            flex-shrink: 0; 
-            position: sticky; 
-            top: 0; 
-            z-index: 10;
-            background: var(--header-bg);
-        }
-
-        tbody { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column;
-            min-height: min-content;
-        }
-
-        /* Desktop Mode: Baris berbagi ruang agar muat 1 layar */
-        @media (min-width: 769px) {
-            .main-content { overflow: hidden; } /* Matikan scroll di desktop */
-            tr:not(.date-divider) { 
-                flex: 1; 
-                min-height: 0; 
-            }
+        thead th { 
+            background: var(--header-bg); 
+            color: var(--text-yellow); 
+            font-size: 0.75rem; 
+            padding: 12px 8px; 
+            text-transform: uppercase;
+            position: sticky;
+            top: 65px; /* Menempel tepat di bawah header */
+            z-index: 999;
+            border-bottom: 1px solid #1a3a6e;
         }
 
         tr { 
-            display: flex; 
-            width: 100%; 
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            align-items: center;
         }
 
-        th, td { padding: 4px 8px; overflow: hidden; display: flex; align-items: center; }
+        td { padding: 12px 8px; vertical-align: middle; }
 
         /* Ukuran Kolom */
-        .col-unit { width: 45%; flex-direction: column; align-items: flex-start; }
-        .col-qty { width: 15%; justify-content: center; font-size: 1.1em; color: var(--text-yellow); }
-        .col-storage { width: 22%; flex-direction: column; align-items: flex-start; }
-        .col-status { width: 18%; justify-content: flex-end; text-align: right; font-size: 0.75rem; }
-
-        th { background: var(--header-bg); color: var(--text-yellow); font-size: 0.75rem; padding: 8px; text-transform: uppercase; }
+        .col-unit { width: 45%; }
+        .col-qty { width: 15%; text-align: center; font-size: 1.2rem; color: var(--text-yellow); font-weight: bold; }
+        .col-storage { width: 22%; }
+        .col-status { width: 18%; text-align: right; font-size: 0.8rem; font-weight: bold; }
 
         .date-divider {
             background: #1a3a6e;
             color: var(--text-yellow);
             text-align: center;
-            font-size: 0.7rem;
-            width: 100%;
-            justify-content: center;
-            flex: 0 0 24px; /* Tinggi divider tetap */
+            font-size: 0.75rem;
+            padding: 8px 0;
             font-weight: bold;
+            letter-spacing: 2px;
         }
 
         /* Status Styles */
@@ -140,37 +118,47 @@
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); }
 
-        .flight-cell { display: flex; align-items: center; gap: 6px; width: 100%; margin-bottom: 2px; }
+        .flight-cell { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
         .nopol-block { 
             background: white; color: black; 
-            padding: 2px 4px; border-radius: 3px; 
-            font-weight: 900; font-size: 0.7rem;
-            min-width: 70px; text-align: center;
+            padding: 4px 6px; border-radius: 3px; 
+            font-weight: 900; font-size: 0.75rem;
+            min-width: 85px; text-align: center;
         }
-        .sopir-name { color: var(--blue-light); font-size: 0.8rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-        .dest-label { font-size: 0.8rem; color: #eee; font-weight: bold; }
-        .depo-text { color: var(--green-fids); font-size: 0.7rem; }
+        .sopir-name { color: var(--blue-light); font-size: 0.9rem; font-weight: bold; }
+        .dest-label { font-size: 0.9rem; color: #eee; font-weight: bold; display: block; margin-left: 2px; }
+        .depo-text { color: var(--green-fids); font-size: 0.8rem; font-weight: bold; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
 
-        /* Footer Tetap di Bawah */
+        /* Footer Marquee - Tetap tampil di bawah di HP & Desktop */
         .footer-marquee {
             background: #000; 
             color: var(--text-yellow);
-            height: 30px; 
-            line-height: 30px; 
-            font-size: 12px;
+            height: 35px; 
+            line-height: 35px; 
+            font-size: 13px;
             font-weight: bold; 
             border-top: 2px solid var(--text-yellow);
-            flex-shrink: 0;
-            z-index: 100;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1001;
+            display: block !important; /* Memastikan tampil */
         }
 
-        /* Khusus HP */
+        marquee { width: 100%; display: block; }
+
+        /* Penyesuaian HP */
         @media (max-width: 768px) {
-            tr:not(.date-divider) { min-height: 70px; }
-            .nopol-block { min-width: 60px; font-size: 0.65rem; }
+            .header h1 { font-size: 1rem; }
+            #clock { font-size: 1.1rem; }
+            .nopol-block { min-width: 70px; font-size: 0.7rem; }
+            .sopir-name { font-size: 0.8rem; }
+            .col-qty { font-size: 1rem; }
+            .footer-marquee { font-size: 11px; height: 30px; line-height: 30px; }
         }
     </style>
 </head>
@@ -202,7 +190,7 @@
     </div>
 
     <div class="footer-marquee">
-        <marquee scrollamount="4">
+        <marquee scrollamount="5" behavior="scroll" direction="left">
             SAFETY FIRST: Pastikan Segel Terpasang Sempurna • Periksa Tekanan Ban dan Fungsi Rem Sebelum Berangkat • Gunakan APD Lengkap (Helm, Sepatu, Rompi) • Dilarang Mengoperasikan HP Saat Mengemudi • Laporkan Segala Kendala Armada Segera Ke Dispatcher...
         </marquee>
     </div>
@@ -235,7 +223,6 @@
 
             if (error) return;
 
-            // Filter status DELIVERED
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
             const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
@@ -260,8 +247,7 @@
             data.forEach(row => {
                 if (row.tanggal === isoBesok && !besokDividerAdded) {
                     const divider = document.createElement('tr');
-                    divider.className = "date-divider";
-                    divider.innerHTML = `--- SCHEDULE UNTUK BESOK ---`;
+                    divider.innerHTML = `<td colspan="4" class="date-divider">--- SCHEDULE UNTUK BESOK ---</td>`;
                     tbody.appendChild(divider);
                     besokDividerAdded = true;
                 }

@@ -31,53 +31,53 @@
             overflow: hidden;
         }
 
-        /* Header - Ukuran Diperbesar */
+        /* Header Kembali ke Ukuran HP */
         .header {
             background: var(--header-bg);
-            padding: 20px 25px;
+            padding: 12px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 5px solid var(--text-yellow);
+            border-bottom: 3px solid var(--text-yellow);
             flex-shrink: 0;
         }
-        .header h1 { margin: 0; font-size: 32px; letter-spacing: 2px; color: var(--text-white); }
+        .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: var(--text-white); }
         #targetDate { 
-            font-size: 24px; 
+            font-size: 16px; 
             color: var(--text-yellow); 
             font-weight: bold; 
-            margin-top: 8px;
+            margin-top: 4px;
         }
         
         .clock-container { text-align: right; }
-        #clock { font-size: 40px; font-weight: bold; color: var(--text-white); font-family: monospace; }
+        #clock { font-size: 20px; font-weight: bold; color: var(--text-white); }
         
         .cloud-status {
-            font-size: 14px;
+            font-size: 10px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 8px;
+            gap: 5px;
             color: var(--green-fids);
-            margin-top: 5px;
+            margin-top: 2px;
             text-transform: uppercase;
             font-weight: bold;
         }
         .dot {
-            height: 12px;
-            width: 12px;
+            height: 8px;
+            width: 8px;
             background-color: var(--green-fids);
             border-radius: 50%;
             display: inline-block;
             animation: pulse 1.5s infinite;
         }
 
-        /* Table Area */
+        /* Table Area HP */
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
             width: 100%;
-            padding-bottom: 60px;
+            padding-bottom: 35px;
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -86,31 +86,31 @@
             background: var(--header-bg);
             color: var(--text-yellow);
             text-align: left;
-            padding: 20px 10px;
-            font-size: 20px;
+            padding: 12px 5px;
+            font-size: 12px;
             text-transform: uppercase;
-            border-bottom: 2px solid #1a3a6e;
+            border-bottom: 1px solid #1a3a6e;
             position: sticky;
             top: 0;
             z-index: 10;
         }
 
         td { 
-            padding: 20px 10px; 
-            font-size: 22px; /* Font Data Diperbesar */
+            padding: 10px 5px; 
+            font-size: 14px; 
             font-weight: bold; 
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            vertical-align: middle;
+            vertical-align: top;
         }
 
         .date-divider {
             background: #1a3a6e;
             color: var(--text-yellow);
             text-align: center;
-            font-size: 20px;
-            padding: 15px 0;
+            font-size: 11px;
+            padding: 5px 0;
             font-weight: bold;
-            letter-spacing: 5px;
+            letter-spacing: 2px;
         }
 
         /* Status Styles */
@@ -119,32 +119,35 @@
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); }
 
-        .flight-cell { display: flex; align-items: center; gap: 15px; margin-bottom: 8px; }
+        .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
         .nopol-block { 
             background: white; 
             color: black; 
-            padding: 8px 12px; 
-            border-radius: 5px; 
+            padding: 5px 0; 
+            border-radius: 3px; 
             font-weight: 900; 
-            font-size: 20px;
-            min-width: 120px;
+            font-size: 11px;
+            min-width: 85px;
             text-align: center;
             flex-shrink: 0;
         }
         .sopir-name { 
             color: var(--blue-light); 
-            font-size: 24px;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 13px;
         }
         .dest-label { 
-            font-size: 24px; 
+            font-size: 14px; 
             color: #eee; 
             display: block;
-            font-weight: 900;
+            padding-left: 2px;
+            font-weight: bold;
         }
 
         .time-cell { line-height: 1.2; }
-        .depo-text { color: var(--green-fids); display: block; font-size: 22px; }
+        .depo-text { color: var(--green-fids); display: block; font-size: 12px; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
@@ -152,8 +155,8 @@
         .footer-marquee {
             position: fixed; bottom: 0; left: 0; width: 100%;
             background: #000; color: var(--text-yellow);
-            height: 50px; line-height: 50px; font-size: 22px; /* Running text besar */
-            font-weight: bold; border-top: 3px solid var(--text-yellow); z-index: 100;
+            height: 30px; line-height: 30px; font-size: 13px;
+            font-weight: bold; border-top: 2px solid var(--text-yellow); z-index: 100;
         }
     </style>
 </head>
@@ -176,8 +179,8 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 50%;">UNIT / DEST</th>
-                    <th style="width: 12%; text-align: center;">QTY</th>
+                    <th style="width: 48%;">UNIT / DEST</th>
+                    <th style="width: 14%; text-align: center;">QTY</th>
                     <th style="width: 20%;">STORAGE</th>
                     <th style="width: 18%; text-align: right;">STATUS</th>
                 </tr>
@@ -187,7 +190,7 @@
     </div>
 
     <div class="footer-marquee">
-        <marquee scrollamount="6">
+        <marquee scrollamount="4">
             NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST: PASTIKAN SEGEL TERPASANG SEMPURNA • PERIKSA TEKANAN BAN DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP (HELM, SEPATU, ROMPI) DI TEMPAT PENGAMBILAN DAN PEMBONGKARAN • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN MAX. DALAM DAN LUAR KOTA • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA BAIK ARMADA, SAAT LOADING BBM DAN SAAT BONGKAR KE BAGIAN OPERASIONAL..
         </marquee>
     </div>
@@ -196,24 +199,6 @@
         const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // --- FITUR AUTO FULLSCREEN ---
-        document.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(e => console.log(e));
-            }
-        });
-
-        // --- CEGAH LAYAR MATI ---
-        let wakeLock = null;
-        async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch (err) {}
-        }
-        requestWakeLock();
 
         function getWIB() {
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
@@ -236,7 +221,10 @@
                 .select('*')
                 .in('tanggal', [isoHariIni, isoBesok]);
 
-            if (error) return;
+            if (error) {
+                console.error('Error fetching data:', error);
+                return;
+            }
 
             let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
@@ -263,7 +251,7 @@
             data.forEach(row => {
                 if (row.tanggal === isoBesok && !besokDividerAdded) {
                     const divider = document.createElement('tr');
-                    divider.innerHTML = `<td colspan="4" class="date-divider">--- JADWAL UNTUK BESOK ---</td>`;
+                    divider.innerHTML = `<td colspan="4" class="date-divider">--- SCHEDULE UNTUK BESOK ---</td>`;
                     tbody.appendChild(divider);
                     besokDividerAdded = true;
                 }
@@ -274,6 +262,7 @@
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
+                else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -284,11 +273,11 @@
                         </div>
                         <span class="dest-label">TO: ${row.delivery_to || '-'}</span>
                     </td>
-                    <td style="color:var(--text-yellow); text-align:center; font-size:32px;">${row.jumlah_keluar || '0'}</td>
+                    <td style="color:var(--text-yellow); text-align:center; font-size:18px;">${row.jumlah_keluar || '0'}</td>
                     <td class="time-cell">
                         <span class="depo-text">${row.supplier || '-'}</span>
                     </td>
-                    <td class="${statusClass}" style="text-align:right; font-size:22px;">${statusRaw}</td>
+                    <td class="${statusClass}" style="text-align:right; font-size:11px;">${statusRaw}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -299,16 +288,23 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        // --- REAL-TIME: REFRESH OTOMATIS JIKA SUPABASE BERUBAH ---
-        _supabase.channel('custom-all-channel')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, (payload) => {
-                console.log('Data Update Detected!');
-                loadDashboard(); // Refresh tampilan seketika
-            })
+        // --- REAL-TIME LISTENER: UPDATE OTOMATIS SETIAP DETIK JIKA DATA BERUBAH ---
+        const channel = _supabase.channel('schema-db-changes')
+            .on('postgres_changes', 
+                { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'data_pengiriman' 
+                }, 
+                (payload) => {
+                    console.log('Real-time update received!');
+                    loadDashboard(); // Langsung update tanpa refresh halaman
+                }
+            )
             .subscribe();
 
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 300000); // Backup refresh tiap 5 menit
+        setInterval(loadDashboard, 300000); 
         
         loadDashboard();
     </script>

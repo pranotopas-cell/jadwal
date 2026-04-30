@@ -21,7 +21,10 @@
             --color-delivered: #00d4ff;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+        }
 
         body { 
             font-family: 'Arial', sans-serif;
@@ -68,13 +71,18 @@
 
         .flight-cell { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
         
-        /* SOLUSI TERAKHIR UNTUK TV: MENGGUNAKAN IMAGE DATA (SVG) SEBAGAI BACKGROUND */
+        /* PENGUNCIAN WARNA NOPOL UNTUK TV */
         .nopol-block { 
+            /* 1. Paksa background putih pakai SVG (Gambar tidak bisa di-invert TV) */
             background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='10' height='10' fill='white'/%3E%3C/svg%3E") !important;
             background-size: cover !important;
             background-color: white !important;
-            color: #000000 !important; 
-            -webkit-text-fill-color: #000000 !important;
+
+            /* 2. Paksa teks warna hitam (menggunakan abu-abu gelap agar tidak dideteksi auto-invert) */
+            color: #111111 !important; 
+            -webkit-text-fill-color: #111111 !important;
+            
+            /* 3. Style visual tetap sama */
             padding: 3px 6px; 
             border-radius: 3px; 
             font-weight: 900; 
@@ -84,6 +92,7 @@
             flex-shrink: 0;
             box-shadow: 0 1px 3px rgba(0,0,0,0.5);
             display: inline-block;
+            text-shadow: none !important;
         }
 
         .sopir-name { color: var(--blue-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }

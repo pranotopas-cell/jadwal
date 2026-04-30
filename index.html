@@ -164,7 +164,7 @@
 
         .footer-marquee {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #000; color: var(--blue-light);
+            background: #000; color: #ffffff; /* Ubah warna teks ke putih */
             height: 35px; line-height: 35px; font-size: 12px;
             font-weight: bold; border-top: 2px solid var(--blue-light); z-index: 100;
         }
@@ -211,14 +211,11 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         function getWIB() {
-            // Mengambil waktu Jakarta secara presisi
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }
 
         async function loadDashboard() {
             const hariIniWIB = getWIB();
-            
-            // Format YYYY-MM-DD secara manual untuk menghindari pergeseran tanggal UTC
             const y = hariIniWIB.getFullYear();
             const m = String(hariIniWIB.getMonth() + 1).padStart(2, '0');
             const d = String(hariIniWIB.getDate()).padStart(2, '0');
@@ -228,7 +225,6 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
-            // Query: Ambil data di mana tanggal >= hari ini (Jakarta)
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
@@ -240,7 +236,20 @@
                 return;
             }
 
-            // Urutan Prioritas Status
+            // --- LOGIKA FILTER DELIVERED ---
+            // Pisahkan data hari ini
+            const dataHariIni = data.filter(row => row.tanggal === isoHariIni);
+            const dataMendatang = data.filter(row => row.tanggal > isoHariIni);
+
+            // Cek apakah semua data hari ini sudah DELIVERED
+            const isSemuaDelivered = dataHariIni.length > 0 && dataHariIni.every(row => 
+                (row.status || "").toUpperCase().includes("DELIVERED")
+            );
+
+            // Jika semua sudah delivered, hanya tampilkan data mendatang
+            let finalData = isSemuaDelivered ? dataMendatang : data;
+            // -------------------------------
+
             const priority = { 
                 "DELIVERED": 1, 
                 "PROSES": 2, 
@@ -250,31 +259,28 @@
                 "INFO": 5 
             };
             
-            data.sort((a, b) => {
-                // Urutkan berdasarkan tanggal terlebih dahulu
+            finalData.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
-                
-                // Jika tanggal sama, urutkan berdasarkan status
                 const statusA = (a.status || "").toUpperCase();
                 const statusB = (b.status || "").toUpperCase();
                 let valA = 99, valB = 99;
-                
                 Object.keys(priority).forEach(key => { if(statusA.includes(key)) valA = priority[key]; });
                 Object.keys(priority).forEach(key => { if(statusB.includes(key)) valB = priority[key]; });
-                
                 return valA - valB;
             });
 
-            renderData(data, isoHariIni);
+            // Tentukan tanggal awal tampilan (jika hari ini disembunyikan, gunakan tanggal pertama yang tersedia)
+            const displayStartDate = (isSemuaDelivered && dataMendatang.length > 0) ? dataMendatang[0].tanggal : isoHariIni;
+            
+            renderData(finalData, displayStartDate);
         }
 
-        function renderData(data, isoHariIni) {
+        function renderData(data, startDate) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-            let currentDisplayDate = isoHariIni;
+            let currentDisplayDate = startDate;
 
             data.forEach((row) => {
-                // Tambahkan pembatas jika data masuk ke tanggal berikutnya
                 if (row.tanggal > currentDisplayDate) {
                     const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
                         weekday: 'long', day: 'numeric', month: 'short' 
@@ -293,7 +299,6 @@
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
                 else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
-                else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -319,7 +324,6 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        // Realtime
         const channel = _supabase.channel('schema-db-changes')
             .on('postgres_changes', 
                 { event: '*', schema: 'public', table: 'data_pengiriman' }, 

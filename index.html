@@ -14,17 +14,14 @@
             --blue-light: #00d4ff;
             --green-fids: #4af54a;
             /* Status Colors */
-            --color-proses: #4af54a;
-            --color-terjadwal: #ffffff;
-            --color-tunggu: #ff5252;
-            --color-langsir: #ffeb3b;
-            --color-delivered: #00d4ff;
+            --color-proses: #4af54a;    /* Hijau */
+            --color-terjadwal: #ffffff; /* Putih */
+            --color-tunggu: #ff5252;    /* Merah */
+            --color-langsir: #ffeb3b;   /* Kuning */
+            --color-delivered: #00d4ff; /* Blue Light */
         }
 
-        * { 
-            box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent; 
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body { 
             font-family: 'Arial', sans-serif;
@@ -50,18 +47,78 @@
             z-index: 101;
         }
         .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: var(--text-white); }
-        #targetDate { font-size: 14px; color: var(--blue-light); font-weight: bold; margin-top: 4px; }
+        
+        #targetDate { 
+            font-size: 14px; 
+            color: var(--blue-light); 
+            font-weight: bold; 
+            margin-top: 4px;
+        }
+        
         .clock-container { text-align: right; }
         #clock { font-size: 18px; font-weight: bold; color: var(--text-white); }
-        .cloud-status { font-size: 9px; display: flex; align-items: center; justify-content: flex-end; gap: 5px; color: var(--green-fids); margin-top: 2px; text-transform: uppercase; font-weight: bold; }
-        .dot { height: 7px; width: 7px; background-color: var(--green-fids); border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        
+        .cloud-status {
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+            color: var(--green-fids);
+            margin-top: 2px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .dot {
+            height: 7px;
+            width: 7px;
+            background-color: var(--green-fids);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
 
-        .main-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; width: 100%; padding-bottom: 60px; }
+        .main-content { 
+            flex: 1; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; 
+            width: 100%;
+            padding-bottom: 60px; 
+        }
+        
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th { background: var(--header-bg); color: var(--text-yellow); text-align: left; padding: 12px 5px; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #1a3a6e; position: sticky; top: 0; z-index: 10; }
-        td { padding: 10px 5px; font-size: 13px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: top; word-wrap: break-word; }
+        
+        th {
+            background: var(--header-bg);
+            color: var(--text-yellow);
+            text-align: left;
+            padding: 12px 5px;
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #1a3a6e;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
 
-        .date-divider { background: #1a3a6e; color: var(--text-yellow); text-align: center; font-size: 10px; padding: 8px 0; font-weight: bold; letter-spacing: 1.5px; }
+        td { 
+            padding: 10px 5px; 
+            font-size: 13px; 
+            font-weight: bold; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            vertical-align: top;
+            word-wrap: break-word;
+        }
+
+        .date-divider {
+            background: #1a3a6e;
+            color: var(--text-yellow);
+            text-align: center;
+            font-size: 10px;
+            padding: 8px 0;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+        }
 
         .st-proses { color: var(--color-proses); animation: blink 1s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
@@ -71,18 +128,11 @@
 
         .flight-cell { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
         
-        /* PENGUNCIAN WARNA NOPOL UNTUK TV */
+        /* MODIFIKASI UNTUK TV: Menggunakan Linear Gradient agar tidak di-invert otomatis */
         .nopol-block { 
-            /* 1. Paksa background putih pakai SVG (Gambar tidak bisa di-invert TV) */
-            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='10' height='10' fill='white'/%3E%3C/svg%3E") !important;
-            background-size: cover !important;
-            background-color: white !important;
-
-            /* 2. Paksa teks warna hitam (menggunakan abu-abu gelap agar tidak dideteksi auto-invert) */
-            color: #111111 !important; 
-            -webkit-text-fill-color: #111111 !important;
-            
-            /* 3. Style visual tetap sama */
+            background: linear-gradient(to bottom, #ffffff, #f0f0f0) !important;
+            color: #000000 !important; 
+            -webkit-text-fill-color: #000000 !important;
             padding: 3px 6px; 
             border-radius: 3px; 
             font-weight: 900; 
@@ -92,12 +142,28 @@
             flex-shrink: 0;
             box-shadow: 0 1px 3px rgba(0,0,0,0.5);
             display: inline-block;
-            text-shadow: none !important;
+            -webkit-print-color-adjust: exact;
         }
 
-        .sopir-name { color: var(--blue-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
-        .dest-label { font-size: 12px; color: #eee; display: block; padding-left: 2px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sopir-name { 
+            color: var(--blue-light); 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 12px;
+        }
+        .dest-label { 
+            font-size: 12px; 
+            color: #eee; 
+            display: block;
+            padding-left: 2px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         .loc-tag { color: var(--text-yellow); font-weight: 900; }
+
         .time-cell { line-height: 1.2; }
         .depo-text { color: var(--blue-light); display: block; font-size: 11px; }
 
@@ -173,15 +239,28 @@
                 .gte('tanggal', isoHariIni)
                 .order('tanggal', { ascending: true });
 
-            if (error) { console.error('Error fetching data:', error); return; }
+            if (error) {
+                console.error('Error fetching data:', error);
+                return;
+            }
 
             const dataHariIni = data.filter(row => row.tanggal === isoHariIni);
             const dataMendatang = data.filter(row => row.tanggal > isoHariIni);
-            const isSemuaDelivered = dataHariIni.length > 0 && dataHariIni.every(row => (row.status || "").toUpperCase().includes("DELIVERED"));
+
+            const isSemuaDelivered = dataHariIni.length > 0 && dataHariIni.every(row => 
+                (row.status || "").toUpperCase().includes("DELIVERED")
+            );
 
             let finalData = isSemuaDelivered ? dataMendatang : data;
 
-            const priority = { "DELIVERED": 1, "PROSES": 2, "TERJADWAL": 3, "LANGSIR": 4, "TUNGGU": 5, "INFO": 5 };
+            const priority = { 
+                "DELIVERED": 1, 
+                "PROSES": 2, 
+                "TERJADWAL": 3, 
+                "LANGSIR": 4, 
+                "TUNGGU": 5, 
+                "INFO": 5 
+            };
             
             finalData.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
@@ -203,7 +282,10 @@
 
             data.forEach((row) => {
                 if (row.tanggal > lastDateProcessed) {
-                    const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+                    const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
+                        weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' 
+                    }).toUpperCase();
+                    
                     const divider = document.createElement('tr');
                     divider.innerHTML = `<td colspan="4" class="date-divider">==== ${formattedDate} ====</td>`;
                     tbody.appendChild(divider);
@@ -212,6 +294,7 @@
 
                 const statusRaw = (row.status || "").toUpperCase();
                 let statusClass = "st-terjadwal";
+
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
@@ -227,7 +310,9 @@
                         <span class="dest-label">TO : ${row.delivery_to || '-'} | <span class="loc-tag">${row.lokasi || '-'}</span></span>
                     </td>
                     <td style="color:var(--text-yellow); text-align:center; font-size:16px;">${row.jumlah_keluar || '0'}</td>
-                    <td class="time-cell"><span class="depo-text">${row.supplier || '-'}</span></td>
+                    <td class="time-cell">
+                        <span class="depo-text">${row.supplier || '-'}</span>
+                    </td>
                     <td class="${statusClass}" style="text-align:right; font-size:10px; font-weight:900;">${statusRaw}</td>
                 `;
                 tbody.appendChild(tr);
@@ -237,10 +322,17 @@
         function updateClock() {
             const now = getWIB();
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
-            if(now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) { loadDashboard(); }
+            if(now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
+                loadDashboard();
+            }
         }
 
-        const channel = _supabase.channel('schema-db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => { loadDashboard(); }).subscribe();
+        const channel = _supabase.channel('schema-db-changes')
+            .on('postgres_changes', 
+                { event: '*', schema: 'public', table: 'data_pengiriman' }, 
+                () => { loadDashboard(); }
+            )
+            .subscribe();
 
         setInterval(updateClock, 1000);
         setInterval(loadDashboard, 30000); 

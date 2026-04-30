@@ -154,6 +154,10 @@
             display: block;
             padding-left: 2px;
             font-weight: bold;
+            /* Update: Mencegah teks turun ke bawah */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .time-cell { line-height: 1.2; }
@@ -164,7 +168,7 @@
 
         .footer-marquee {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #000; color: #ffffff; /* Ubah warna teks ke putih */
+            background: #000; color: #ffffff; 
             height: 35px; line-height: 35px; font-size: 12px;
             font-weight: bold; border-top: 2px solid var(--blue-light); z-index: 100;
         }
@@ -236,19 +240,14 @@
                 return;
             }
 
-            // --- LOGIKA FILTER DELIVERED ---
-            // Pisahkan data hari ini
             const dataHariIni = data.filter(row => row.tanggal === isoHariIni);
             const dataMendatang = data.filter(row => row.tanggal > isoHariIni);
 
-            // Cek apakah semua data hari ini sudah DELIVERED
             const isSemuaDelivered = dataHariIni.length > 0 && dataHariIni.every(row => 
                 (row.status || "").toUpperCase().includes("DELIVERED")
             );
 
-            // Jika semua sudah delivered, hanya tampilkan data mendatang
             let finalData = isSemuaDelivered ? dataMendatang : data;
-            // -------------------------------
 
             const priority = { 
                 "DELIVERED": 1, 
@@ -269,19 +268,18 @@
                 return valA - valB;
             });
 
-            // Tentukan tanggal awal tampilan (jika hari ini disembunyikan, gunakan tanggal pertama yang tersedia)
-            const displayStartDate = (isSemuaDelivered && dataMendatang.length > 0) ? dataMendatang[0].tanggal : isoHariIni;
-            
-            renderData(finalData, displayStartDate);
+            // Pembatas tanggal akan otomatis menyesuaikan saat melewati jam 00:00
+            renderData(finalData, isoHariIni);
         }
 
-        function renderData(data, startDate) {
+        function renderData(data, isoHariIni) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-            let currentDisplayDate = startDate;
+            let lastDateProcessed = isoHariIni;
 
             data.forEach((row) => {
-                if (row.tanggal > currentDisplayDate) {
+                // Tambahkan pembatas tanggal jika tanggal data lebih besar dari tanggal yang sedang diproses
+                if (row.tanggal > lastDateProcessed) {
                     const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
                         weekday: 'long', day: 'numeric', month: 'short' 
                     }).toUpperCase();
@@ -289,7 +287,7 @@
                     const divider = document.createElement('tr');
                     divider.innerHTML = `<td colspan="4" class="date-divider">--- JADWAL UNTUK ${formattedDate} ---</td>`;
                     tbody.appendChild(divider);
-                    currentDisplayDate = row.tanggal;
+                    lastDateProcessed = row.tanggal;
                 }
 
                 const statusRaw = (row.status || "").toUpperCase();
@@ -322,6 +320,11 @@
         function updateClock() {
             const now = getWIB();
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
+            
+            // Cek setiap detik, jika tepat jam 00:00:00, muat ulang dashboard untuk update tanggal hari ini
+            if(now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
+                loadDashboard();
+            }
         }
 
         const channel = _supabase.channel('schema-db-changes')

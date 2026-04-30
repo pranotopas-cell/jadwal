@@ -281,7 +281,7 @@
                 // Tambahkan pembatas tanggal jika tanggal data lebih besar dari tanggal yang sedang diproses
                 if (row.tanggal > lastDateProcessed) {
                     const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
-                        weekday: 'long', day: 'numeric', month: 'short' 
+                    weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' // <--- Tambah ini
                     }).toUpperCase();
                     
                     const divider = document.createElement('tr');

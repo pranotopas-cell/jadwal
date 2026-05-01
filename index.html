@@ -3,28 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>JADWAL PENGIRIMAN</title>
+    <title>JADWAL PENGIRIMAN - PREMIUM</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-airport: #000c26;
-            --header-bg: #000511;
-            --text-yellow: #ffeb3b;
-            --text-white: #ffffff;
-            --blue-light: #00d4ff;
-            --green-fids: #4af54a;
-            /* Status Colors */
-            --color-proses: #4af54a;    /* Hijau */
-            --color-terjadwal: #ffffff; /* Putih */
-            --color-tunggu: #ff5252;    /* Merah */
-            --color-langsir: #ffeb3b;   /* Kuning */
-            --color-delivered: #00d4ff; /* Blue Light */
+            /* Palette Dasar: Mewah & Modern (Deep & Muted) */
+            --bg-airport: #0f1115;        /* Hitam arang matte */
+            --header-bg: #16191e;        /* Slate gelap */
+            --border-color: #262a31;     /* Border halus */
+            --text-white: #e2e8f0;       /* Putih tulang */
+            --text-dim: #94a3b8;         /* Abu-abu teks sekunder */
+            --accent-gold: #c2a35d;      /* Emas Muted (Pengganti Kuning Neon) */
+            
+            /* Status Colors: Soft & Sophisticated */
+            --color-proses: #4ade80;     /* Sage Green (Soft) */
+            --color-terjadwal: #cbd5e1;  /* Cool Grey */
+            --color-tunggu: #f87171;     /* Soft Coral */
+            --color-langsir: #fbbf24;    /* Amber */
+            --color-delivered: #60a5fa;  /* Sky Blue Muted */
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+        }
 
         body { 
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0; 
             background-color: var(--bg-airport); 
             color: var(--text-white);
@@ -38,45 +43,59 @@
 
         .header {
             background: var(--header-bg);
-            padding: 12px 15px;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid var(--blue-light);
+            border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
             z-index: 101;
         }
-        .header h1 { margin: 0; font-size: 20px; letter-spacing: 1px; color: var(--text-white); }
+
+        .header h1 { 
+            margin: 0; 
+            font-size: 18px; 
+            letter-spacing: 2px; 
+            color: var(--text-white);
+            font-weight: 300; 
+            text-transform: uppercase;
+        }
         
-        /* UPDATED: Warna tanggal menjadi Hijau FIDS */
         #targetDate { 
-            font-size: 16px; 
-            color: var(--green-fids); 
-            font-weight: bold; 
+            font-size: 13px; 
+            color: var(--accent-gold); 
+            font-weight: 500; 
             margin-top: 4px;
+            letter-spacing: 0.5px;
         }
         
         .clock-container { text-align: right; }
-        #clock { font-size: 20px; font-weight: bold; color: var(--text-white); }
+        #clock { 
+            font-size: 22px; 
+            font-weight: 300; 
+            color: var(--text-white); 
+            letter-spacing: 1px;
+        }
         
         .cloud-status {
             font-size: 9px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 5px;
-            color: var(--green-fids);
-            margin-top: 2px;
-            text-transform: uppercase;
-            font-weight: bold;
+            gap: 6px;
+            color: var(--color-proses);
+            margin-top: 4px;
+            letter-spacing: 1px;
+            opacity: 0.8;
         }
         .dot {
-            height: 7px;
-            width: 7px;
-            background-color: var(--green-fids);
+            height: 6px;
+            width: 6px;
+            background-color: var(--color-proses);
             border-radius: 50%;
             display: inline-block;
-            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 8px var(--color-proses);
+            animation: pulse 2s infinite;
         }
 
         .main-content { 
@@ -91,90 +110,89 @@
         
         th {
             background: var(--header-bg);
-            color: var(--text-yellow);
+            color: var(--text-dim);
             text-align: left;
-            padding: 12px 5px;
-            font-size: 16px;
+            padding: 15px 10px;
+            font-size: 11px;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            border-bottom: 1px solid #1a3a6e;
+            border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
             z-index: 10;
         }
 
         td { 
-            padding: 10px 5px; 
+            padding: 12px 10px; 
             font-size: 13px; 
-            font-weight: bold; 
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            vertical-align: top;
-            word-wrap: break-word;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            vertical-align: middle;
         }
 
         .date-divider {
-            background: #1a3a6e;
-            color: var(--text-yellow);
+            background: rgba(255,255,255,0.03);
+            color: var(--text-dim);
             text-align: center;
             font-size: 10px;
-            padding: 8px 0;
-            font-weight: bold;
-            letter-spacing: 1.5px;
+            padding: 10px 0;
+            font-weight: 600;
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .st-proses { color: var(--color-proses); animation: blink 1s infinite; }
+        /* Status Styles */
+        .st-proses { color: var(--color-proses); animation: soft-blink 2s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
-        .st-langsir { color: var(--color-langsir); animation: blink 1.2s infinite; }
+        .st-langsir { color: var(--color-langsir); animation: soft-blink 2.5s infinite; }
         .st-delivered { color: var(--color-delivered); }
 
-        .flight-cell { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+        .flight-cell { display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
         
         .nopol-block { 
-            background: linear-gradient(to bottom, #f9f9f9, #f0f0f0) !important;
-            color: #000000 !important; 
-            -webkit-text-fill-color: #000000 !important;
-            padding: 3px 6px; 
-            border-radius: 3px; 
-            font-weight: 900; 
+            background: #2d343f !important; 
+            color: #ffffff !important; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-weight: 700; 
             font-size: 11px;  
-            min-width: 70px;  
+            min-width: 80px;  
             text-align: center;
-            flex-shrink: 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
             display: inline-block;
-            -webkit-print-color-adjust: exact;
         }
 
         .sopir-name { 
-            color: var(--blue-light); 
+            color: var(--text-white); 
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-size: 12px;
+            font-size: 13px;
+            font-weight: 500;
         }
         .dest-label { 
-            font-size: 12px; 
-            color: #eee; 
+            font-size: 11px; 
+            color: var(--text-dim); 
             display: block;
-            padding-left: 2px;
-            font-weight: bold;
+            margin-top: 4px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .loc-tag { color: var(--text-yellow); font-weight: 900; }
+        .loc-tag { color: var(--accent-gold); font-weight: 600; }
 
         .time-cell { line-height: 1.2; }
-        .depo-text { color: var(--green-fids); display: block; font-size: 12px; }
+        .depo-text { color: var(--text-dim); display: block; font-size: 12px; }
 
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
+        @keyframes soft-blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
 
         .footer-marquee {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #000; color: #ffffff; 
-            height: 35px; line-height: 35px; font-size: 12px;
-            font-weight: bold; border-top: 2px solid var(--blue-light); z-index: 100;
+            background: #000; color: var(--text-dim); 
+            height: 35px; line-height: 35px; font-size: 11px;
+            border-top: 1px solid var(--border-color); z-index: 100;
+            letter-spacing: 0.5px;
         }
     </style>
 </head>
@@ -182,7 +200,7 @@
 
     <div class="header">
         <div>
-            <h1>SCHEDULE DELIVERY</h1>
+            <h1>Schedule Delivery</h1>
             <div id="targetDate">MEMUAT TANGGAL...</div>
         </div>
         <div class="clock-container">
@@ -197,10 +215,10 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 50%;">UNIT / DRIVER / DEST</th>
-                    <th style="width: 12%; text-align: center;">QTY</th>
-                    <th style="width: 20%;">STORAGE</th>
-                    <th style="width: 18%; text-align: right;">STATUS</th>
+                    <th style="width: 50%;">Unit / Driver / Dest</th>
+                    <th style="width: 12%; text-align: center;">Qty</th>
+                    <th style="width: 20%;">Storage</th>
+                    <th style="width: 18%; text-align: right;">Status</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -209,7 +227,7 @@
 
     <div class="footer-marquee">
         <marquee scrollamount="4">
-            NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST: PASTIKAN SURAT JALAN SUDAH MASUK MOBIL DAN SEGEL TERPASANG SEMPURNA • SELESAI BONGKAR PASTIKAN SURAT JALAN DAN BERITA ACARA SUDAH DI TANDATANGANI • PERIKSA TEKANAN BAN ,RADIATOR DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP (HELM, SEPATU, ROMPI) SELAMA DI TEMPAT MUAT BBM DAN PEMBONGKARAN BBM • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN MAX. DALAM DAN LUAR KOTA • DILARANG MENGOPERASIKAN  HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA BAIK ARMADA, SAAT LOADING BBM DAN SAAT BONGKAR KE BAGIAN OPERASIONAL..
+            NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST: PASTIKAN SURAT JALAN SUDAH MASUK MOBIL DAN SEGEL TERPASANG SEMPURNA • SELESAI BONGKAR PASTIKAN SURAT JALAN DAN BERITA ACARA SUDAH DI TANDATANGANI • PERIKSA TEKANAN BAN, RADIATOR DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP (HELM, SEPATU, ROMPI) SELAMA DI TEMPAT MUAT BBM DAN PEMBONGKARAN BBM • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN MAX. DALAM DAN LUAR KOTA • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA BAIK ARMADA, SAAT LOADING BBM DAN SAAT BONGKAR KE BAGIAN OPERASIONAL..
         </marquee>
     </div>
 
@@ -301,7 +319,6 @@
                 else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
 
                 const tr = document.createElement('tr');
-                // UPDATED: Ukuran font status diperbesar menjadi 13px untuk keterbacaan
                 tr.innerHTML = `
                     <td>
                         <div class="flight-cell">
@@ -310,11 +327,11 @@
                         </div>
                         <span class="dest-label">TO : ${row.delivery_to || '-'} | <span class="loc-tag">${row.lokasi || '-'}</span></span>
                     </td>
-                    <td style="color:var(--text-yellow); text-align:center; font-size:16px;">${row.jumlah_keluar || '0'}</td>
+                    <td style="color:var(--accent-gold); text-align:center; font-size:15px; font-weight:600;">${row.jumlah_keluar || '0'}</td>
                     <td class="time-cell">
                         <span class="depo-text">${row.supplier || '-'}</span>
                     </td>
-                    <td class="${statusClass}" style="text-align:right; font-size:13px; font-weight:900;">${statusRaw}</td>
+                    <td class="${statusClass}" style="text-align:right; font-size:13px; font-weight:700;">${statusRaw}</td>
                 `;
                 tbody.appendChild(tr);
             });

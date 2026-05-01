@@ -48,9 +48,10 @@
         }
         .header h1 { margin: 0; font-size: 20px; letter-spacing: 1px; color: var(--text-white); }
         
+        /* UPDATED: Warna tanggal menjadi Hijau FIDS */
         #targetDate { 
             font-size: 16px; 
-            color: var(--text-green); 
+            color: var(--green-fids); 
             font-weight: bold; 
             margin-top: 4px;
         }
@@ -128,7 +129,6 @@
 
         .flight-cell { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
         
-        /* MODIFIKASI UNTUK TV: Menggunakan Linear Gradient agar tidak di-invert otomatis */
         .nopol-block { 
             background: linear-gradient(to bottom, #f9f9f9, #f0f0f0) !important;
             color: #000000 !important; 
@@ -165,7 +165,7 @@
         .loc-tag { color: var(--text-yellow); font-weight: 900; }
 
         .time-cell { line-height: 1.2; }
-        .depo-text { color: var(--text-green); display: block; font-size: 12px; }
+        .depo-text { color: var(--green-fids); display: block; font-size: 12px; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
         @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
@@ -301,6 +301,7 @@
                 else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
 
                 const tr = document.createElement('tr');
+                // UPDATED: Ukuran font status diperbesar menjadi 13px untuk keterbacaan
                 tr.innerHTML = `
                     <td>
                         <div class="flight-cell">
@@ -313,7 +314,7 @@
                     <td class="time-cell">
                         <span class="depo-text">${row.supplier || '-'}</span>
                     </td>
-                    <td class="${statusClass}" style="text-align:right; font-size:10px; font-weight:900;">${statusRaw}</td>
+                    <td class="${statusClass}" style="text-align:right; font-size:13px; font-weight:900;">${statusRaw}</td>
                 `;
                 tbody.appendChild(tr);
             });

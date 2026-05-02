@@ -7,18 +7,24 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-airport: #121418;
-            --header-bg: #1a1d23;
-            --border-color: #2a2e35;
-            --text-white: #d1d5db;
-            --text-dim: #8e96a3;
-            --accent-gold: #b59a6d;
+            /* Palette Baru: Corporate Soft Dark */
+            --bg-airport: #0f1113; 
+            --header-bg: #15181a; 
+            --card-bg: #1a1d20; 
+            --border-color: #24282b; 
+
+            --text-white: #e1e4e8; 
+            --text-primary: #cbd0d6; 
+            --text-secondary: #9aa1a8; 
+            --text-dim: #8e96a3; 
+            --accent-gold: #c9b084; 
             
-            --color-proses: #6da383;
-            --color-terjadwal: #94a3b8;
-            --color-tunggu: #b37676;
-            --color-langsir: #c29d66;
-            --color-delivered: #708cb0;
+            /* Status Indicators (Soft Tone) */
+            --color-proses: #84b793;      
+            --color-terjadwal: #9db1c5;   
+            --color-tunggu: #c59d9d;      
+            --color-langsir: #d3be93;     
+            --color-delivered: #b0c9e6;  
         }
 
         * { 
@@ -30,7 +36,7 @@
             font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
             margin: 0; 
             background-color: var(--bg-airport); 
-            color: var(--text-white);
+            color: var(--text-primary);
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -41,7 +47,7 @@
 
         .header {
             background: var(--header-bg);
-            padding: 15px 20px;
+            padding: 18px 25px; /* Spasi lebih lebar agar corporate */
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -50,10 +56,9 @@
             z-index: 101;
         }
 
-        /* Update: Judul Bold */
         .header h1 { 
             margin: 0; 
-            font-size: 20px; 
+            font-size: 22px; 
             letter-spacing: 2px; 
             color: var(--text-white);
             font-weight: 800; 
@@ -65,21 +70,20 @@
             color: var(--accent-gold); 
             font-weight: 600; 
             margin-top: 4px;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
         
         .clock-container { text-align: right; }
         
-        /* Update: Jam Bold */
         #clock { 
-            font-size: 24px; 
+            font-size: 26px; 
             font-weight: 800; 
             color: var(--text-white); 
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
         }
         
         .cloud-status {
-            font-size: 9px;
+            font-size: 10px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
@@ -94,17 +98,16 @@
             flex: 1; 
             overflow-y: auto; 
             width: 100%;
-            padding-bottom: 60px; 
+            padding: 10px 0 60px 0; 
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         
-        /* Update: Judul Tabel Bold */
         th {
             background: var(--header-bg);
             color: var(--text-white);
             text-align: left;
-            padding: 15px 10px;
+            padding: 15px 20px;
             font-size: 12px;
             letter-spacing: 1.5px;
             text-transform: uppercase;
@@ -116,10 +119,16 @@
         }
 
         td { 
-            padding: 14px 10px; 
-            font-size: 13px; 
+            padding: 18px 20px; /* Padding lebih besar biar lega */
+            font-size: 14px; 
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
+            background-color: transparent;
+        }
+
+        /* Memberikan efek card per baris secara halus */
+        tr:hover td {
+            background-color: var(--card-bg);
         }
 
         .date-divider {
@@ -127,50 +136,58 @@
             color: var(--accent-gold);
             text-align: center;
             font-size: 11px;
-            padding: 10px 0;
+            padding: 12px 0;
             font-weight: 800;
-            letter-spacing: 2px;
+            letter-spacing: 2.5px;
             border-bottom: 1px solid var(--border-color);
         }
 
+        /* Status Colors */
         .st-proses { color: var(--color-proses); animation: soft-blink 3s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); animation: soft-blink 4s infinite; }
         .st-delivered { color: var(--color-delivered); }
 
-        .flight-cell { display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
+        .flight-cell { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
         
         .nopol-block { 
-            background: #282c34 !important; 
+            background: #24282b !important; 
             color: #ffffff !important; 
-            padding: 4px 8px; 
+            padding: 5px 10px; 
             border-radius: 4px; 
             font-weight: 800; 
             font-size: 11px;  
-            min-width: 85px;  
+            min-width: 90px;  
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.05);
             display: inline-block;
         }
 
         .sopir-name { 
             color: var(--text-white); 
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
         }
 
-        /* Update: Running Text Bold */
+        .dest-text {
+            font-size: 12px; 
+            color: var(--text-secondary); 
+            display: block; 
+            margin-top: 6px; 
+            font-weight: 600;
+        }
+
         .footer-marquee {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #000; color: #d1d5db; 
+            background: #000; color: var(--text-secondary); 
             height: 35px; line-height: 35px; font-size: 11px;
             border-top: 1px solid var(--border-color); z-index: 100;
             letter-spacing: 0.5px;
             font-weight: 700;
         }
 
-        @keyframes soft-blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        @keyframes soft-blink { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -183,7 +200,7 @@
         <div class="clock-container">
             <div id="clock">00:00:00</div>
             <div class="cloud-status">
-                <span style="height:6px; width:6px; background:var(--color-proses); border-radius:50%;"></span> CLOUD ONLINE
+                <span style="height:7px; width:7px; background:var(--color-proses); border-radius:50%;"></span> CLOUD ONLINE
             </div>
         </div>
     </div>
@@ -287,13 +304,13 @@
                             <div class="nopol-block">${row.nopol || '-'}</div>
                             <div class="sopir-name">${row.sopir || '-'}</div>
                         </div>
-                        <span style="font-size:11px; color:var(--text-dim); display:block; margin-top:5px; font-weight:600;">
+                        <span class="dest-text">
                             TO : ${row.delivery_to || '-'} | <span style="color:var(--accent-gold);">${row.lokasi || '-'}</span>
                         </span>
                     </td>
-                    <td style="color:var(--accent-gold); text-align:center; font-size:16px; font-weight:800;">${row.jumlah_keluar || '0'}</td>
-                    <td><span style="color:var(--text-dim); font-size:12px; font-weight:600;">${row.supplier || '-'}</span></td>
-                    <td class="${statusClass}" style="text-align:right; font-size:12px; font-weight:800; letter-spacing:0.5px;">${statusRaw}</td>
+                    <td style="color:var(--accent-gold); text-align:center; font-size:18px; font-weight:800;">${row.jumlah_keluar || '0'}</td>
+                    <td><span style="color:var(--text-primary); font-size:13px; font-weight:600;">${row.supplier || '-'}</span></td>
+                    <td class="${statusClass}" style="text-align:right; font-size:13px; font-weight:800; letter-spacing:0.5px;">${statusRaw}</td>
                 `;
                 tbody.appendChild(tr);
             });

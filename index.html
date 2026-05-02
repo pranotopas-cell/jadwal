@@ -7,20 +7,20 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            /* Palette Dasar: Mewah & Modern (Deep & Muted) */
-            --bg-airport: #0f1115;        /* Hitam arang matte */
-            --header-bg: #16191e;        /* Slate gelap */
-            --border-color: #262a31;     /* Border halus */
-            --text-white: #e2e8f0;       /* Putih tulang */
-            --text-dim: #94a3b8;         /* Abu-abu teks sekunder */
-            --accent-gold: #c2a35d;      /* Emas Muted (Pengganti Kuning Neon) */
+            /* Palette Dasar: Muted & Sophisticated */
+            --bg-airport: #121418;        /* Dark Charcoal (Bukan hitam pekat agar tidak backlight bleeding di TV) */
+            --header-bg: #1a1d23;        /* Slate Slate */
+            --border-color: #2a2e35;     /* Border abu-abu gelap */
+            --text-white: #d1d5db;       /* Soft White (Bukan putih murni agar tidak silau) */
+            --text-dim: #8e96a3;         /* Muted Blue Grey */
+            --accent-gold: #b59a6d;      /* Muted Gold (Pengganti kuning terang) */
             
-            /* Status Colors: Soft & Sophisticated */
-            --color-proses: #4ade80;     /* Sage Green (Soft) */
-            --color-terjadwal: #cbd5e1;  /* Cool Grey */
-            --color-tunggu: #f87171;     /* Soft Coral */
-            --color-langsir: #fbbf24;    /* Amber */
-            --color-delivered: #60a5fa;  /* Sky Blue Muted */
+            /* Status Colors: Low Saturation (Anti-Neon) */
+            --color-proses: #6da383;     /* Muted Sage Green */
+            --color-terjadwal: #94a3b8;  /* Steel Grey */
+            --color-tunggu: #b37676;     /* Dusty Rose / Muted Red */
+            --color-langsir: #c29d66;    /* Warm Oak / Muted Amber */
+            --color-delivered: #708cb0;  /* Dusty Blue */
         }
 
         * { 
@@ -29,7 +29,7 @@
         }
 
         body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
             margin: 0; 
             background-color: var(--bg-airport); 
             color: var(--text-white);
@@ -57,7 +57,7 @@
             font-size: 18px; 
             letter-spacing: 2px; 
             color: var(--text-white);
-            font-weight: 300; 
+            font-weight: 400; 
             text-transform: uppercase;
         }
         
@@ -86,7 +86,7 @@
             color: var(--color-proses);
             margin-top: 4px;
             letter-spacing: 1px;
-            opacity: 0.8;
+            opacity: 0.7;
         }
         .dot {
             height: 6px;
@@ -94,8 +94,8 @@
             background-color: var(--color-proses);
             border-radius: 50%;
             display: inline-block;
-            box-shadow: 0 0 8px var(--color-proses);
-            animation: pulse 2s infinite;
+            opacity: 0.8;
+            animation: pulse 3s infinite;
         }
 
         .main-content { 
@@ -123,14 +123,14 @@
         }
 
         td { 
-            padding: 12px 10px; 
+            padding: 14px 10px; 
             font-size: 13px; 
-            border-bottom: 1px solid rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
         }
 
         .date-divider {
-            background: rgba(255,255,255,0.03);
+            background: rgba(255,255,255,0.02);
             color: var(--text-dim);
             text-align: center;
             font-size: 10px;
@@ -140,33 +140,30 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        /* Status Styles */
-        .st-proses { color: var(--color-proses); animation: soft-blink 2s infinite; }
+        /* Status Styles - Smooth Animations */
+        .st-proses { color: var(--color-proses); animation: soft-blink 3s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
-        .st-langsir { color: var(--color-langsir); animation: soft-blink 2.5s infinite; }
+        .st-langsir { color: var(--color-langsir); animation: soft-blink 4s infinite; }
         .st-delivered { color: var(--color-delivered); }
 
         .flight-cell { display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
         
         .nopol-block { 
-            background: #2d343f !important; 
-            color: #ffffff !important; 
+            background: #282c34 !important; 
+            color: #abb2bf !important; 
             padding: 4px 8px; 
             border-radius: 4px; 
-            font-weight: 700; 
+            font-weight: 600; 
             font-size: 11px;  
-            min-width: 80px;  
+            min-width: 85px;  
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.05);
             display: inline-block;
         }
 
         .sopir-name { 
             color: var(--text-white); 
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
             font-size: 13px;
             font-weight: 500;
         }
@@ -174,23 +171,19 @@
             font-size: 11px; 
             color: var(--text-dim); 
             display: block;
-            margin-top: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            margin-top: 5px;
         }
         .loc-tag { color: var(--accent-gold); font-weight: 600; }
 
-        .time-cell { line-height: 1.2; }
         .depo-text { color: var(--text-dim); display: block; font-size: 12px; }
 
-        @keyframes soft-blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
+        @keyframes soft-blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
 
         .footer-marquee {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #000; color: var(--text-dim); 
-            height: 35px; line-height: 35px; font-size: 11px;
+            background: #000; color: #5c6370; 
+            height: 35px; line-height: 35px; font-size: 10px;
             border-top: 1px solid var(--border-color); z-index: 100;
             letter-spacing: 0.5px;
         }
@@ -226,8 +219,8 @@
     </div>
 
     <div class="footer-marquee">
-        <marquee scrollamount="4">
-            NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST: PASTIKAN SURAT JALAN SUDAH MASUK MOBIL DAN SEGEL TERPASANG SEMPURNA • SELESAI BONGKAR PASTIKAN SURAT JALAN DAN BERITA ACARA SUDAH DI TANDATANGANI • PERIKSA TEKANAN BAN, RADIATOR DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP (HELM, SEPATU, ROMPI) SELAMA DI TEMPAT MUAT BBM DAN PEMBONGKARAN BBM • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN MAX. DALAM DAN LUAR KOTA • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA BAIK ARMADA, SAAT LOADING BBM DAN SAAT BONGKAR KE BAGIAN OPERASIONAL..
+        <marquee scrollamount="3">
+            NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST • PASTIKAN SURAT JALAN SUDAH MASUK MOBIL DAN SEGEL TERPASANG SEMPURNA • SELESAI BONGKAR PASTIKAN SURAT JALAN DAN BERITA ACARA SUDAH DI TANDATANGANI • PERIKSA TEKANAN BAN, RADIATOR DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA...
         </marquee>
     </div>
 
@@ -328,10 +321,10 @@
                         <span class="dest-label">TO : ${row.delivery_to || '-'} | <span class="loc-tag">${row.lokasi || '-'}</span></span>
                     </td>
                     <td style="color:var(--accent-gold); text-align:center; font-size:15px; font-weight:600;">${row.jumlah_keluar || '0'}</td>
-                    <td class="time-cell">
+                    <td>
                         <span class="depo-text">${row.supplier || '-'}</span>
                     </td>
-                    <td class="${statusClass}" style="text-align:right; font-size:13px; font-weight:700;">${statusRaw}</td>
+                    <td class="${statusClass}" style="text-align:right; font-size:12px; font-weight:700; letter-spacing:0.5px;">${statusRaw}</td>
                 `;
                 tbody.appendChild(tr);
             });

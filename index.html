@@ -49,21 +49,25 @@
         
         .header h1 { 
             margin: 0; 
-            font-size: 18px; 
+            font-size: 22px; /* Diperbesar */
             letter-spacing: 2px; 
             color: var(--text-white-soft); 
-            font-weight: 600;
+            font-weight: 800; /* Bold maksimal */
         }
         
         #targetDate { 
-            font-size: 13px; 
+            font-size: 18px; /* Ukuran disamakan dengan jam */
             color: var(--text-gold-soft); 
-            font-weight: 500; 
+            font-weight: 700; /* Bold */
             margin-top: 4px;
         }
         
         .clock-container { text-align: right; }
-        #clock { font-size: 18px; font-weight: 600; color: var(--text-white-soft); }
+        #clock { 
+            font-size: 18px; /* Ukuran sama dengan hari */
+            font-weight: 700; /* Bold */
+            color: var(--text-white-soft); 
+        }
         
         .cloud-status {
             font-size: 9px;
@@ -102,13 +106,14 @@
             color: var(--text-gold-soft);
             text-align: left;
             padding: 14px 8px;
-            font-size: 10px;
+            font-size: 11px; /* Sedikit lebih besar agar bold terlihat jelas */
             text-transform: uppercase;
             border-bottom: 1px solid var(--border-blue);
             position: sticky;
             top: 0;
             z-index: 10;
             letter-spacing: 1px;
+            font-weight: 900; /* Judul Tabel Bold */
         }
 
         td { 
@@ -130,7 +135,6 @@
             text-transform: uppercase;
         }
 
-        /* Status Styling */
         .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
@@ -161,10 +165,9 @@
             font-weight: 600;
         }
         
-        /* LOGIKA RESPONSIVE UNTUK DEST & LOKASI */
         .destination-container {
             display: flex;
-            flex-direction: row; /* Sejajar di Desktop/TV */
+            flex-direction: row; 
             flex-wrap: wrap;
             gap: 10px;
         }
@@ -183,9 +186,11 @@
 
         @media (max-width: 600px) {
             .destination-container {
-                flex-direction: column; /* Ke bawah di HP */
+                flex-direction: column; 
                 gap: 2px;
             }
+            .header h1 { font-size: 18px; }
+            #targetDate, #clock { font-size: 14px; }
         }
 
         .time-cell { line-height: 1.2; }

@@ -7,190 +7,164 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            /* Palette Baru: Corporate Soft Dark */
             --bg-airport: #0f1113; 
             --header-bg: #15181a; 
             --card-bg: #1a1d20; 
             --border-color: #24282b; 
-
             --text-white: #e1e4e8; 
             --text-primary: #cbd0d6; 
             --text-secondary: #9aa1a8; 
-            --text-dim: #8e96a3; 
             --accent-gold: #c9b084; 
             
-            /* Status Indicators (Kecerahan ditingkatkan sedikit, tetap soft) */
-            --color-proses: #b2d8b2;      /* Hijau lebih terang tapi pastel */
-            --color-terjadwal: #e6e6fa;   
+            --color-proses: #98ffb3;      
+            --color-terjadwal: #b4c8db;   
             --color-tunggu: #e0acac;      
-            --color-langsir: #fff9c4;     /* Kuning langsir lebih terlihat */
+            --color-langsir: #ffdf9e;     
             --color-delivered: #c4d9f2;  
         }
 
-        * { 
-            box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent; 
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+        /* KUNCI BODY AGAR TIDAK SCROLL LUAR */
         body { 
-            font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             margin: 0; 
             background-color: var(--bg-airport); 
             color: var(--text-primary);
-            height: 100vh;
+            height: 100vh; /* Paksa tinggi layar pas */
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden; 
-            position: relative; 
-            width: 100%;
         }
 
         .header {
             background: var(--header-bg);
-            padding: 18px 25px;
+            padding: 1vh 2vw;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
-            z-index: 101;
         }
 
         .header h1 { 
             margin: 0; 
-            font-size: 22px; 
+            font-size: clamp(16px, 2.5vh, 22px); 
             letter-spacing: 2px; 
             color: var(--text-white);
             font-weight: 800; 
-            text-transform: uppercase;
         }
         
         #targetDate { 
-            font-size: 13px; 
+            font-size: clamp(10px, 1.5vh, 13px); 
             color: var(--accent-gold); 
             font-weight: 600; 
-            margin-top: 4px;
-            letter-spacing: 1px;
         }
-        
-        .clock-container { text-align: right; }
         
         #clock { 
-            font-size: 26px; 
+            font-size: clamp(20px, 3.5vh, 28px); 
             font-weight: 800; 
             color: var(--text-white); 
-            letter-spacing: 1.5px;
-        }
-        
-        .cloud-status {
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 6px;
-            color: var(--color-proses);
-            margin-top: 4px;
-            letter-spacing: 1px;
-            font-weight: 700;
         }
 
+        /* AREA UTAMA DENGAN SCROLL INTERNAL */
         .main-content { 
             flex: 1; 
-            overflow-y: auto; 
+            overflow-y: auto; /* Hanya tabel yang boleh scroll jika data overload */
             width: 100%;
-            padding: 10px 0 60px 0; 
+            background: linear-gradient(180deg, var(--bg-airport) 0%, #050505 100%);
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         
-        th {
-            background: var(--header-bg);
-            color: var(--text-white);
-            text-align: left;
-            padding: 15px 20px;
-            font-size: 12px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border-color);
+        /* HEADER TABEL TETAP DI ATAS */
+        thead {
             position: sticky;
             top: 0;
             z-index: 10;
-            font-weight: 800;
+            background: var(--header-bg);
+        }
+
+        th {
+            color: var(--text-dim);
+            text-align: left;
+            padding: 1.5vh 15px;
+            font-size: clamp(10px, 1.2vh, 12px);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--border-color);
         }
 
         td { 
-            padding: 18px 20px; 
-            font-size: 14px; 
+            padding: 1.2vh 15px; 
+            font-size: clamp(12px, 1.6vh, 15px); 
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
-            background-color: transparent;
         }
 
-        tr:hover td {
-            background-color: var(--card-bg);
-        }
+        tr:hover td { background-color: var(--card-bg); }
 
         .date-divider {
-            background: rgba(255,255,255,0.02);
+            background: rgba(255,255,255,0.03);
             color: var(--accent-gold);
             text-align: center;
             font-size: 11px;
-            padding: 12px 0;
+            padding: 8px 0;
             font-weight: 800;
-            letter-spacing: 2.5px;
-            border-bottom: 1px solid var(--border-color);
+            letter-spacing: 2px;
         }
 
-        /* Status Styles & Smooth Animations */
-        .st-proses { color: var(--color-proses); animation: smooth-blink 1.5s ease-in-out infinite; }
+        /* STATUS & ANIMASI */
+        .st-proses { color: var(--color-proses); animation: smooth-blink 2s infinite; }
+        .st-langsir { color: var(--color-langsir); animation: smooth-blink 2.5s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
-        .st-langsir { color: var(--color-langsir); animation: smooth-blink 1.5s ease-in-out infinite; }
         .st-delivered { color: var(--color-delivered); }
 
-        /* Keyframe Animasi Baru yang lebih halus */
         @keyframes smooth-blink { 
-            0% { opacity: 1; text-shadow: 0 0 0px transparent; } 
-            50% { opacity: 0.4; text-shadow: 0 0 5px rgba(255,255,255,0.1); } 
-            100% { opacity: 1; text-shadow: 0 0 0px transparent; } 
+            0%, 100% { opacity: 1; } 50% { opacity: 0.4; } 
         }
 
-        .flight-cell { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
-        
         .nopol-block { 
-            background: #24282b !important; 
-            color: #ffffff !important; 
-            padding: 5px 10px; 
+            background: #24282b; 
+            color: #fff; 
+            padding: 4px 8px; 
             border-radius: 4px; 
             font-weight: 800; 
-            font-size: 11px;  
-            min-width: 90px;  
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.05);
+            font-size: clamp(10px, 1.3vh, 12px);
             display: inline-block;
+            min-width: 80px;
+            text-align: center;
         }
 
-        .sopir-name { 
-            color: var(--text-white); 
-            font-size: 14px;
-            font-weight: 700;
-        }
+        .sopir-name { color: var(--text-white); font-weight: 700; margin-left: 8px; }
 
         .dest-text {
-            font-size: 12px; 
+            font-size: clamp(10px, 1.3vh, 12px); 
             color: var(--text-secondary); 
             display: block; 
-            margin-top: 6px; 
-            font-weight: 600;
+            margin-top: 4px; 
         }
 
         .footer-marquee {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #000; color: var(--text-secondary); 
-            height: 35px; line-height: 35px; font-size: 11px;
-            border-top: 1px solid var(--border-color); z-index: 100;
-            letter-spacing: 0.5px;
-            font-weight: 700;
+            flex-shrink: 0;
+            background: #000; 
+            color: var(--text-secondary); 
+            height: 30px; 
+            line-height: 30px; 
+            font-size: 11px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* PENYESUAIAN HP */
+        @media (max-width: 600px) {
+            th:nth-child(2), td:nth-child(2), /* QTY */
+            th:nth-child(3), td:nth-child(3)  /* STORAGE */ {
+                display: none; /* Sembunyikan kolom kurang penting di HP agar tidak sesak */
+            }
+            th:nth-child(1) { width: 70% !important; }
+            th:nth-child(4) { width: 30% !important; }
         }
     </style>
 </head>
@@ -199,12 +173,12 @@
     <div class="header">
         <div>
             <h1>SCHEDULE DELIVERY</h1>
-            <div id="targetDate">MEMUAT TANGGAL...</div>
+            <div id="targetDate">LOADING...</div>
         </div>
         <div class="clock-container">
             <div id="clock">00:00:00</div>
-            <div class="cloud-status">
-                <span style="height:7px; width:7px; background:var(--color-proses); border-radius:50%;"></span> CLOUD ONLINE
+            <div class="cloud-status" style="font-size: 9px; display: flex; align-items: center; justify-content: flex-end; gap: 5px; color: var(--color-proses);">
+                <span style="height:6px; width:6px; background:var(--color-proses); border-radius:50%;"></span> ONLINE
             </div>
         </div>
     </div>
@@ -213,10 +187,10 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 50%;">UNIT / DRIVER / DEST</th>
-                    <th style="width: 12%; text-align: center;">QTY</th>
-                    <th style="width: 20%;">STORAGE</th>
-                    <th style="width: 18%; text-align: right;">STATUS</th>
+                    <th style="width: 45%;">UNIT / DRIVER / DEST</th>
+                    <th style="width: 10%; text-align: center;">QTY</th>
+                    <th style="width: 25%;">STORAGE</th>
+                    <th style="width: 20%; text-align: right;">STATUS</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -225,7 +199,7 @@
 
     <div class="footer-marquee">
         <marquee scrollamount="4">
-            <strong>NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST • PASTIKAN SURAT JALAN SUDAH MASUK MOBIL DAN SEGEL TERPASANG SEMPURNA • SELESAI BONGKAR PASTIKAN SURAT JALAN DAN BERITA ACARA SUDAH DI TANDATANGANI • PERIKSA TEKANAN BAN, RADIATOR DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA...</strong>
+            <strong>NOTE : SAFETY FIRST • PERIKSA KENDARAAN SEBELUM BERANGKAT • PATUHI BATAS KECEPATAN • DILARANG MENGGUNAKAN HP SAAT MENGEMUDI • LAPORKAN KENDALA SEGERA...</strong>
         </marquee>
     </div>
 
@@ -239,13 +213,10 @@
         }
 
         async function loadDashboard() {
-            const hariIniWIB = getWIB();
-            const y = hariIniWIB.getFullYear();
-            const m = String(hariIniWIB.getMonth() + 1).padStart(2, '0');
-            const d = String(hariIniWIB.getDate()).padStart(2, '0');
-            const isoHariIni = `${y}-${m}-${d}`;
+            const now = getWIB();
+            const isoHariIni = now.toISOString().split('T')[0];
             
-            document.getElementById('targetDate').innerText = hariIniWIB.toLocaleDateString('id-ID', { 
+            document.getElementById('targetDate').innerText = now.toLocaleDateString('id-ID', { 
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
@@ -261,73 +232,62 @@
             const dataMendatang = data.filter(row => row.tanggal > isoHariIni);
             const isSemuaDelivered = dataHariIni.length > 0 && dataHariIni.every(row => (row.status || "").toUpperCase().includes("DELIVERED"));
 
-            let finalData = isSemuaDelivered ? dataMendatang : data;
-
-            const priority = { "DELIVERED": 1, "PROSES": 2, "TERJADWAL": 3, "LANGSIR": 4, "TUNGGU": 5, "INFO": 5 };
-            
-            finalData.sort((a, b) => {
-                if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
-                const statusA = (a.status || "").toUpperCase();
-                const statusB = (b.status || "").toUpperCase();
-                let valA = 99, valB = 99;
-                Object.keys(priority).forEach(key => { if(statusA.includes(key)) valA = priority[key]; });
-                Object.keys(priority).forEach(key => { if(statusB.includes(key)) valB = priority[key]; });
-                return valA - valB;
-            });
-
-            renderData(finalData, isoHariIni);
+            renderData(isSemuaDelivered ? dataMendatang : data, isoHariIni);
         }
 
         function renderData(data, isoHariIni) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-            let lastDateProcessed = isoHariIni;
+            let lastDate = isoHariIni;
+
+            const priority = { "PROSES": 1, "LANGSIR": 2, "TERJADWAL": 3, "TUNGGU": 4, "DELIVERED": 5 };
+
+            data.sort((a, b) => {
+                if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
+                let pA = 99, pB = 99;
+                Object.keys(priority).forEach(k => { if(a.status?.toUpperCase().includes(k)) pA = priority[k]; });
+                Object.keys(priority).forEach(k => { if(b.status?.toUpperCase().includes(k)) pB = priority[k]; });
+                return pA - pB;
+            });
 
             data.forEach((row) => {
-                if (row.tanggal > lastDateProcessed) {
-                    const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
-                        weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' 
-                    }).toUpperCase();
-                    const divider = document.createElement('tr');
-                    divider.innerHTML = `<td colspan="4" class="date-divider"> ${formattedDate} </td>`;
-                    tbody.appendChild(divider);
-                    lastDateProcessed = row.tanggal;
+                if (row.tanggal > lastDate) {
+                    const fmtDate = new Date(row.tanggal).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
+                    tbody.innerHTML += `<tr><td colspan="4" class="date-divider">JADWAL ${fmtDate}</td></tr>`;
+                    lastDate = row.tanggal;
                 }
 
-                const statusRaw = (row.status || "").toUpperCase();
-                let statusClass = "st-terjadwal";
-                if (statusRaw.includes("PROSES")) statusClass = "st-proses";
-                else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
-                else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
-                else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
+                const s = (row.status || "").toUpperCase();
+                let sClass = "st-terjadwal";
+                if(s.includes("PROSES")) sClass = "st-proses";
+                else if(s.includes("LANGSIR")) sClass = "st-langsir";
+                else if(s.includes("DELIVERED")) sClass = "st-delivered";
+                else if(s.includes("TUNGGU")) sClass = "st-tunggu";
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <div class="flight-cell">
-                            <div class="nopol-block">${row.nopol || '-'}</div>
-                            <div class="sopir-name">${row.sopir || '-'}</div>
-                        </div>
-                        <span class="dest-text">
-                            TO : ${row.delivery_to || '-'} | <span style="color:var(--accent-gold);">${row.lokasi || '-'}</span>
-                        </span>
-                    </td>
-                    <td style="color:var(--accent-gold); text-align:center; font-size:18px; font-weight:800;">${row.jumlah_keluar || '0'}</td>
-                    <td><span style="color:var(--text-primary); font-size:13px; font-weight:600;">${row.supplier || '-'}</span></td>
-                    <td class="${statusClass}" style="text-align:right; font-size:13px; font-weight:800; letter-spacing:0.5px;">${statusRaw}</td>
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <div style="display:flex; align-items:center;">
+                                <span class="nopol-block">${row.nopol || '-'}</span>
+                                <span class="sopir-name">${row.sopir || '-'}</span>
+                            </div>
+                            <span class="dest-text">TO: ${row.delivery_to || '-'} | <span style="color:var(--accent-gold)">${row.lokasi || '-'}</span></span>
+                        </td>
+                        <td style="text-align:center; font-weight:800; color:var(--accent-gold);">${row.jumlah_keluar || 0}</td>
+                        <td style="color:var(--text-secondary); font-size:12px;">${row.supplier || '-'}</td>
+                        <td class="${sClass}" style="text-align:right; font-weight:800;">${s}</td>
+                    </tr>
                 `;
-                tbody.appendChild(tr);
             });
         }
 
         function updateClock() {
-            const now = getWIB();
-            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
+            document.getElementById('clock').innerText = getWIB().toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        _supabase.channel('schema-db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => { loadDashboard(); }).subscribe();
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 30000); 
+        setInterval(loadDashboard, 30000);
+        _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, loadDashboard).subscribe();
         loadDashboard();
     </script>
 </body>

@@ -19,12 +19,12 @@
             --text-dim: #8e96a3; 
             --accent-gold: #c9b084; 
             
-            /* Status Indicators (Soft Tone) */
-            --color-proses: #84b793;      
-            --color-terjadwal: #9db1c5;   
-            --color-tunggu: #c59d9d;      
-            --color-langsir: #d3be93;     
-            --color-delivered: #b0c9e6;  
+            /* Status Indicators (Kecerahan ditingkatkan sedikit, tetap soft) */
+            --color-proses: #98ffb3;      /* Hijau lebih terang tapi pastel */
+            --color-terjadwal: #b4c8db;   
+            --color-tunggu: #e0acac;      
+            --color-langsir: #ffdf9e;     /* Kuning langsir lebih terlihat */
+            --color-delivered: #c4d9f2;  
         }
 
         * { 
@@ -47,7 +47,7 @@
 
         .header {
             background: var(--header-bg);
-            padding: 18px 25px; /* Spasi lebih lebar agar corporate */
+            padding: 18px 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -119,14 +119,13 @@
         }
 
         td { 
-            padding: 18px 20px; /* Padding lebih besar biar lega */
+            padding: 18px 20px; 
             font-size: 14px; 
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
             background-color: transparent;
         }
 
-        /* Memberikan efek card per baris secara halus */
         tr:hover td {
             background-color: var(--card-bg);
         }
@@ -142,12 +141,19 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        /* Status Colors */
-        .st-proses { color: var(--color-proses); animation: soft-blink 3s infinite; }
+        /* Status Styles & Smooth Animations */
+        .st-proses { color: var(--color-proses); animation: smooth-blink 1.5s ease-in-out infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
-        .st-langsir { color: var(--color-langsir); animation: soft-blink 4s infinite; }
+        .st-langsir { color: var(--color-langsir); animation: smooth-blink 1.5s ease-in-out infinite; }
         .st-delivered { color: var(--color-delivered); }
+
+        /* Keyframe Animasi Baru yang lebih halus */
+        @keyframes smooth-blink { 
+            0% { opacity: 1; text-shadow: 0 0 0px transparent; } 
+            50% { opacity: 0.4; text-shadow: 0 0 5px rgba(255,255,255,0.1); } 
+            100% { opacity: 1; text-shadow: 0 0 0px transparent; } 
+        }
 
         .flight-cell { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
         
@@ -186,8 +192,6 @@
             letter-spacing: 0.5px;
             font-weight: 700;
         }
-
-        @keyframes soft-blink { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>

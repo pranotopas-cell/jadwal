@@ -17,6 +17,7 @@
             --color-terjadwal: #b0bec5;
             --color-tunggu: #e57373;
             --color-langsir: #fff176;
+            --color-delivered: #4db6ac; 
             --border-blue: #1e293b;
         }
 
@@ -129,10 +130,12 @@
             text-transform: uppercase;
         }
 
+        /* Status Styling */
         .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); animation: blink 2s infinite; } 
+        .st-delivered { color: var(--color-delivered); opacity: 0.8; }
 
         .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
         
@@ -166,7 +169,8 @@
             font-weight: 600;
         }
 
-        .location-label {
+        /* Styling baru untuk Lokasi */
+        .loc-label {
             font-size: 12px;
             color: var(--text-gold-soft);
             display: block;
@@ -251,11 +255,9 @@
                 return;
             }
 
-            let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
+            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4, "DELIVERED": 5 };
             
-            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
-            
-            filtered.sort((a, b) => {
+            data.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                 const statusA = (a.status || "").toUpperCase();
                 const statusB = (b.status || "").toUpperCase();
@@ -265,7 +267,7 @@
                 return valA - valB;
             });
 
-            renderData(filtered, isoHariIni);
+            renderData(data, isoHariIni);
         }
 
         function renderData(data, isoHariIni) {
@@ -291,6 +293,7 @@
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
+                else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
                 else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
 
                 const tr = document.createElement('tr');
@@ -301,7 +304,7 @@
                             <div class="sopir-name">${row.sopir || '-'}</div>
                         </div>
                         <span class="dest-label">TO : ${row.delivery_to || '-'}</span>
-                        <span class="location-label">LOKASI : ${row.lokasi || '-'}</span>
+                        <span class="loc-label">LOKASI : ${row.lokasi || '-'}</span>
                     </td>
                     <td style="color:var(--text-gold-soft); text-align:center; font-size:16px; font-weight:bold;">${row.jumlah_keluar || '0'}</td>
                     <td class="time-cell">

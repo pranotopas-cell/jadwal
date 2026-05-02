@@ -7,20 +7,18 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            /* Palette Dasar: Muted & Sophisticated */
-            --bg-airport: #121418;        /* Dark Charcoal (Bukan hitam pekat agar tidak backlight bleeding di TV) */
-            --header-bg: #1a1d23;        /* Slate Slate */
-            --border-color: #2a2e35;     /* Border abu-abu gelap */
-            --text-white: #d1d5db;       /* Soft White (Bukan putih murni agar tidak silau) */
-            --text-dim: #8e96a3;         /* Muted Blue Grey */
-            --accent-gold: #b59a6d;      /* Muted Gold (Pengganti kuning terang) */
+            --bg-airport: #121418;
+            --header-bg: #1a1d23;
+            --border-color: #2a2e35;
+            --text-white: #d1d5db;
+            --text-dim: #8e96a3;
+            --accent-gold: #b59a6d;
             
-            /* Status Colors: Low Saturation (Anti-Neon) */
-            --color-proses: #6da383;     /* Muted Sage Green */
-            --color-terjadwal: #94a3b8;  /* Steel Grey */
-            --color-tunggu: #b37676;     /* Dusty Rose / Muted Red */
-            --color-langsir: #c29d66;    /* Warm Oak / Muted Amber */
-            --color-delivered: #708cb0;  /* Dusty Blue */
+            --color-proses: #6da383;
+            --color-terjadwal: #94a3b8;
+            --color-tunggu: #b37676;
+            --color-langsir: #c29d66;
+            --color-delivered: #708cb0;
         }
 
         * { 
@@ -52,27 +50,30 @@
             z-index: 101;
         }
 
+        /* Update: Judul Bold */
         .header h1 { 
             margin: 0; 
-            font-size: 18px; 
+            font-size: 20px; 
             letter-spacing: 2px; 
             color: var(--text-white);
-            font-weight: 400; 
+            font-weight: 800; 
             text-transform: uppercase;
         }
         
         #targetDate { 
             font-size: 13px; 
             color: var(--accent-gold); 
-            font-weight: 500; 
+            font-weight: 600; 
             margin-top: 4px;
             letter-spacing: 0.5px;
         }
         
         .clock-container { text-align: right; }
+        
+        /* Update: Jam Bold */
         #clock { 
-            font-size: 22px; 
-            font-weight: 300; 
+            font-size: 24px; 
+            font-weight: 800; 
             color: var(--text-white); 
             letter-spacing: 1px;
         }
@@ -86,40 +87,32 @@
             color: var(--color-proses);
             margin-top: 4px;
             letter-spacing: 1px;
-            opacity: 0.7;
-        }
-        .dot {
-            height: 6px;
-            width: 6px;
-            background-color: var(--color-proses);
-            border-radius: 50%;
-            display: inline-block;
-            opacity: 0.8;
-            animation: pulse 3s infinite;
+            font-weight: 700;
         }
 
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
-            -webkit-overflow-scrolling: touch; 
             width: 100%;
             padding-bottom: 60px; 
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         
+        /* Update: Judul Tabel Bold */
         th {
             background: var(--header-bg);
-            color: var(--text-dim);
+            color: var(--text-white);
             text-align: left;
             padding: 15px 10px;
-            font-size: 11px;
+            font-size: 12px;
             letter-spacing: 1.5px;
             text-transform: uppercase;
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
             z-index: 10;
+            font-weight: 800;
         }
 
         td { 
@@ -131,16 +124,15 @@
 
         .date-divider {
             background: rgba(255,255,255,0.02);
-            color: var(--text-dim);
+            color: var(--accent-gold);
             text-align: center;
-            font-size: 10px;
+            font-size: 11px;
             padding: 10px 0;
-            font-weight: 600;
+            font-weight: 800;
             letter-spacing: 2px;
             border-bottom: 1px solid var(--border-color);
         }
 
-        /* Status Styles - Smooth Animations */
         .st-proses { color: var(--color-proses); animation: soft-blink 3s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
@@ -151,55 +143,47 @@
         
         .nopol-block { 
             background: #282c34 !important; 
-            color: #abb2bf !important; 
+            color: #ffffff !important; 
             padding: 4px 8px; 
             border-radius: 4px; 
-            font-weight: 600; 
+            font-weight: 800; 
             font-size: 11px;  
             min-width: 85px;  
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
             display: inline-block;
         }
 
         .sopir-name { 
             color: var(--text-white); 
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 700;
         }
-        .dest-label { 
-            font-size: 11px; 
-            color: var(--text-dim); 
-            display: block;
-            margin-top: 5px;
-        }
-        .loc-tag { color: var(--accent-gold); font-weight: 600; }
 
-        .depo-text { color: var(--text-dim); display: block; font-size: 12px; }
-
-        @keyframes soft-blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
-
+        /* Update: Running Text Bold */
         .footer-marquee {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #000; color: #5c6370; 
-            height: 35px; line-height: 35px; font-size: 10px;
+            background: #000; color: #d1d5db; 
+            height: 35px; line-height: 35px; font-size: 11px;
             border-top: 1px solid var(--border-color); z-index: 100;
             letter-spacing: 0.5px;
+            font-weight: 700;
         }
+
+        @keyframes soft-blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div>
-            <h1>Schedule Delivery</h1>
+            <h1>SCHEDULE DELIVERY</h1>
             <div id="targetDate">MEMUAT TANGGAL...</div>
         </div>
         <div class="clock-container">
             <div id="clock">00:00:00</div>
             <div class="cloud-status">
-                <span class="dot"></span> CLOUD ONLINE
+                <span style="height:6px; width:6px; background:var(--color-proses); border-radius:50%;"></span> CLOUD ONLINE
             </div>
         </div>
     </div>
@@ -208,10 +192,10 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 50%;">Unit / Driver / Dest</th>
-                    <th style="width: 12%; text-align: center;">Qty</th>
-                    <th style="width: 20%;">Storage</th>
-                    <th style="width: 18%; text-align: right;">Status</th>
+                    <th style="width: 50%;">UNIT / DRIVER / DEST</th>
+                    <th style="width: 12%; text-align: center;">QTY</th>
+                    <th style="width: 20%;">STORAGE</th>
+                    <th style="width: 18%; text-align: right;">STATUS</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -219,8 +203,8 @@
     </div>
 
     <div class="footer-marquee">
-        <marquee scrollamount="3">
-            NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST • PASTIKAN SURAT JALAN SUDAH MASUK MOBIL DAN SEGEL TERPASANG SEMPURNA • SELESAI BONGKAR PASTIKAN SURAT JALAN DAN BERITA ACARA SUDAH DI TANDATANGANI • PERIKSA TEKANAN BAN, RADIATOR DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA...
+        <marquee scrollamount="4">
+            <strong>NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST • PASTIKAN SURAT JALAN SUDAH MASUK MOBIL DAN SEGEL TERPASANG SEMPURNA • SELESAI BONGKAR PASTIKAN SURAT JALAN DAN BERITA ACARA SUDAH DI TANDATANGANI • PERIKSA TEKANAN BAN, RADIATOR DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA...</strong>
         </marquee>
     </div>
 
@@ -250,28 +234,15 @@
                 .gte('tanggal', isoHariIni)
                 .order('tanggal', { ascending: true });
 
-            if (error) {
-                console.error('Error fetching data:', error);
-                return;
-            }
+            if (error) return;
 
             const dataHariIni = data.filter(row => row.tanggal === isoHariIni);
             const dataMendatang = data.filter(row => row.tanggal > isoHariIni);
-
-            const isSemuaDelivered = dataHariIni.length > 0 && dataHariIni.every(row => 
-                (row.status || "").toUpperCase().includes("DELIVERED")
-            );
+            const isSemuaDelivered = dataHariIni.length > 0 && dataHariIni.every(row => (row.status || "").toUpperCase().includes("DELIVERED"));
 
             let finalData = isSemuaDelivered ? dataMendatang : data;
 
-            const priority = { 
-                "DELIVERED": 1, 
-                "PROSES": 2, 
-                "TERJADWAL": 3, 
-                "LANGSIR": 4, 
-                "TUNGGU": 5, 
-                "INFO": 5 
-            };
+            const priority = { "DELIVERED": 1, "PROSES": 2, "TERJADWAL": 3, "LANGSIR": 4, "TUNGGU": 5, "INFO": 5 };
             
             finalData.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
@@ -296,7 +267,6 @@
                     const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
                         weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' 
                     }).toUpperCase();
-                    
                     const divider = document.createElement('tr');
                     divider.innerHTML = `<td colspan="4" class="date-divider"> ${formattedDate} </td>`;
                     tbody.appendChild(divider);
@@ -305,7 +275,6 @@
 
                 const statusRaw = (row.status || "").toUpperCase();
                 let statusClass = "st-terjadwal";
-
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
@@ -318,13 +287,13 @@
                             <div class="nopol-block">${row.nopol || '-'}</div>
                             <div class="sopir-name">${row.sopir || '-'}</div>
                         </div>
-                        <span class="dest-label">TO : ${row.delivery_to || '-'} | <span class="loc-tag">${row.lokasi || '-'}</span></span>
+                        <span style="font-size:11px; color:var(--text-dim); display:block; margin-top:5px; font-weight:600;">
+                            TO : ${row.delivery_to || '-'} | <span style="color:var(--accent-gold);">${row.lokasi || '-'}</span>
+                        </span>
                     </td>
-                    <td style="color:var(--accent-gold); text-align:center; font-size:15px; font-weight:600;">${row.jumlah_keluar || '0'}</td>
-                    <td>
-                        <span class="depo-text">${row.supplier || '-'}</span>
-                    </td>
-                    <td class="${statusClass}" style="text-align:right; font-size:12px; font-weight:700; letter-spacing:0.5px;">${statusRaw}</td>
+                    <td style="color:var(--accent-gold); text-align:center; font-size:16px; font-weight:800;">${row.jumlah_keluar || '0'}</td>
+                    <td><span style="color:var(--text-dim); font-size:12px; font-weight:600;">${row.supplier || '-'}</span></td>
+                    <td class="${statusClass}" style="text-align:right; font-size:12px; font-weight:800; letter-spacing:0.5px;">${statusRaw}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -333,18 +302,9 @@
         function updateClock() {
             const now = getWIB();
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
-            if(now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
-                loadDashboard();
-            }
         }
 
-        const channel = _supabase.channel('schema-db-changes')
-            .on('postgres_changes', 
-                { event: '*', schema: 'public', table: 'data_pengiriman' }, 
-                () => { loadDashboard(); }
-            )
-            .subscribe();
-
+        _supabase.channel('schema-db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => { loadDashboard(); }).subscribe();
         setInterval(updateClock, 1000);
         setInterval(loadDashboard, 30000); 
         loadDashboard();

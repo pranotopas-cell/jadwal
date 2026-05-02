@@ -25,13 +25,12 @@
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        /* KUNCI BODY AGAR TIDAK SCROLL LUAR */
         body { 
             font-family: 'Segoe UI', Roboto, sans-serif;
             margin: 0; 
             background-color: var(--bg-airport); 
             color: var(--text-primary);
-            height: 100vh; /* Paksa tinggi layar pas */
+            height: 100vh;
             height: 100dvh;
             display: flex;
             flex-direction: column;
@@ -50,35 +49,32 @@
 
         .header h1 { 
             margin: 0; 
-            font-size: clamp(16px, 2.5vh, 22px); 
-            letter-spacing: 2px; 
+            font-size: clamp(14px, 2.5vh, 22px); 
+            letter-spacing: 1px; 
             color: var(--text-white);
             font-weight: 800; 
         }
         
         #targetDate { 
-            font-size: clamp(10px, 1.5vh, 13px); 
+            font-size: clamp(9px, 1.2vh, 13px); 
             color: var(--accent-gold); 
-            font-weight: 600; 
         }
         
         #clock { 
-            font-size: clamp(20px, 3.5vh, 28px); 
+            font-size: clamp(18px, 3.5vh, 28px); 
             font-weight: 800; 
             color: var(--text-white); 
         }
 
-        /* AREA UTAMA DENGAN SCROLL INTERNAL */
         .main-content { 
             flex: 1; 
-            overflow-y: auto; /* Hanya tabel yang boleh scroll jika data overload */
+            overflow-y: auto; 
             width: 100%;
             background: linear-gradient(180deg, var(--bg-airport) 0%, #050505 100%);
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         
-        /* HEADER TABEL TETAP DI ATAS */
         thead {
             position: sticky;
             top: 0;
@@ -87,84 +83,69 @@
         }
 
         th {
-            color: var(--text-dim);
+            color: var(--text-secondary);
             text-align: left;
-            padding: 1.5vh 15px;
-            font-size: clamp(10px, 1.2vh, 12px);
-            letter-spacing: 1px;
+            padding: 1.2vh 8px;
+            font-size: clamp(9px, 1.1vh, 12px);
             text-transform: uppercase;
             border-bottom: 2px solid var(--border-color);
         }
 
         td { 
-            padding: 1.2vh 15px; 
-            font-size: clamp(12px, 1.6vh, 15px); 
+            padding: 1vh 8px; 
+            font-size: clamp(10px, 1.4vh, 15px); 
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
+            word-wrap: break-word;
         }
 
-        tr:hover td { background-color: var(--card-bg); }
-
-        .date-divider {
-            background: rgba(255,255,255,0.03);
-            color: var(--accent-gold);
-            text-align: center;
-            font-size: 11px;
-            padding: 8px 0;
-            font-weight: 800;
-            letter-spacing: 2px;
-        }
-
-        /* STATUS & ANIMASI */
+        /* STATUS COLORS */
         .st-proses { color: var(--color-proses); animation: smooth-blink 2s infinite; }
         .st-langsir { color: var(--color-langsir); animation: smooth-blink 2.5s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
         .st-delivered { color: var(--color-delivered); }
 
-        @keyframes smooth-blink { 
-            0%, 100% { opacity: 1; } 50% { opacity: 0.4; } 
-        }
+        @keyframes smooth-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
         .nopol-block { 
             background: #24282b; 
             color: #fff; 
-            padding: 4px 8px; 
-            border-radius: 4px; 
+            padding: 2px 4px; 
+            border-radius: 3px; 
             font-weight: 800; 
-            font-size: clamp(10px, 1.3vh, 12px);
+            font-size: 0.85em;
             display: inline-block;
-            min-width: 80px;
-            text-align: center;
         }
 
-        .sopir-name { color: var(--text-white); font-weight: 700; margin-left: 8px; }
+        .sopir-name { color: var(--text-white); font-weight: 700; display: block; margin-top: 2px; }
 
         .dest-text {
-            font-size: clamp(10px, 1.3vh, 12px); 
+            font-size: 0.8em; 
             color: var(--text-secondary); 
             display: block; 
-            margin-top: 4px; 
         }
 
         .footer-marquee {
             flex-shrink: 0;
             background: #000; 
             color: var(--text-secondary); 
-            height: 30px; 
-            line-height: 30px; 
-            font-size: 11px;
-            border-top: 1px solid var(--border-color);
+            height: 25px; 
+            line-height: 25px; 
+            font-size: 10px;
         }
 
-        /* PENYESUAIAN HP */
+        /* PENGATURAN LEBAR KOLOM AGAR MUAT DI HP */
+        .col-unit { width: 40%; }
+        .col-qty { width: 12%; text-align: center; }
+        .col-store { width: 25%; }
+        .col-status { width: 23%; text-align: right; }
+
         @media (max-width: 600px) {
-            th:nth-child(2), td:nth-child(2), /* QTY */
-            th:nth-child(3), td:nth-child(3)  /* STORAGE */ {
-                display: none; /* Sembunyikan kolom kurang penting di HP agar tidak sesak */
-            }
-            th:nth-child(1) { width: 70% !important; }
-            th:nth-child(4) { width: 30% !important; }
+            td, th { padding: 8px 4px; }
+            .nopol-block { font-size: 9px; }
+            .sopir-name { font-size: 10px; }
+            .dest-text { font-size: 9px; }
         }
     </style>
 </head>
@@ -177,9 +158,6 @@
         </div>
         <div class="clock-container">
             <div id="clock">00:00:00</div>
-            <div class="cloud-status" style="font-size: 9px; display: flex; align-items: center; justify-content: flex-end; gap: 5px; color: var(--color-proses);">
-                <span style="height:6px; width:6px; background:var(--color-proses); border-radius:50%;"></span> ONLINE
-            </div>
         </div>
     </div>
 
@@ -187,10 +165,10 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 45%;">UNIT / DRIVER / DEST</th>
-                    <th style="width: 10%; text-align: center;">QTY</th>
-                    <th style="width: 25%;">STORAGE</th>
-                    <th style="width: 20%; text-align: right;">STATUS</th>
+                    <th class="col-unit">UNIT / DRIVER</th>
+                    <th class="col-qty">QTY</th>
+                    <th class="col-store">STORAGE</th>
+                    <th class="col-status">STATUS</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -198,9 +176,7 @@
     </div>
 
     <div class="footer-marquee">
-        <marquee scrollamount="4">
-            <strong>NOTE : SAFETY FIRST • PERIKSA KENDARAAN SEBELUM BERANGKAT • PATUHI BATAS KECEPATAN • DILARANG MENGGUNAKAN HP SAAT MENGEMUDI • LAPORKAN KENDALA SEGERA...</strong>
-        </marquee>
+        <marquee>SAFETY FIRST • PERIKSA KENDARAAN • PATUHI BATAS KECEPATAN • DILARANG MENGGUNAKAN HP SAAT MENGEMUDI</marquee>
     </div>
 
     <script>
@@ -217,7 +193,7 @@
             const isoHariIni = now.toISOString().split('T')[0];
             
             document.getElementById('targetDate').innerText = now.toLocaleDateString('id-ID', { 
-                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+                weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
             }).toUpperCase();
 
             const { data, error } = await _supabase
@@ -228,11 +204,7 @@
 
             if (error) return;
 
-            const dataHariIni = data.filter(row => row.tanggal === isoHariIni);
-            const dataMendatang = data.filter(row => row.tanggal > isoHariIni);
-            const isSemuaDelivered = dataHariIni.length > 0 && dataHariIni.every(row => (row.status || "").toUpperCase().includes("DELIVERED"));
-
-            renderData(isSemuaDelivered ? dataMendatang : data, isoHariIni);
+            renderData(data, isoHariIni);
         }
 
         function renderData(data, isoHariIni) {
@@ -240,20 +212,10 @@
             tbody.innerHTML = '';
             let lastDate = isoHariIni;
 
-            const priority = { "PROSES": 1, "LANGSIR": 2, "TERJADWAL": 3, "TUNGGU": 4, "DELIVERED": 5 };
-
-            data.sort((a, b) => {
-                if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
-                let pA = 99, pB = 99;
-                Object.keys(priority).forEach(k => { if(a.status?.toUpperCase().includes(k)) pA = priority[k]; });
-                Object.keys(priority).forEach(k => { if(b.status?.toUpperCase().includes(k)) pB = priority[k]; });
-                return pA - pB;
-            });
-
             data.forEach((row) => {
                 if (row.tanggal > lastDate) {
-                    const fmtDate = new Date(row.tanggal).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
-                    tbody.innerHTML += `<tr><td colspan="4" class="date-divider">JADWAL ${fmtDate}</td></tr>`;
+                    const fmtDate = new Date(row.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }).toUpperCase();
+                    tbody.innerHTML += `<tr><td colspan="4" style="background:#1a1d20; color:#c9b084; text-align:center; font-size:10px; font-weight:800; padding:5px;">${fmtDate}</td></tr>`;
                     lastDate = row.tanggal;
                 }
 
@@ -267,15 +229,13 @@
                 tbody.innerHTML += `
                     <tr>
                         <td>
-                            <div style="display:flex; align-items:center;">
-                                <span class="nopol-block">${row.nopol || '-'}</span>
-                                <span class="sopir-name">${row.sopir || '-'}</span>
-                            </div>
-                            <span class="dest-text">TO: ${row.delivery_to || '-'} | <span style="color:var(--accent-gold)">${row.lokasi || '-'}</span></span>
+                            <span class="nopol-block">${row.nopol || '-'}</span>
+                            <span class="sopir-name">${row.sopir || '-'}</span>
+                            <span class="dest-text">${row.lokasi || '-'}</span>
                         </td>
                         <td style="text-align:center; font-weight:800; color:var(--accent-gold);">${row.jumlah_keluar || 0}</td>
-                        <td style="color:var(--text-secondary); font-size:12px;">${row.supplier || '-'}</td>
-                        <td class="${sClass}" style="text-align:right; font-weight:800;">${s}</td>
+                        <td style="color:var(--text-secondary); font-size:0.85em;">${row.supplier || '-'}</td>
+                        <td class="${sClass}" style="text-align:right; font-weight:800; font-size:0.85em;">${s}</td>
                     </tr>
                 `;
             });

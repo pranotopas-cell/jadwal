@@ -292,11 +292,11 @@
             data.forEach(row => {
                 if (row.tanggal > lastDate) {
                     const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
-                        weekday: 'long', day: 'numeric', month: 'short' 
+                        weekday: 'long', day: 'numeric', month: 'short' ,year: 'numeric'
                     }).toUpperCase();
                     
                     const divider = document.createElement('tr');
-                    divider.innerHTML = `<td colspan="4" class="date-divider">--- JADWAL UNTUK ${formattedDate} ---</td>`;
+                    divider.innerHTML = `<td colspan="4" class="date-divider"> ${formattedDate} </td>`;
                     tbody.appendChild(divider);
                     lastDate = row.tanggal;
                 }

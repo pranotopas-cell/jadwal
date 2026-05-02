@@ -17,7 +17,6 @@
             --color-terjadwal: #b0bec5;
             --color-tunggu: #e57373;
             --color-langsir: #fff176;
-            --color-delivered: #4db6ac; /* Warna tambahan untuk Delivered agar soft */
             --border-blue: #1e293b;
         }
 
@@ -130,12 +129,10 @@
             text-transform: uppercase;
         }
 
-        /* Status Styling */
         .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); animation: blink 2s infinite; } 
-        .st-delivered { color: var(--color-delivered); opacity: 0.8; }
 
         .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
         
@@ -167,6 +164,15 @@
             display: block;
             padding-left: 2px;
             font-weight: 600;
+        }
+
+        .location-label {
+            font-size: 12px;
+            color: var(--text-gold-soft);
+            display: block;
+            padding-left: 2px;
+            font-weight: 500;
+            margin-top: 2px;
         }
 
         .time-cell { line-height: 1.2; }
@@ -235,7 +241,6 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
-            // Mengambil semua data dari hari ini ke depan tanpa filter status
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
@@ -246,10 +251,11 @@
                 return;
             }
 
-            // Prioritas urutan tampilan berdasarkan status
-            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4, "DELIVERED": 5 };
+            let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
             
-            data.sort((a, b) => {
+            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
+            
+            filtered.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                 const statusA = (a.status || "").toUpperCase();
                 const statusB = (b.status || "").toUpperCase();
@@ -259,7 +265,7 @@
                 return valA - valB;
             });
 
-            renderData(data, isoHariIni);
+            renderData(filtered, isoHariIni);
         }
 
         function renderData(data, isoHariIni) {
@@ -268,7 +274,6 @@
             let lastDate = isoHariIni;
 
             data.forEach(row => {
-                // Tambahkan divider jika tanggal berubah
                 if (row.tanggal > lastDate) {
                     const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
                         weekday: 'long', day: 'numeric', month: 'short' 
@@ -283,11 +288,9 @@
                 const statusRaw = (row.status || "").toUpperCase();
                 let statusClass = "st-terjadwal";
 
-                // Penentuan class CSS berdasarkan kata kunci status
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
-                else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
                 else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
 
                 const tr = document.createElement('tr');
@@ -298,6 +301,7 @@
                             <div class="sopir-name">${row.sopir || '-'}</div>
                         </div>
                         <span class="dest-label">TO : ${row.delivery_to || '-'}</span>
+                        <span class="location-label">LOKASI : ${row.lokasi || '-'}</span>
                     </td>
                     <td style="color:var(--text-gold-soft); text-align:center; font-size:16px; font-weight:bold;">${row.jumlah_keluar || '0'}</td>
                     <td class="time-cell">
@@ -314,7 +318,6 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        // Realtime update dari Supabase
         const channel = _supabase.channel('schema-db-changes')
             .on('postgres_changes', 
                 { 

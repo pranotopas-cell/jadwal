@@ -7,145 +7,181 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-airport: #0f1113; 
-            --header-bg: #15181a; 
-            --card-bg: #1a1d20; 
-            --border-color: #24282b; 
-            --text-white: #e1e4e8; 
-            --text-primary: #cbd0d6; 
-            --text-secondary: #9aa1a8; 
-            --accent-gold: #c9b084; 
+            /* Palette Warna Baru yang Lebih Soft */
+            --bg-airport: #0a0f1d;          /* Biru gelap lebih soft */
+            --header-bg: #050811;
+            --text-gold-soft: #e5c07b;      /* Kuning Emas Soft */
+            --text-white-soft: #d1d5db;     /* Putih keabuan agar tidak silau */
+            --blue-soft: #7fb4ca;           /* Biru pastel soft */
             
-            --color-proses: #98ffb3;      
-            --color-terjadwal: #b4c8db;   
-            --color-tunggu: #e0acac;      
-            --color-langsir: #ffdf9e;     
-            --color-delivered: #c4d9f2;  
+            /* Status Colors (Versi Desaturated/Soft) */
+            --color-proses: #81c784;        /* Hijau soft */
+            --color-terjadwal: #b0bec5;     /* Putih kebiruan soft */
+            --color-tunggu: #e57373;        /* Merah soft */
+            --color-langsir: #fff176;       /* Kuning soft */
+            --border-blue: #1e293b;
         }
 
+        /* Perbaikan Kompatibilitas HP */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body { 
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0; 
             background-color: var(--bg-airport); 
-            color: var(--text-primary);
+            color: var(--text-white-soft);
             height: 100vh;
-            height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden; 
+            position: relative; 
+            width: 100%;
         }
 
         .header {
             background: var(--header-bg);
-            padding: 1vh 2vw;
+            padding: 12px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 2px solid var(--text-gold-soft);
             flex-shrink: 0;
+            z-index: 101;
         }
-
+        
         .header h1 { 
             margin: 0; 
-            font-size: clamp(14px, 2.5vh, 22px); 
-            letter-spacing: 1px; 
-            color: var(--text-white);
-            font-weight: 800; 
+            font-size: 18px; 
+            letter-spacing: 2px; 
+            color: var(--text-white-soft); 
+            font-weight: 600;
         }
         
         #targetDate { 
-            font-size: clamp(9px, 1.2vh, 13px); 
-            color: var(--accent-gold); 
+            font-size: 13px; 
+            color: var(--text-gold-soft); 
+            font-weight: 500; 
+            margin-top: 4px;
         }
         
-        #clock { 
-            font-size: clamp(18px, 3.5vh, 28px); 
-            font-weight: 800; 
-            color: var(--text-white); 
+        .clock-container { text-align: right; }
+        #clock { font-size: 18px; font-weight: 600; color: var(--text-white-soft); }
+        
+        .cloud-status {
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+            color: var(--color-proses);
+            margin-top: 2px;
+            text-transform: uppercase;
+            font-weight: bold;
+            opacity: 0.8;
+        }
+        
+        .dot {
+            height: 6px;
+            width: 6px;
+            background-color: var(--color-proses);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
         }
 
+        /* Area Scroll Utama */
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; 
             width: 100%;
-            background: linear-gradient(180deg, var(--bg-airport) 0%, #050505 100%);
+            padding-bottom: 60px; 
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         
-        thead {
+        th {
+            background: rgba(5, 8, 17, 0.9);
+            color: var(--text-gold-soft);
+            text-align: left;
+            padding: 14px 8px;
+            font-size: 10px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-blue);
             position: sticky;
             top: 0;
             z-index: 10;
-            background: var(--header-bg);
-        }
-
-        th {
-            color: var(--text-secondary);
-            text-align: left;
-            padding: 1.2vh 8px;
-            font-size: clamp(9px, 1.1vh, 12px);
-            text-transform: uppercase;
-            border-bottom: 2px solid var(--border-color);
+            letter-spacing: 1px;
         }
 
         td { 
-            padding: 1vh 8px; 
-            font-size: clamp(10px, 1.4vh, 15px); 
-            border-bottom: 1px solid var(--border-color);
-            vertical-align: middle;
+            padding: 12px 8px; 
+            font-size: 13px; 
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            vertical-align: top;
             word-wrap: break-word;
         }
 
-        /* STATUS COLORS */
-        .st-proses { color: var(--color-proses); animation: smooth-blink 2s infinite; }
-        .st-langsir { color: var(--color-langsir); animation: smooth-blink 2.5s infinite; }
+        .date-divider {
+            background: rgba(30, 41, 59, 0.5);
+            color: var(--text-gold-soft);
+            text-align: center;
+            font-size: 10px;
+            padding: 10px 0;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Status Styling */
+        .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
-        .st-delivered { color: var(--color-delivered); }
+        .st-langsir { color: var(--color-langsir); animation: blink 2s infinite; } 
 
-        @keyframes smooth-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
+        .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        
         .nopol-block { 
-            background: #24282b; 
-            color: #fff; 
-            padding: 2px 4px; 
-            border-radius: 3px; 
+            background: #e2e8f0; 
+            color: #1e293b; 
+            padding: 3px 6px; 
+            border-radius: 4px; 
             font-weight: 800; 
-            font-size: 0.85em;
-            display: inline-block;
+            font-size: 10px;  
+            min-width: 75px;  
+            text-align: center;
+            flex-shrink: 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        .sopir-name { color: var(--text-white); font-weight: 700; display: block; margin-top: 2px; }
-
-        .dest-text {
-            font-size: 0.8em; 
-            color: var(--text-secondary); 
-            display: block; 
+        .sopir-name { 
+            color: var(--blue-soft); 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 12px;
+            font-weight: 600;
         }
+        
+        .dest-label { 
+            font-size: 13px; 
+            color: var(--text-white-soft); 
+            display: block;
+            padding-left: 2px;
+            font-weight: 600;
+        }
+
+        .time-cell { line-height: 1.2; }
+        .depo-text { color: var(--blue-soft); display: block; font-size: 11px; font-weight: 500; }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.5; } }
 
         .footer-marquee {
-            flex-shrink: 0;
-            background: #000; 
-            color: var(--text-secondary); 
-            height: 25px; 
-            line-height: 25px; 
-            font-size: 10px;
-        }
-
-        /* PENGATURAN LEBAR KOLOM AGAR MUAT DI HP */
-        .col-unit { width: 40%; }
-        .col-qty { width: 12%; text-align: center; }
-        .col-store { width: 25%; }
-        .col-status { width: 23%; text-align: right; }
-
-        @media (max-width: 600px) {
-            td, th { padding: 8px 4px; }
-            .nopol-block { font-size: 9px; }
-            .sopir-name { font-size: 10px; }
-            .dest-text { font-size: 9px; }
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #000; color: var(--text-gold-soft);
+            height: 35px; line-height: 35px; font-size: 11px;
+            font-weight: 500; border-top: 1px solid var(--text-gold-soft); z-index: 100;
         }
     </style>
 </head>
@@ -154,10 +190,13 @@
     <div class="header">
         <div>
             <h1>SCHEDULE DELIVERY</h1>
-            <div id="targetDate">LOADING...</div>
+            <div id="targetDate">MEMUAT TANGGAL...</div>
         </div>
         <div class="clock-container">
             <div id="clock">00:00:00</div>
+            <div class="cloud-status">
+                <span class="dot"></span> CLOUD ONLINE
+            </div>
         </div>
     </div>
 
@@ -165,10 +204,10 @@
         <table>
             <thead>
                 <tr>
-                    <th class="col-unit">UNIT / DRIVER</th>
-                    <th class="col-qty">QTY</th>
-                    <th class="col-store">STORAGE</th>
-                    <th class="col-status">STATUS</th>
+                    <th style="width: 50%;">UNIT / DEST</th>
+                    <th style="width: 12%; text-align: center;">QTY</th>
+                    <th style="width: 20%;">STORAGE</th>
+                    <th style="width: 18%; text-align: right;">STATUS</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -176,7 +215,9 @@
     </div>
 
     <div class="footer-marquee">
-        <marquee>SAFETY FIRST • PERIKSA KENDARAAN • PATUHI BATAS KECEPATAN • DILARANG MENGGUNAKAN HP SAAT MENGEMUDI</marquee>
+        <marquee scrollamount="3">
+            NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST: PASTIKAN SEGEL TERPASANG SEMPURNA • PERIKSA TEKANAN BAN DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP (HELM, SEPATU, ROMPI) DI TEMPAT PENGAMBILAN DAN PEMBONGKARAN • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN MAX. DALAM DAN LUAR KOTA • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA BAIK ARMADA, SAAT LOADING BBM DAN SAAT BONGKAR KE BAGIAN OPERASIONAL..
+        </marquee>
     </div>
 
     <script>
@@ -189,22 +230,38 @@
         }
 
         async function loadDashboard() {
-            const now = getWIB();
-            const isoHariIni = now.toISOString().split('T')[0];
+            const hariIni = getWIB();
+            const isoHariIni = hariIni.toISOString().split('T')[0];
             
-            document.getElementById('targetDate').innerText = now.toLocaleDateString('id-ID', { 
-                weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+            document.getElementById('targetDate').innerText = hariIni.toLocaleDateString('id-ID', { 
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
-                .gte('tanggal', isoHariIni)
-                .order('tanggal', { ascending: true });
+                .gte('tanggal', isoHariIni);
 
-            if (error) return;
+            if (error) {
+                console.error('Error fetching data:', error);
+                return;
+            }
 
-            renderData(data, isoHariIni);
+            let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
+            
+            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
+            
+            filtered.sort((a, b) => {
+                if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
+                const statusA = (a.status || "").toUpperCase();
+                const statusB = (b.status || "").toUpperCase();
+                let valA = 99, valB = 99;
+                Object.keys(priority).forEach(key => { if(statusA.includes(key)) valA = priority[key]; });
+                Object.keys(priority).forEach(key => { if(statusB.includes(key)) valB = priority[key]; });
+                return valA - valB;
+            });
+
+            renderData(filtered, isoHariIni);
         }
 
         function renderData(data, isoHariIni) {
@@ -212,42 +269,66 @@
             tbody.innerHTML = '';
             let lastDate = isoHariIni;
 
-            data.forEach((row) => {
+            data.forEach(row => {
                 if (row.tanggal > lastDate) {
-                    const fmtDate = new Date(row.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }).toUpperCase();
-                    tbody.innerHTML += `<tr><td colspan="4" style="background:#1a1d20; color:#c9b084; text-align:center; font-size:10px; font-weight:800; padding:5px;">${fmtDate}</td></tr>`;
+                    const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
+                        weekday: 'long', day: 'numeric', month: 'short' 
+                    }).toUpperCase();
+                    
+                    const divider = document.createElement('tr');
+                    divider.innerHTML = `<td colspan="4" class="date-divider">--- JADWAL UNTUK ${formattedDate} ---</td>`;
+                    tbody.appendChild(divider);
                     lastDate = row.tanggal;
                 }
 
-                const s = (row.status || "").toUpperCase();
-                let sClass = "st-terjadwal";
-                if(s.includes("PROSES")) sClass = "st-proses";
-                else if(s.includes("LANGSIR")) sClass = "st-langsir";
-                else if(s.includes("DELIVERED")) sClass = "st-delivered";
-                else if(s.includes("TUNGGU")) sClass = "st-tunggu";
+                const statusRaw = (row.status || "").toUpperCase();
+                let statusClass = "st-terjadwal";
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td>
-                            <span class="nopol-block">${row.nopol || '-'}</span>
-                            <span class="sopir-name">${row.sopir || '-'}</span>
-                            <span class="dest-text">${row.lokasi || '-'}</span>
-                        </td>
-                        <td style="text-align:center; font-weight:800; color:var(--accent-gold);">${row.jumlah_keluar || 0}</td>
-                        <td style="color:var(--text-secondary); font-size:0.85em;">${row.supplier || '-'}</td>
-                        <td class="${sClass}" style="text-align:right; font-weight:800; font-size:0.85em;">${s}</td>
-                    </tr>
+                if (statusRaw.includes("PROSES")) statusClass = "st-proses";
+                else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
+                else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
+                else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div class="flight-cell">
+                            <div class="nopol-block">${row.nopol || '-'}</div>
+                            <div class="sopir-name">${row.sopir || '-'}</div>
+                        </div>
+                        <span class="dest-label">TO : ${row.delivery_to || '-'}</span>
+                    </td>
+                    <td style="color:var(--text-gold-soft); text-align:center; font-size:16px; font-weight:bold;">${row.jumlah_keluar || '0'}</td>
+                    <td class="time-cell">
+                        <span class="depo-text">${row.supplier || '-'}</span>
+                    </td>
+                    <td class="${statusClass}" style="text-align:right; font-size:10px; font-weight:900; letter-spacing:0.5px;">${statusRaw}</td>
                 `;
+                tbody.appendChild(tr);
             });
         }
 
         function updateClock() {
-            document.getElementById('clock').innerText = getWIB().toLocaleTimeString('id-ID', {hour12:false});
+            const now = getWIB();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
+        const channel = _supabase.channel('schema-db-changes')
+            .on('postgres_changes', 
+                { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'data_pengiriman' 
+                }, 
+                (payload) => {
+                    loadDashboard();
+                }
+            )
+            .subscribe();
+
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 30000);
-        _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, loadDashboard).subscribe();
+        setInterval(loadDashboard, 300000); 
+        
         loadDashboard();
     </script>
 </body>

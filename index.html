@@ -7,22 +7,20 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            /* Palette Warna Baru yang Lebih Soft */
-            --bg-airport: #0a0f1d;          /* Biru gelap lebih soft */
+            --bg-airport: #0a0f1d;
             --header-bg: #050811;
-            --text-gold-soft: #e5c07b;      /* Kuning Emas Soft */
-            --text-white-soft: #d1d5db;     /* Putih keabuan agar tidak silau */
-            --blue-soft: #7fb4ca;           /* Biru pastel soft */
+            --text-gold-soft: #e5c07b;
+            --text-white-soft: #d1d5db;
+            --blue-soft: #7fb4ca;
             
-            /* Status Colors (Versi Desaturated/Soft) */
-            --color-proses: #81c784;        /* Hijau soft */
-            --color-terjadwal: #b0bec5;     /* Putih kebiruan soft */
-            --color-tunggu: #e57373;        /* Merah soft */
-            --color-langsir: #fff176;       /* Kuning soft */
+            --color-proses: #81c784;
+            --color-terjadwal: #b0bec5;
+            --color-tunggu: #e57373;
+            --color-langsir: #fff176;
+            --color-delivered: #4db6ac; /* Warna tambahan untuk Delivered agar soft */
             --border-blue: #1e293b;
         }
 
-        /* Perbaikan Kompatibilitas HP */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body { 
@@ -89,7 +87,6 @@
             animation: pulse 2s infinite;
         }
 
-        /* Area Scroll Utama */
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
@@ -138,6 +135,7 @@
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); animation: blink 2s infinite; } 
+        .st-delivered { color: var(--color-delivered); opacity: 0.8; }
 
         .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
         
@@ -237,6 +235,7 @@
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             }).toUpperCase();
 
+            // Mengambil semua data dari hari ini ke depan tanpa filter status
             const { data, error } = await _supabase
                 .from('data_pengiriman')
                 .select('*')
@@ -247,11 +246,10 @@
                 return;
             }
 
-            let filtered = data.filter(item => !(item.status || "").toUpperCase().includes("DELIVERED"));
+            // Prioritas urutan tampilan berdasarkan status
+            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4, "DELIVERED": 5 };
             
-            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4 };
-            
-            filtered.sort((a, b) => {
+            data.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                 const statusA = (a.status || "").toUpperCase();
                 const statusB = (b.status || "").toUpperCase();
@@ -261,7 +259,7 @@
                 return valA - valB;
             });
 
-            renderData(filtered, isoHariIni);
+            renderData(data, isoHariIni);
         }
 
         function renderData(data, isoHariIni) {
@@ -270,6 +268,7 @@
             let lastDate = isoHariIni;
 
             data.forEach(row => {
+                // Tambahkan divider jika tanggal berubah
                 if (row.tanggal > lastDate) {
                     const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
                         weekday: 'long', day: 'numeric', month: 'short' 
@@ -284,9 +283,11 @@
                 const statusRaw = (row.status || "").toUpperCase();
                 let statusClass = "st-terjadwal";
 
+                // Penentuan class CSS berdasarkan kata kunci status
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
+                else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
                 else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
 
                 const tr = document.createElement('tr');
@@ -313,6 +314,7 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
+        // Realtime update dari Supabase
         const channel = _supabase.channel('schema-db-changes')
             .on('postgres_changes', 
                 { 

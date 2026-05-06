@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
+            /* Warna sesuai preferensi: hijau tua, emas, dan biru donker */
             --bg-airport: #0a0f1d;
             --header-bg: #050811;
             --text-gold-soft: #e5c07b;
@@ -49,23 +50,29 @@
         
         .header h1 { 
             margin: 0; 
-            font-size: 22px; /* Diperbesar */
+            font-size: 22px;
             letter-spacing: 2px; 
             color: var(--text-white-soft); 
-            font-weight: 800; /* Bold maksimal */
+            font-weight: 800;
         }
         
         #targetDate { 
-            font-size: 18px; /* Ukuran disamakan dengan jam */
+            font-size: 18px; 
             color: var(--text-gold-soft); 
-            font-weight: 700; /* Bold */
+            font-weight: 700; 
             margin-top: 4px;
         }
         
-        .clock-container { text-align: right; }
+        .clock-container { 
+            text-align: right; 
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
         #clock { 
-            font-size: 18px; /* Ukuran sama dengan hari */
-            font-weight: 700; /* Bold */
+            font-size: 18px; 
+            font-weight: 700; 
             color: var(--text-white-soft); 
         }
         
@@ -73,7 +80,6 @@
             font-size: 11px;
             display: flex;
             align-items: center;
-            justify-content: flex-end;
             gap: 5px;
             color: var(--color-proses);
             margin-top: 2px;
@@ -91,6 +97,43 @@
             animation: pulse 2s infinite;
         }
 
+        /* Audio Control Header Style */
+        .audio-header-control {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            border-radius: 15px;
+            border: 1px solid rgba(229, 192, 123, 0.3);
+        }
+
+        #audio-status {
+            font-size: 9px;
+            color: var(--text-gold-soft);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .audio-btn {
+            background: var(--text-gold-soft);
+            border: none;
+            color: #000;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+        .audio-btn:active { transform: scale(0.9); }
+
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
@@ -106,14 +149,14 @@
             color: var(--text-gold-soft);
             text-align: left;
             padding: 14px 8px;
-            font-size: 12px; /* Sedikit lebih besar agar bold terlihat jelas */
+            font-size: 12px; 
             text-transform: uppercase;
             border-bottom: 1px solid var(--border-blue);
             position: sticky;
             top: 0;
             z-index: 10;
             letter-spacing: 1px;
-            font-weight: 900; /* Judul Tabel Bold */
+            font-weight: 900;
         }
 
         td { 
@@ -219,8 +262,16 @@
             <div class="cloud-status">
                 <span class="dot"></span> CLOUD ONLINE
             </div>
+            <!-- Audio Control (Play Radio Al-Quran) -->
+            <div class="audio-header-control">
+                <span id="audio-status">RADIO OFF</span>
+                <button class="audio-btn" id="playPauseBtn" onclick="toggleAudio()">▶</button>
+            </div>
         </div>
     </div>
+
+    <!-- Audio Element -->
+    <audio id="murottalAudio" preload="none"></audio>
 
     <div class="main-content">
         <table>
@@ -247,6 +298,53 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // --- AUDIO ENGINE (Radio Al-Quran mp3quran.net) ---
+        const audio = document.getElementById('murottalAudio');
+        const btn = document.getElementById('playPauseBtn');
+        const statusLabel = document.getElementById('audio-status');
+
+        // Link streaming radio dari mp3quran.net
+        const streamSources = [
+            "https://live.mp3quran.net/makkah", // Radio Makkah
+            "https://live.mp3quran.net/madinah", // Radio Madinah
+            "https://qurango.net/radio/mix"      // Radio Murottal Mix
+        ];
+        
+        let currentSourceIndex = 0;
+
+        function toggleAudio() {
+            if (audio.paused || audio.src === "") {
+                playSource(currentSourceIndex);
+            } else {
+                audio.pause();
+                audio.src = ""; 
+                btn.innerText = "▶";
+                statusLabel.innerText = "RADIO OFF";
+            }
+        }
+
+        function playSource(index) {
+            if (index >= streamSources.length) {
+                statusLabel.innerText = "LINK GAGAL";
+                btn.innerText = "▶";
+                currentSourceIndex = 0; 
+                return;
+            }
+
+            statusLabel.innerText = "CONNECTING...";
+            audio.src = streamSources[index];
+            
+            audio.play().then(() => {
+                btn.innerText = "⏸";
+                statusLabel.innerText = "PLAYING";
+            }).catch(err => {
+                console.log("Link error, mencoba link cadangan...");
+                currentSourceIndex++;
+                playSource(currentSourceIndex);
+            });
+        }
+
+        // --- DASHBOARD ENGINE ---
         function getWIB() {
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }
@@ -264,10 +362,7 @@
                 .select('*')
                 .gte('tanggal', isoHariIni);
 
-            if (error) {
-                console.error('Error fetching data:', error);
-                return;
-            }
+            if (error) return;
 
             const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4, "DELIVERED": 5 };
             
@@ -308,7 +403,6 @@
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
                 else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
-                else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -337,22 +431,12 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
         }
 
-        const channel = _supabase.channel('schema-db-changes')
-            .on('postgres_changes', 
-                { 
-                    event: '*', 
-                    schema: 'public', 
-                    table: 'data_pengiriman' 
-                }, 
-                (payload) => {
-                    loadDashboard();
-                }
-            )
+        _supabase.channel('schema-db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
             .subscribe();
 
         setInterval(updateClock, 1000);
         setInterval(loadDashboard, 180000); 
-        
         loadDashboard();
     </script>
 </body>

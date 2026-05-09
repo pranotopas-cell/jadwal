@@ -401,9 +401,9 @@
                 const statusRaw = (row.status || "").toUpperCase();
                 let statusClass = "st-terjadwal";
 
-                if (statusRaw.includes("PROSES")) statusClass = "st-proses";
-                else if (statusRaw.includes("OPER")) statusClass = "st-oper";
+                if (statusRaw.includes("PROSES")) statusClass = "st-proses";     
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
+                else if (statusRaw.includes("OPER")) statusClass = "st-oper"
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
                 else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
 

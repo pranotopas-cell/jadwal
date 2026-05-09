@@ -13,7 +13,7 @@
             --text-gold-soft: #e5c07b;
             --text-white-soft: #d1d5db;
             --text-blue-soft: #89cff0;
-                     
+                               
             --color-proses: #98ff98;
             --color-terjadwal: #89cff0;
             --color-tunggu: #ef4444;
@@ -300,16 +300,15 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- AUDIO ENGINE (Radio Al-Quran mp3quran.net) ---
+        // --- AUDIO ENGINE ---
         const audio = document.getElementById('murottalAudio');
         const btn = document.getElementById('playPauseBtn');
         const statusLabel = document.getElementById('audio-status');
 
-        // Link streaming radio dari mp3quran.net
         const streamSources = [
-            "https://live.mp3quran.net/makkah", // Radio Makkah
-            "https://live.mp3quran.net/madinah", // Radio Madinah
-            "https://qurango.net/radio/mix"      // Radio Murottal Mix
+            "https://live.mp3quran.net/makkah",
+            "https://live.mp3quran.net/madinah",
+            "https://qurango.net/radio/mix"
         ];
         
         let currentSourceIndex = 0;
@@ -340,7 +339,6 @@
                 btn.innerText = "⏸";
                 statusLabel.innerText = "PLAYING";
             }).catch(err => {
-                console.log("Link error, mencoba link cadangan...");
                 currentSourceIndex++;
                 playSource(currentSourceIndex);
             });
@@ -364,21 +362,25 @@
                 .select('*')
                 .gte('tanggal', isoHariIni);
 
-            if (error) return;
+            if (error) {
+                console.error("Error fetching data:", error);
+                return;
+            }
 
-            const priority = { "PROSES": 1, "OPER ": 2, "TERJADWAL": 3, "LANGSIR": 4, "TUNGGU/INFO": 5, "DELIVERED": 6 };
+            const priority = { "PROSES": 1, "OPER": 2, "TERJADWAL": 3, "LANGSIR": 4, "TUNGGU/INFO": 5, "DELIVERED": 6 };
             
-            data.sort((a, b) => {
-                if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
-                const statusA = (a.status || "").toUpperCase();
-                const statusB = (b.status || "").toUpperCase();
-                let valA = 99, valB = 99;
-                Object.keys(priority).forEach(key => { if(statusA.includes(key)) valA = priority[key]; });
-                Object.keys(priority).forEach(key => { if(statusB.includes(key)) valB = priority[key]; });
-                return valA - valB;
-            });
-
-            renderData(data, isoHariIni);
+            if (data) {
+                data.sort((a, b) => {
+                    if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
+                    const statusA = (a.status || "").toUpperCase();
+                    const statusB = (b.status || "").toUpperCase();
+                    let valA = 99, valB = 99;
+                    Object.keys(priority).forEach(key => { if(statusA.includes(key)) valA = priority[key]; });
+                    Object.keys(priority).forEach(key => { if(statusB.includes(key)) valB = priority[key]; });
+                    return valA - valB;
+                });
+                renderData(data, isoHariIni);
+            }
         }
 
         function renderData(data, isoHariIni) {
@@ -401,11 +403,11 @@
                 const statusRaw = (row.status || "").toUpperCase();
                 let statusClass = "st-terjadwal";
 
-                if (statusRaw.includes("PROSES")) statusClass = "st-proses";     
-                else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
-                else if (statusRaw.includes("OPER")) statusClass = "st-oper"
-                else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
-                else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";
+                if (statusRaw.includes("PROSES")) { statusClass = "st-proses"; }    
+                else if (statusRaw.includes("LANGSIR")) { statusClass = "st-langsir"; }
+                else if (statusRaw.includes("OPER")) { statusClass = "st-oper"; }
+                else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) { statusClass = "st-tunggu"; }
+                else if (statusRaw.includes("DELIVERED")) { statusClass = "st-delivered"; }
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `

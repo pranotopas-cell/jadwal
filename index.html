@@ -13,12 +13,13 @@
             --text-gold-soft: #e5c07b;
             --text-white-soft: #d1d5db;
             --text-blue-soft: #89cff0;
-            
+                     
             --color-proses: #98ff98;
             --color-terjadwal: #89cff0;
             --color-tunggu: #ef4444;
             --color-langsir: #fff176;
-            --color-delivered: #4db6ac; 
+            --color-delivered: #4db6ac;
+            --color-oper: #ff9800;
             --border-blue: #1e293b;
         }
 
@@ -183,6 +184,7 @@
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); animation: blink 2s infinite; } 
         .st-delivered { color: var(--color-delivered); opacity: 0.8; }
+        .st-oper { color: var(--color-oper); font-weight: 900; animation: blink 1.8s infinite; }
 
         .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
         
@@ -364,7 +366,7 @@
 
             if (error) return;
 
-            const priority = { "PROSES": 1, "TERJADWAL": 2, "LANGSIR": 3, "TUNGGU/INFO": 4, "DELIVERED": 5 };
+            const priority = { "PROSES": 1, "OPER MUATAN": 2, "TERJADWAL": 3, "LANGSIR": 4, "TUNGGU/INFO": 5, "DELIVERED": 6 };
             
             data.sort((a, b) => {
                 if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
@@ -400,6 +402,7 @@
                 let statusClass = "st-terjadwal";
 
                 if (statusRaw.includes("PROSES")) statusClass = "st-proses";
+                else if (statusRaw.includes("OPER MUATAN")) statusClass = "st-oper";
                 else if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                 else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) statusClass = "st-tunggu";
                 else if (statusRaw.includes("DELIVERED")) statusClass = "st-delivered";

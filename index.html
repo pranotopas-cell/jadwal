@@ -209,7 +209,7 @@
             
             <!-- Tombol Audio Di bawah ONLINE -->
             <div class="audio-controls">
-                <span id="audio-status">Radio OFF</span>
+                <span id="audio-status">QUR'AN</span>
                 <button class="play-btn" id="playPauseBtn" onclick="toggleAudio()">▶</button>
             </div>
         </div>
@@ -278,7 +278,7 @@
             
             audio.play().then(() => {
                 btn.innerText = "⏸";
-                statusLabel.innerText = "Playing Murottal";
+                statusLabel.innerText = "Play";
             }).catch(err => {
                 console.log("Stream error, trying next...");
                 currentSourceIndex++;

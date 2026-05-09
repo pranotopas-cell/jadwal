@@ -125,9 +125,18 @@
 
         .main-content { 
             flex: 1; 
-            overflow-y: hidden;
+            overflow-y: auto; /* Default auto untuk HP/Laptop */
             width: 100%;
             padding-bottom: 60px; 
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-blue) transparent;
+        }
+
+        /* Khusus Layar TV / Monitor Besar: Hilangkan scrollbar untuk auto-scroll */
+        @media (min-width: 1200px) {
+            .main-content {
+                overflow-y: hidden;
+            }
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -161,25 +170,14 @@
             text-transform: uppercase;
         }
 
-        /* --- ANIMASI MASUK --- */
         tr.fade-in-row {
             opacity: 0;
-            transform: scale(0.95) translateY(10px);
-            animation: rowAppear 0.6s forwards ease-out;
+            transform: translateY(20px);
+            animation: rowAppear 0.5s forwards ease-out;
         }
 
         @keyframes rowAppear {
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        /* --- ANIMASI KELUAR PECAH --- */
-        tr.exit-shatter {
-            animation: shatter 0.5s forwards ease-in;
-        }
-
-        @keyframes shatter {
-            0% { opacity: 1; transform: scale(1); filter: blur(0); }
-            100% { opacity: 0; transform: scale(1.1) translateY(-20px); filter: blur(4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; font-weight: bold; }
@@ -292,37 +290,28 @@
             });
         }
 
-        // --- SCROLL & TRANSITION LOGIC ---
+        // --- AUTO SCROLL LOGIC (TV ONLY) ---
         let scrollInterval;
         const scrollContainer = document.getElementById('scrollContainer');
         
         function startAutoScroll() {
             clearInterval(scrollInterval);
-            scrollContainer.scrollTop = 0;
             
+            // Logika Deteksi: Jalankan auto scroll hanya jika lebar layar > 1199px (TV/Monitor Besar)
+            if (window.innerWidth < 1200) {
+                console.log("Mode HP/Laptop: Auto-scroll dinonaktifkan.");
+                return;
+            }
+
+            scrollContainer.scrollTop = 0;
             setTimeout(() => {
                 scrollInterval = setInterval(() => {
                     scrollContainer.scrollTop += 1; 
-                    
                     if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight) {
                         clearInterval(scrollInterval);
-                        
-                        // Efek Pecah/Keluar sebelum Refresh
-                        setTimeout(() => {
-                            const rows = document.querySelectorAll('#tableBody tr');
-                            rows.forEach((row, i) => {
-                                setTimeout(() => {
-                                    row.classList.add('exit-shatter');
-                                }, i * 50);
-                            });
-
-                            // Tunggu animasi pecah selesai baru muat ulang
-                            setTimeout(() => {
-                                loadDashboard();
-                            }, 1000);
-                        }, 3000);
+                        setTimeout(() => { loadDashboard(); }, 5000);
                     }
-                }, 60); // Diperlambat (60ms per pixel)
+                }, 40);
             }, 3000);
         }
 
@@ -421,6 +410,10 @@
 
         _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, loadDashboard).subscribe();
         setInterval(updateClock, 1000);
+        
+        // Interval refresh data 5 menit tetap aktif sebagai backup
+        setInterval(loadDashboard, 300000);
+        
         loadDashboard();
     </script>
 </body>

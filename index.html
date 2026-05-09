@@ -43,6 +43,7 @@
             align-items: center;
             border-bottom: 2px solid var(--text-gold-soft);
             flex-shrink: 0;
+            z-index: 100;
         }
         
         .header h1 { 
@@ -89,7 +90,6 @@
             animation: pulse 2s infinite;
         }
 
-        /* Tampilan Kontrol Audio */
         .audio-controls {
             display: flex;
             align-items: center;
@@ -125,15 +125,15 @@
 
         .main-content { 
             flex: 1; 
-            overflow-y: auto; 
+            overflow-y: hidden;
             width: 100%;
-            padding-bottom: 40px; 
+            padding-bottom: 60px; 
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         
         th {
-            background: rgba(5, 8, 17, 0.9);
+            background: var(--header-bg);
             color: var(--text-gold-soft);
             text-align: left;
             padding: 14px 8px;
@@ -152,13 +152,34 @@
         }
 
         .date-divider {
-            background: rgba(30, 41, 59, 0.5);
+            background: rgba(30, 41, 59, 0.8);
             color: var(--text-gold-soft);
             text-align: center;
             font-size: 12px;
             padding: 10px 0;
             font-weight: bold;
             text-transform: uppercase;
+        }
+
+        /* --- ANIMASI MASUK --- */
+        tr.fade-in-row {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+            animation: rowAppear 0.6s forwards ease-out;
+        }
+
+        @keyframes rowAppear {
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* --- ANIMASI KELUAR PECAH --- */
+        tr.exit-shatter {
+            animation: shatter 0.5s forwards ease-in;
+        }
+
+        @keyframes shatter {
+            0% { opacity: 1; transform: scale(1); filter: blur(0); }
+            100% { opacity: 0; transform: scale(1.1) translateY(-20px); filter: blur(4px); }
         }
 
         .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; font-weight: bold; }
@@ -182,7 +203,6 @@
         }
 
         .sopir-name { color: var(--text-blue-soft); font-weight: 600; }
-        
         .destination-container { font-size: 12px; color: var(--text-white-soft); }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
@@ -193,6 +213,7 @@
             background: #000; color: var(--text-gold-soft);
             height: 30px; line-height: 30px; font-size: 11px;
             border-top: 1px solid var(--text-gold-soft);
+            z-index: 100;
         }
     </style>
 </head>
@@ -206,8 +227,6 @@
         <div class="clock-container">
             <div id="clock">00:00:00</div>
             <div class="cloud-status"><span class="dot"></span> ONLINE</div>
-            
-            <!-- Tombol Audio Di bawah ONLINE -->
             <div class="audio-controls">
                 <span id="audio-status">PLAY</span>
                 <button class="play-btn" id="playPauseBtn" onclick="toggleAudio()">▶</button>
@@ -215,11 +234,10 @@
         </div>
     </div>
 
-    <!-- Element Audio Tersembunyi -->
     <audio id="murottalAudio" preload="none"></audio>
 
-    <div class="main-content">
-        <table>
+    <div class="main-content" id="scrollContainer">
+        <table id="deliveryTable">
             <thead>
                 <tr>
                     <th style="width: 55%;">NOPOL / DEST / DRIVER</th>
@@ -242,51 +260,72 @@
         
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- AUDIO ENGINE ---
         const audio = document.getElementById('murottalAudio');
         const btn = document.getElementById('playPauseBtn');
         const statusLabel = document.getElementById('audio-status');
-
         const streamSources = [
             "https://live.mp3quran.net/makkah",
             "https://live.mp3quran.net/madinah",
             "https://qurango.net/radio/mix"
         ];
-        
         let currentSourceIndex = 0;
 
         function toggleAudio() {
             if (audio.paused || audio.src === "") {
                 playSource(currentSourceIndex);
             } else {
-                audio.pause();
-                audio.src = ""; // Stop buffer
-                btn.innerText = "▶";
-                statusLabel.innerText = "STOP";
+                audio.pause(); audio.src = "";
+                btn.innerText = "▶"; statusLabel.innerText = "STOP";
             }
         }
 
         function playSource(index) {
             if (index >= streamSources.length) {
-                statusLabel.innerText = "Error Link";
-                currentSourceIndex = 0;
-                return;
+                statusLabel.innerText = "Error Link"; currentSourceIndex = 0; return;
             }
-            
             statusLabel.innerText = "Connecting...";
             audio.src = streamSources[index];
-            
             audio.play().then(() => {
-                btn.innerText = "⏸";
-                statusLabel.innerText = "QUR'AN";
+                btn.innerText = "⏸"; statusLabel.innerText = "QUR'AN";
             }).catch(err => {
-                console.log("Stream error, trying next...");
-                currentSourceIndex++;
-                playSource(currentSourceIndex);
+                currentSourceIndex++; playSource(currentSourceIndex);
             });
         }
 
-        // --- DASHBOARD LOGIC ---
+        // --- SCROLL & TRANSITION LOGIC ---
+        let scrollInterval;
+        const scrollContainer = document.getElementById('scrollContainer');
+        
+        function startAutoScroll() {
+            clearInterval(scrollInterval);
+            scrollContainer.scrollTop = 0;
+            
+            setTimeout(() => {
+                scrollInterval = setInterval(() => {
+                    scrollContainer.scrollTop += 1; 
+                    
+                    if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight) {
+                        clearInterval(scrollInterval);
+                        
+                        // Efek Pecah/Keluar sebelum Refresh
+                        setTimeout(() => {
+                            const rows = document.querySelectorAll('#tableBody tr');
+                            rows.forEach((row, i) => {
+                                setTimeout(() => {
+                                    row.classList.add('exit-shatter');
+                                }, i * 50);
+                            });
+
+                            // Tunggu animasi pecah selesai baru muat ulang
+                            setTimeout(() => {
+                                loadDashboard();
+                            }, 1000);
+                        }, 3000);
+                    }
+                }, 60); // Diperlambat (60ms per pixel)
+            }, 3000);
+        }
+
         function getWIB() {
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }
@@ -327,14 +366,16 @@
             tbody.innerHTML = '';
             let currentGroupDate = isoHariIni;
 
-            data.forEach(row => {
+            data.forEach((row, index) => {
                 if (row.tanggal > currentGroupDate) {
                     const fmtDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
                         weekday: 'long', day: 'numeric', month: 'short' 
                     }).toUpperCase();
-                    const div = document.createElement('tr');
-                    div.innerHTML = `<td colspan="4" class="date-divider">${fmtDate}</td>`;
-                    tbody.appendChild(div);
+                    const divider = document.createElement('tr');
+                    divider.className = "fade-in-row";
+                    divider.style.animationDelay = `${index * 0.1}s`;
+                    divider.innerHTML = `<td colspan="4" class="date-divider">${fmtDate}</td>`;
+                    tbody.appendChild(divider);
                     currentGroupDate = row.tanggal;
                 }
 
@@ -347,6 +388,9 @@
                 else if (st.includes("DELIVERED")) cls = "st-delivered";
 
                 const tr = document.createElement('tr');
+                tr.className = "fade-in-row";
+                tr.style.animationDelay = `${index * 0.1}s`;
+                
                 tr.innerHTML = `
                     <td>
                         <div class="flight-cell">
@@ -363,6 +407,8 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            startAutoScroll();
         }
 
         function updateClock() {
@@ -374,9 +420,7 @@
         }
 
         _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, loadDashboard).subscribe();
-
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 60000);
         loadDashboard();
     </script>
 </body>

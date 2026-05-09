@@ -7,13 +7,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            /* Warna sesuai preferensi: hijau tua, emas, dan biru donker */
             --bg-airport: #0a0f1d;
             --header-bg: #050811;
             --text-gold-soft: #e5c07b;
             --text-white-soft: #d1d5db;
             --text-blue-soft: #89cff0;
-                               
             --color-proses: #98ff98;
             --color-terjadwal: #89cff0;
             --color-tunggu: #ef4444;
@@ -34,7 +32,6 @@
             display: flex;
             flex-direction: column;
             overflow: hidden; 
-            position: relative; 
             width: 100%;
         }
 
@@ -46,7 +43,6 @@
             align-items: center;
             border-bottom: 2px solid var(--text-gold-soft);
             flex-shrink: 0;
-            z-index: 101;
         }
         
         .header h1 { 
@@ -61,15 +57,9 @@
             font-size: 18px; 
             color: var(--text-gold-soft); 
             font-weight: 700; 
-            margin-top: 4px;
         }
         
-        .clock-container { 
-            text-align: right; 
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-        }
+        .clock-container { text-align: right; }
 
         #clock { 
             font-size: 18px; 
@@ -83,10 +73,7 @@
             align-items: center;
             gap: 5px;
             color: var(--color-proses);
-            margin-top: 2px;
-            text-transform: uppercase;
-            font-weight: bold;
-            opacity: 0.8;
+            justify-content: flex-end;
         }
         
         .dot {
@@ -94,53 +81,14 @@
             width: 6px;
             background-color: var(--color-proses);
             border-radius: 50%;
-            display: inline-block;
             animation: pulse 2s infinite;
         }
-
-        /* Audio Control Header Style */
-        .audio-header-control {
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 4px 10px;
-            border-radius: 15px;
-            border: 1px solid rgba(229, 192, 123, 0.3);
-        }
-
-        #audio-status {
-            font-size: 9px;
-            color: var(--text-white-soft);
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .audio-btn {
-            background: var(--text-gold-soft);
-            border: none;
-            color: #000;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            transition: transform 0.2s;
-        }
-        .audio-btn:active { transform: scale(0.9); }
 
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
-            -webkit-overflow-scrolling: touch; 
             width: 100%;
-            padding-bottom: 60px; 
+            padding-bottom: 40px; 
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -151,13 +99,10 @@
             text-align: left;
             padding: 14px 8px;
             font-size: 12px; 
-            text-transform: uppercase;
             border-bottom: 1px solid var(--border-blue);
             position: sticky;
             top: 0;
             z-index: 10;
-            letter-spacing: 1px;
-            font-weight: 900;
         }
 
         td { 
@@ -165,7 +110,6 @@
             font-size: 13px; 
             border-bottom: 1px solid rgba(255,255,255,0.03);
             vertical-align: top;
-            word-wrap: break-word;
         }
 
         .date-divider {
@@ -175,18 +119,17 @@
             font-size: 12px;
             padding: 10px 0;
             font-weight: bold;
-            letter-spacing: 2px;
             text-transform: uppercase;
         }
 
-        .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; }
+        .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; font-weight: bold; }
         .st-terjadwal { color: var(--color-terjadwal); }
         .st-tunggu { color: var(--color-tunggu); }
         .st-langsir { color: var(--color-langsir); animation: blink 2s infinite; } 
         .st-delivered { color: var(--color-delivered); opacity: 0.8; }
-        .st-oper { color: var(--color-oper); font-weight: 900; animation: blink 1.8s infinite; }
+        .st-oper { color: var(--color-oper); font-weight: bold; animation: blink 1.8s infinite; }
 
-        .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
         
         .nopol-block { 
             background: #e2e8f0; 
@@ -194,61 +137,23 @@
             padding: 3px 6px; 
             border-radius: 4px; 
             font-weight: 800; 
-            font-size: 10px;  
-            min-width: 75px;  
+            font-size: 11px;  
+            min-width: 80px;  
             text-align: center;
-            flex-shrink: 0;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        .sopir-name { 
-            color: var(--text-blue-soft); 
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: 12px;
-            font-weight: 600;
-        }
+        .sopir-name { color: var(--text-blue-soft); font-weight: 600; }
         
-        .destination-container {
-            display: flex;
-            flex-direction: row; 
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .dest-label { 
-            font-size: 12px; 
-            color: var(--text-white-soft); 
-            font-weight: 600;
-        }
-
-        .loc-label {
-            font-size: 12px;
-            color: var(--text-gold-soft);
-            font-weight: 500;
-        }
-
-        @media (max-width: 600px) {
-            .destination-container {
-                flex-direction: column; 
-                gap: 2px;
-            }
-            .header h1 { font-size: 18px; }
-            #targetDate, #clock { font-size: 14px; }
-        }
-
-        .time-cell { line-height: 1.2; }
-        .depo-text { color: var(--text-white-soft); display: block; font-size: 11px; font-weight: 500; }
+        .destination-container { font-size: 12px; color: var(--text-white-soft); }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.5; } }
+        @keyframes pulse { 0% { transform: scale(0.9); } 50% { transform: scale(1.2); } 100% { transform: scale(0.9); } }
 
         .footer-marquee {
-            position: fixed; bottom: 0; left: 0; width: 100%;
+            position: fixed; bottom: 0; width: 100%;
             background: #000; color: var(--text-gold-soft);
-            height: 35px; line-height: 35px; font-size: 11px;
-            font-weight: 500; border-top: 1px solid var(--text-gold-soft); z-index: 100;
+            height: 30px; line-height: 30px; font-size: 11px;
+            border-top: 1px solid var(--text-gold-soft);
         }
     </style>
 </head>
@@ -257,32 +162,22 @@
     <div class="header">
         <div>
             <h1>SCHEDULE DELIVERY</h1>
-            <div id="targetDate">MEMUAT TANGGAL...</div>
+            <div id="targetDate">LOADING...</div>
         </div>
         <div class="clock-container">
             <div id="clock">00:00:00</div>
-            <div class="cloud-status">
-                <span class="dot"></span>ONLINE
-            </div>
-            <!-- Audio Control (Play Radio Al-Quran) -->
-            <div class="audio-header-control">
-                <span id="audio-status">lIVE QUR'AN</span>
-                <button class="audio-btn" id="playPauseBtn" onclick="toggleAudio()">▶</button>
-            </div>
+            <div class="cloud-status"><span class="dot"></span> ONLINE</div>
         </div>
     </div>
-
-    <!-- Audio Element -->
-    <audio id="murottalAudio" preload="none"></audio>
 
     <div class="main-content">
         <table>
             <thead>
                 <tr>
-                    <th style="width: 50%;">NOPOL / DEST / DRIVER</th>
-                    <th style="width: 12%; text-align: center;">QTY</th>
-                    <th style="width: 20%;">STORAGE</th>
-                    <th style="width: 18%; text-align: right;">STATUS</th>
+                    <th style="width: 55%;">NOPOL / DEST / DRIVER</th>
+                    <th style="width: 10%; text-align: center;">QTY</th>
+                    <th style="width: 15%;">STORAGE</th>
+                    <th style="width: 20%; text-align: right;">STATUS</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -290,124 +185,75 @@
     </div>
 
     <div class="footer-marquee">
-        <marquee scrollamount="3">
-            NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST: PASTIKAN SEGEL TERPASANG SEMPURNA • PERIKSA TEKANAN BAN DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP (HELM, SEPATU, ROMPI) DI TEMPAT PENGAMBILAN DAN PEMBONGKARAN • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN MAX. DALAM DAN LUAR KOTA • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA BAIK ARMADA, SAAT LOADING BBM DAN SAAT BONGKAR KE BAGIAN OPERASIONAL..
-        </marquee>
+        <marquee>NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU - SAFETY FIRST - GUNAKAN APD LENGKAP - PATUHI RAMBU LALU LINTAS</marquee>
     </div>
 
     <script>
+        // Inisialisasi Supabase
         const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- AUDIO ENGINE ---
-        const audio = document.getElementById('murottalAudio');
-        const btn = document.getElementById('playPauseBtn');
-        const statusLabel = document.getElementById('audio-status');
-
-        const streamSources = [
-            "https://live.mp3quran.net/makkah",
-            "https://live.mp3quran.net/madinah",
-            "https://qurango.net/radio/mix"
-        ];
-        
-        let currentSourceIndex = 0;
-
-        function toggleAudio() {
-            if (audio.paused || audio.src === "") {
-                playSource(currentSourceIndex);
-            } else {
-                audio.pause();
-                audio.src = ""; 
-                btn.innerText = "▶";
-                statusLabel.innerText = "RADIO OFF";
-            }
-        }
-
-        function playSource(index) {
-            if (index >= streamSources.length) {
-                statusLabel.innerText = "LINK GAGAL";
-                btn.innerText = "▶";
-                currentSourceIndex = 0; 
-                return;
-            }
-
-            statusLabel.innerText = "CONNECTING...";
-            audio.src = streamSources[index];
-            
-            audio.play().then(() => {
-                btn.innerText = "⏸";
-                statusLabel.innerText = "PLAYING";
-            }).catch(err => {
-                currentSourceIndex++;
-                playSource(currentSourceIndex);
-            });
-        }
-
-        // --- DASHBOARD ENGINE ---
         function getWIB() {
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }
 
         async function loadDashboard() {
-            const hariIni = getWIB();
-            const isoHariIni = hariIni.toISOString().split('T')[0];
-            
-            document.getElementById('targetDate').innerText = hariIni.toLocaleDateString('id-ID', { 
-                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-            }).toUpperCase();
+            try {
+                const hariIni = getWIB();
+                const isoHariIni = hariIni.toISOString().split('T')[0];
+                
+                document.getElementById('targetDate').innerText = hariIni.toLocaleDateString('id-ID', { 
+                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+                }).toUpperCase();
 
-            const { data, error } = await _supabase
-                .from('data_pengiriman')
-                .select('*')
-                .gte('tanggal', isoHariIni);
+                const { data, error } = await _supabase
+                    .from('data_pengiriman')
+                    .select('*')
+                    .gte('tanggal', isoHariIni);
 
-            if (error) {
-                console.error("Error fetching data:", error);
-                return;
-            }
+                if (error) throw error;
 
-            const priority = { "PROSES": 1, "OPER": 2, "TERJADWAL": 3, "LANGSIR": 4, "TUNGGU/INFO": 5, "DELIVERED": 6 };
-            
-            if (data) {
-                data.sort((a, b) => {
-                    if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
-                    const statusA = (a.status || "").toUpperCase();
-                    const statusB = (b.status || "").toUpperCase();
-                    let valA = 99, valB = 99;
-                    Object.keys(priority).forEach(key => { if(statusA.includes(key)) valA = priority[key]; });
-                    Object.keys(priority).forEach(key => { if(statusB.includes(key)) valB = priority[key]; });
-                    return valA - valB;
-                });
-                renderData(data, isoHariIni);
+                if (data) {
+                    // Sorting Data
+                    const priority = { "PROSES": 1, "OPER": 2, "TERJADWAL": 3, "LANGSIR": 4, "TUNGGU": 5, "DELIVERED": 6 };
+                    data.sort((a, b) => {
+                        if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
+                        let pA = priority[Object.keys(priority).find(k => (a.status||"").toUpperCase().includes(k))] || 99;
+                        let pB = priority[Object.keys(priority).find(k => (b.status||"").toUpperCase().includes(k))] || 99;
+                        return pA - pB;
+                    });
+                    renderData(data, isoHariIni);
+                }
+            } catch (err) {
+                console.error("Gagal memuat data:", err.message);
             }
         }
 
         function renderData(data, isoHariIni) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-            let lastDate = isoHariIni;
+            let currentGroupDate = isoHariIni;
 
             data.forEach(row => {
-                if (row.tanggal > lastDate) {
-                    const formattedDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
-                        weekday: 'long', day: 'numeric', month: 'short' ,year: 'numeric'
+                // Tambah pemisah tanggal jika berbeda
+                if (row.tanggal > currentGroupDate) {
+                    const fmtDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
+                        weekday: 'long', day: 'numeric', month: 'short' 
                     }).toUpperCase();
-                    
-                    const divider = document.createElement('tr');
-                    divider.innerHTML = `<td colspan="4" class="date-divider"> ${formattedDate} </td>`;
-                    tbody.appendChild(divider);
-                    lastDate = row.tanggal;
+                    const div = document.createElement('tr');
+                    div.innerHTML = `<td colspan="4" class="date-divider">${fmtDate}</td>`;
+                    tbody.appendChild(div);
+                    currentGroupDate = row.tanggal;
                 }
 
-                const statusRaw = (row.status || "").toUpperCase();
-                let statusClass = "st-terjadwal";
-
-                if (statusRaw.includes("PROSES")) { statusClass = "st-proses"; }    
-                else if (statusRaw.includes("LANGSIR")) { statusClass = "st-langsir"; }
-                else if (statusRaw.includes("OPER")) { statusClass = "st-oper"; }
-                else if (statusRaw.includes("TUNGGU") || statusRaw.includes("INFO")) { statusClass = "st-tunggu"; }
-                else if (statusRaw.includes("DELIVERED")) { statusClass = "st-delivered"; }
+                const st = (row.status || "").toUpperCase();
+                let cls = "st-terjadwal";
+                if (st.includes("PROSES")) cls = "st-proses";
+                else if (st.includes("LANGSIR")) cls = "st-langsir";
+                else if (st.includes("OPER")) cls = "st-oper";
+                else if (st.includes("TUNGGU")) cls = "st-tunggu";
+                else if (st.includes("DELIVERED")) cls = "st-delivered";
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -417,15 +263,12 @@
                             <div class="sopir-name">${row.sopir || '-'}</div>
                         </div>
                         <div class="destination-container">
-                            <span class="dest-label">TO : ${row.delivery_to || '-'}</span>
-                            <span class="loc-label">LOKASI : ${row.lokasi || '-'}</span>
+                            TO: ${row.delivery_to || '-'} | <span style="color:var(--text-gold-soft)">${row.lokasi || '-'}</span>
                         </div>
                     </td>
-                    <td style="color:var(--text-gold-soft); text-align:center; font-size:16px; font-weight:bold;">${row.jumlah_keluar || '0'}</td>
-                    <td class="time-cell">
-                        <span class="depo-text">${row.supplier || '-'}</span>
-                    </td>
-                    <td class="${statusClass}" style="text-align:right; font-size:10px; font-weight:900; letter-spacing:0.5px;">${statusRaw}</td>
+                    <td style="text-align:center; font-weight:bold; color:var(--text-gold-soft); font-size:15px;">${row.jumlah_keluar || '0'}</td>
+                    <td><span style="font-size:11px;">${row.supplier || '-'}</span></td>
+                    <td class="${cls}" style="text-align:right; font-size:11px; font-weight:bold;">${st}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -433,15 +276,16 @@
 
         function updateClock() {
             const now = getWIB();
-            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour12:false});
+            document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ":" + 
+                                                        now.getMinutes().toString().padStart(2, '0') + ":" + 
+                                                        now.getSeconds().toString().padStart(2, '0');
         }
 
-        _supabase.channel('schema-db-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
-            .subscribe();
+        // Realtime Subscriptions
+        _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, loadDashboard).subscribe();
 
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 180000); 
+        setInterval(loadDashboard, 60000); // Refresh tiap 1 menit untuk jaga-jaga
         loadDashboard();
     </script>
 </body>

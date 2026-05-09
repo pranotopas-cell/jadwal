@@ -59,7 +59,13 @@
             font-weight: 700; 
         }
         
-        .clock-container { text-align: right; }
+        .clock-container { 
+            text-align: right; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-end; 
+            gap: 4px;
+        }
 
         #clock { 
             font-size: 18px; 
@@ -73,7 +79,6 @@
             align-items: center;
             gap: 5px;
             color: var(--color-proses);
-            justify-content: flex-end;
         }
         
         .dot {
@@ -82,6 +87,40 @@
             background-color: var(--color-proses);
             border-radius: 50%;
             animation: pulse 2s infinite;
+        }
+
+        /* Tampilan Kontrol Audio */
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(229, 192, 123, 0.2);
+            margin-top: 4px;
+        }
+
+        #audio-status {
+            font-size: 10px;
+            color: var(--text-gold-soft);
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .play-btn {
+            background: var(--text-gold-soft);
+            color: #000;
+            border: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
         }
 
         .main-content { 
@@ -167,8 +206,17 @@
         <div class="clock-container">
             <div id="clock">00:00:00</div>
             <div class="cloud-status"><span class="dot"></span> ONLINE</div>
+            
+            <!-- Tombol Audio Di bawah ONLINE -->
+            <div class="audio-controls">
+                <span id="audio-status">Radio OFF</span>
+                <button class="play-btn" id="playPauseBtn" onclick="toggleAudio()">▶</button>
+            </div>
         </div>
     </div>
+
+    <!-- Element Audio Tersembunyi -->
+    <audio id="murottalAudio" preload="none"></audio>
 
     <div class="main-content">
         <table>
@@ -192,9 +240,53 @@
         const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
         
-        // Memastikan client terbuat dengan benar
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // --- AUDIO ENGINE ---
+        const audio = document.getElementById('murottalAudio');
+        const btn = document.getElementById('playPauseBtn');
+        const statusLabel = document.getElementById('audio-status');
+
+        const streamSources = [
+            "https://live.mp3quran.net/makkah",
+            "https://live.mp3quran.net/madinah",
+            "https://qurango.net/radio/mix"
+        ];
+        
+        let currentSourceIndex = 0;
+
+        function toggleAudio() {
+            if (audio.paused || audio.src === "") {
+                playSource(currentSourceIndex);
+            } else {
+                audio.pause();
+                audio.src = ""; // Stop buffer
+                btn.innerText = "▶";
+                statusLabel.innerText = "Radio OFF";
+            }
+        }
+
+        function playSource(index) {
+            if (index >= streamSources.length) {
+                statusLabel.innerText = "Error Link";
+                currentSourceIndex = 0;
+                return;
+            }
+            
+            statusLabel.innerText = "Connecting...";
+            audio.src = streamSources[index];
+            
+            audio.play().then(() => {
+                btn.innerText = "⏸";
+                statusLabel.innerText = "Playing Murottal";
+            }).catch(err => {
+                console.log("Stream error, trying next...");
+                currentSourceIndex++;
+                playSource(currentSourceIndex);
+            });
+        }
+
+        // --- DASHBOARD LOGIC ---
         function getWIB() {
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }

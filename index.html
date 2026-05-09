@@ -89,13 +89,7 @@
             animation: pulse 2s infinite;
         }
 
-        /* Grouping Tombol Audio */
-        .audio-wrapper {
-            display: flex;
-            gap: 10px;
-            margin-top: 8px;
-        }
-
+        /* Tampilan Kontrol Audio */
         .audio-controls {
             display: flex;
             align-items: center;
@@ -104,19 +98,14 @@
             padding: 4px 10px;
             border-radius: 20px;
             border: 1px solid rgba(229, 192, 123, 0.2);
+            margin-top: 4px;
         }
 
-        .audio-controls.active {
-            border-color: var(--text-gold-soft);
-            background: rgba(229, 192, 123, 0.1);
-        }
-
-        .status-text {
-            font-size: 9px;
+        #audio-status {
+            font-size: 10px;
             color: var(--text-gold-soft);
             font-weight: bold;
             text-transform: uppercase;
-            min-width: 45px;
         }
 
         .play-btn {
@@ -213,27 +202,21 @@
         <div>
             <h1>SCHEDULE DELIVERY</h1>
             <div id="targetDate">LOADING...</div>
-            
-            <!-- Dua Tombol Audio (Kiri Jreng, Kanan Quran) -->
-            <div class="audio-wrapper">
-                <div class="audio-controls" id="ctrl-jreng">
-                    <span class="status-text" id="stat-jreng">JRENG</span>
-                    <button class="play-btn" onclick="playAudio('jreng')">▶</button>
-                </div>
-                <div class="audio-controls" id="ctrl-quran">
-                    <span class="status-text" id="stat-quran">QURAN</span>
-                    <button class="play-btn" onclick="playAudio('quran')">▶</button>
-                </div>
-            </div>
         </div>
         <div class="clock-container">
             <div id="clock">00:00:00</div>
             <div class="cloud-status"><span class="dot"></span> ONLINE</div>
+            
+            <!-- Tombol Audio Di bawah ONLINE -->
+            <div class="audio-controls">
+                <span id="audio-status">PLAY</span>
+                <button class="play-btn" id="playPauseBtn" onclick="toggleAudio()">▶</button>
+            </div>
         </div>
     </div>
 
-    <!-- Element Audio Tunggal untuk Efisiensi Memori -->
-    <audio id="globalAudio" preload="none"></audio>
+    <!-- Element Audio Tersembunyi -->
+    <audio id="murottalAudio" preload="none"></audio>
 
     <div class="main-content">
         <table>
@@ -259,64 +242,48 @@
         
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- DUAL AUDIO ENGINE ---
-        const audio = document.getElementById('globalAudio');
-        const streams = {
-            jreng: "https://stream.radioonline.co.id/8004/stream",
-            quran: "https://live.mp3quran.net/makkah"
-        };
-        let activeType = null;
+        // --- AUDIO ENGINE ---
+        const audio = document.getElementById('murottalAudio');
+        const btn = document.getElementById('playPauseBtn');
+        const statusLabel = document.getElementById('audio-status');
 
-        function playAudio(type) {
-            const btnJreng = document.querySelector('#ctrl-jreng button');
-            const btnQuran = document.querySelector('#ctrl-quran button');
-            const statJreng = document.getElementById('stat-jreng');
-            const statQuran = document.getElementById('stat-quran');
+        const streamSources = [
+            "https://live.mp3quran.net/makkah",
+            "https://live.mp3quran.net/madinah",
+            "https://qurango.net/radio/mix"
+        ];
+        
+        let currentSourceIndex = 0;
 
-            // Jika mengklik tombol yang sedang play, maka matikan
-            if (activeType === type) {
-                audio.pause();
-                audio.src = "";
-                activeType = null;
-                resetUI();
-                return;
-            }
-
-            // Ganti source dan putar
-            audio.pause();
-            audio.src = streams[type];
-            resetUI();
-
-            if (type === 'jreng') {
-                statJreng.innerText = "LOADING..";
-                document.getElementById('ctrl-jreng').classList.add('active');
+        function toggleAudio() {
+            if (audio.paused || audio.src === "") {
+                playSource(currentSourceIndex);
             } else {
-                statQuran.innerText = "LOADING..";
-                document.getElementById('ctrl-quran').classList.add('active');
+                audio.pause();
+                audio.src = ""; // Stop buffer
+                btn.innerText = "▶";
+                statusLabel.innerText = "STOP";
             }
-
-            audio.play().then(() => {
-                activeType = type;
-                if (type === 'jreng') {
-                    statJreng.innerText = "LIVE";
-                    btnJreng.innerText = "⏸";
-                } else {
-                    statQuran.innerText = "LIVE";
-                    btnQuran.innerText = "⏸";
-                }
-            }).catch(e => {
-                console.error("Error playing:", e);
-                resetUI();
-            });
         }
 
-        function resetUI() {
-            document.getElementById('ctrl-jreng').classList.remove('active');
-            document.getElementById('ctrl-quran').classList.remove('active');
-            document.getElementById('stat-jreng').innerText = "JRENG";
-            document.getElementById('stat-quran').innerText = "QURAN";
-            document.querySelector('#ctrl-jreng button').innerText = "▶";
-            document.querySelector('#ctrl-quran button').innerText = "▶";
+        function playSource(index) {
+            if (index >= streamSources.length) {
+                statusLabel.innerText = "Error Link";
+                currentSourceIndex = 0;
+                return;
+            }
+            
+            statusLabel.innerText = "Connecting...";
+            audio.src = streamSources[index];
+            
+            audio.play().then(() => {
+                btn.innerText = "⏸";
+                statusLabel.innerText = "QUR'AN";
+            }).catch(err => {
+                console.log("Stream error, trying next...");
+                currentSourceIndex++;
+                playSource(currentSourceIndex);
+            });
         }
 
         // --- DASHBOARD LOGIC ---

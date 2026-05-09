@@ -123,19 +123,20 @@
             font-weight: bold;
         }
 
+        /* --- PENGATURAN SCROLL --- */
         .main-content { 
             flex: 1; 
-            overflow-y: auto; /* Default auto untuk HP/Laptop */
+            overflow-y: auto; /* Aktif manual scroll secara default */
             width: 100%;
             padding-bottom: 60px; 
             scrollbar-width: thin;
             scrollbar-color: var(--border-blue) transparent;
         }
 
-        /* Khusus Layar TV / Monitor Besar: Hilangkan scrollbar untuk auto-scroll */
-        @media (min-width: 1200px) {
+        /* Jika layar di atas 1500px (Indikasi Monitor Besar/TV 20"+) */
+        @media (min-width: 1500px) {
             .main-content {
-                overflow-y: hidden;
+                overflow-y: hidden; /* Sembunyikan scrollbar agar auto-scroll rapi */
             }
         }
         
@@ -290,17 +291,17 @@
             });
         }
 
-        // --- AUTO SCROLL LOGIC (TV ONLY) ---
+        // --- AUTO SCROLL LOGIC ---
         let scrollInterval;
         const scrollContainer = document.getElementById('scrollContainer');
         
         function startAutoScroll() {
             clearInterval(scrollInterval);
             
-            // Logika Deteksi: Jalankan auto scroll hanya jika lebar layar > 1199px (TV/Monitor Besar)
-            if (window.innerWidth < 1200) {
-                console.log("Mode HP/Laptop: Auto-scroll dinonaktifkan.");
-                return;
+            // LOGIKA MATIKAN SCROLL: Jika lebar layar kurang dari 1500px (Laptop/HP)
+            if (window.innerWidth < 1500) {
+                console.log("Perangkat terdeteksi Laptop/HP. Auto-scroll dimatikan.");
+                return; 
             }
 
             scrollContainer.scrollTop = 0;
@@ -410,10 +411,7 @@
 
         _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, loadDashboard).subscribe();
         setInterval(updateClock, 1000);
-        
-        // Interval refresh data 5 menit tetap aktif sebagai backup
         setInterval(loadDashboard, 300000);
-        
         loadDashboard();
     </script>
 </body>

@@ -189,9 +189,10 @@
     </div>
 
     <script>
-        // Inisialisasi Supabase
         const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
+        
+        // Memastikan client terbuat dengan benar
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         function getWIB() {
@@ -201,7 +202,7 @@
         async function loadDashboard() {
             try {
                 const hariIni = getWIB();
-                const isoHariIni = hariIni.toISOString().split('T')[0];
+                const isoHariIni = hariIni.getFullYear() + '-' + String(hariIni.getMonth() + 1).padStart(2, '0') + '-' + String(hariIni.getDate()).padStart(2, '0');
                 
                 document.getElementById('targetDate').innerText = hariIni.toLocaleDateString('id-ID', { 
                     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
@@ -215,7 +216,6 @@
                 if (error) throw error;
 
                 if (data) {
-                    // Sorting Data
                     const priority = { "PROSES": 1, "OPER": 2, "TERJADWAL": 3, "LANGSIR": 4, "TUNGGU": 5, "DELIVERED": 6 };
                     data.sort((a, b) => {
                         if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
@@ -236,7 +236,6 @@
             let currentGroupDate = isoHariIni;
 
             data.forEach(row => {
-                // Tambah pemisah tanggal jika berbeda
                 if (row.tanggal > currentGroupDate) {
                     const fmtDate = new Date(row.tanggal).toLocaleDateString('id-ID', { 
                         weekday: 'long', day: 'numeric', month: 'short' 
@@ -276,16 +275,16 @@
 
         function updateClock() {
             const now = getWIB();
-            document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ":" + 
-                                                        now.getMinutes().toString().padStart(2, '0') + ":" + 
-                                                        now.getSeconds().toString().padStart(2, '0');
+            document.getElementById('clock').innerText = 
+                String(now.getHours()).padStart(2, '0') + ":" + 
+                String(now.getMinutes()).padStart(2, '0') + ":" + 
+                String(now.getSeconds()).padStart(2, '0');
         }
 
-        // Realtime Subscriptions
         _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, loadDashboard).subscribe();
 
         setInterval(updateClock, 1000);
-        setInterval(loadDashboard, 60000); // Refresh tiap 1 menit untuk jaga-jaga
+        setInterval(loadDashboard, 60000);
         loadDashboard();
     </script>
 </body>

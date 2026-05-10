@@ -156,6 +156,25 @@
             }).toUpperCase();
         }
 
+        // Fungsi mengekstrak angka RIT (Utamakan RIT 1, 2, 3)
+        function getRitNumber(loc) {
+            if (!loc) return 999;
+            const match = loc.toUpperCase().match(/RIT\s*(\d+)/);
+            return match ? parseInt(match[1]) : 990; // Non-RIT diletakkan setelah RIT terdeteksi
+        }
+
+        // Fungsi bobot status
+        function getStatusWeight(statusRaw, isDataLengkap) {
+            const s = (statusRaw || "").toUpperCase();
+            if (s.includes("PROSES")) return 1;
+            if (!isDataLengkap) return 5;
+            if (s.includes("TERJADWAL")) return 2;
+            if (s.includes("OPER")) return 3;
+            if (s.includes("LANGSIR")) return 4;
+            if (s.includes("DELIVERED") || s.includes("SUCCES")) return 6;
+            return 5;
+        }
+
         async function loadDashboard() {
             const isoHariIni = getWIB().toISOString().split('T')[0];
             document.getElementById('targetDate').innerText = formatFullDate(new Date());
@@ -167,7 +186,24 @@
                 .order('tanggal', { ascending: true });
 
             if (error) return;
-            renderData(data);
+
+            // LOGIKA SORTING PRIORITAS RIT 1, 2, 3
+            const sortedData = data.sort((a, b) => {
+                // 1. Tanggal tetap utama
+                if (a.tanggal !== b.tanggal) return a.tanggal.localeCompare(b.tanggal);
+                
+                // 2. PRIORITAS UTAMA: Nomor RIT (1, 2, 3...)
+                const ritA = getRitNumber(a.lokasi);
+                const ritB = getRitNumber(b.lokasi);
+                if (ritA !== ritB) return ritA - ritB;
+
+                // 3. PRIORITAS KEDUA: Status
+                const isALengkap = a.nopol && a.sopir && a.delivery_to;
+                const isBLengkap = b.nopol && b.sopir && b.delivery_to;
+                return getStatusWeight(a.status, isALengkap) - getStatusWeight(b.status, isBLengkap);
+            });
+
+            renderData(sortedData);
         }
 
         function renderData(data) {
@@ -186,8 +222,6 @@
                 const statusRaw = (row.status || "").toUpperCase();
                 let statusClass = "st-terjadwal";
                 let actionBtn = "";
-
-                // Validasi data lengkap: Nopol, Sopir, dan Tujuan harus ada
                 const isDataLengkap = row.nopol && row.sopir && row.delivery_to;
 
                 if (statusRaw.includes("PROSES")) {
@@ -200,19 +234,17 @@
                     actionBtn = `<span style="font-size:9px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> DONE ${savedDuration ? '('+savedDuration+'m)' : ''}</span>`;
                 } 
                 else {
-                    // Penentuan warna status berdasarkan teks
                     if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
                     else if (statusRaw.includes("OPER")) statusClass = "st-oper";
                     else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
                     else statusClass = "st-tunggu";
 
-                    // Logika Tombol Ambil Job: Muncul jika data lengkap DAN status adalah kategori jadwal
                     const isStatusAmbil = statusRaw.includes("TERJADWAL") || statusRaw.includes("LANGSIR") || statusRaw.includes("OPER");
                     
                     if (isDataLengkap && isStatusAmbil) {
                         actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}')">AMBILJOB</button>`;
                     } else {
-                        statusClass = "st-tunggu"; // Paksa ke merah jika data tidak lengkap
+                        statusClass = "st-tunggu"; 
                         actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAITING INFO</span>`;
                     }
                 }

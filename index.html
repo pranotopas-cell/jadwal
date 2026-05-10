@@ -181,7 +181,7 @@
 
                 if (statusRaw.includes("PROSES")) {
                     statusClass = "st-proses";
-                    actionBtn = `<button class="btn-job btn-finish" onclick="finishJob('${row.nopol}', '${row.id}')">TIBA</button>`;
+                    actionBtn = `<button class="btn-job btn-finish" onclick="finishJob('${row.nopol}', '${row.id}')">SUCCES JOB</button>`;
                 } else if (statusRaw.includes("DELIVERED")) {
                     statusClass = "st-delivered";
                     const savedDuration = localStorage.getItem(`duration_${row.id}`);
@@ -189,7 +189,7 @@
                 } else {
                     const isReady = row.nopol && row.sopir && row.delivery_to;
                     if (isReady) {
-                        actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}')">AMBIL</button>`;
+                        actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}')">AMBILJOB</button>`;
                     } else {
                         actionBtn = `<span style="font-size:9px; color:#607d8b;">WAITING INFO</span>`;
                     }

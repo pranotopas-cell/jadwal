@@ -13,10 +13,15 @@
             --text-gold-soft: #e5c07b;
             --text-white-soft: #d1d5db;
             --blue-soft: #7fb4ca;
-            --color-proses: #81c784;
-            --color-terjadwal: #b0bec5;
-            --color-delivered: #4db6ac; 
             --border-blue: #1e293b;
+            
+            /* Warna Status */
+            --color-tunggu: #ff5252;    /* MERAH */
+            --color-terjadwal: #42a5f5; /* BIRU */
+            --color-proses: #66bb6a;    /* HIJAU */
+            --color-langsir: #fdd835;   /* KUNING */
+            --color-oper: #fb8c00;      /* ORANGE */
+            --color-delivered: #ffffff; /* PUTIH */
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -38,7 +43,7 @@
         .header h1 { margin: 0; font-size: 20px; letter-spacing: 2px; font-weight: 800; }
         #targetDate { font-size: 14px; color: var(--text-gold-soft); font-weight: 700; margin-top: 4px; }
         #clock { font-size: 18px; font-weight: 700; text-align: right; }
-        .cloud-status { font-size: 10px; color: var(--color-proses); text-align: right; font-weight: bold; }
+        .cloud-status { font-size: 10px; color: #66bb6a; text-align: right; font-weight: bold; }
 
         /* TABLE STYLE */
         .main-content { flex: 1; overflow-y: auto; padding-bottom: 60px; }
@@ -73,10 +78,13 @@
         .loc-label { color: var(--text-gold-soft); font-weight: 500; }
         .storage-text { color: var(--blue-soft); font-size: 11px; font-weight: 500; display: block; }
 
-        /* STATUS & BUTTON STYLE */
-        .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; font-weight: 900; }
-        .st-delivered { color: var(--color-delivered); opacity: 0.8; font-weight: 900; }
+        /* STATUS CLASSES */
+        .st-tunggu { color: var(--color-tunggu); font-weight: 900; }
         .st-terjadwal { color: var(--color-terjadwal); font-weight: 900; }
+        .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; font-weight: 900; }
+        .st-langsir { color: var(--color-langsir); font-weight: 900; }
+        .st-oper { color: var(--color-oper); font-weight: 900; }
+        .st-delivered { color: var(--color-delivered); font-weight: 900; opacity: 0.9; }
         
         .action-cell { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
         
@@ -85,8 +93,8 @@
             font-weight: 800; cursor: pointer; border: none;
             text-transform: uppercase; transition: 0.2s;
         }
-        .btn-ambil { background: #2e7d32; color: white; box-shadow: 0 0 8px rgba(46, 125, 50, 0.4); }
-        .btn-finish { background: #0288d1; color: white; box-shadow: 0 0 8px rgba(2, 136, 209, 0.4); }
+        .btn-ambil { background: #2e7d32; color: white; }
+        .btn-finish { background: #0288d1; color: white; }
         
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
@@ -179,19 +187,33 @@
                 let statusClass = "st-terjadwal";
                 let actionBtn = "";
 
+                // Validasi data lengkap: Nopol, Sopir, dan Tujuan harus ada
+                const isDataLengkap = row.nopol && row.sopir && row.delivery_to;
+
                 if (statusRaw.includes("PROSES")) {
                     statusClass = "st-proses";
                     actionBtn = `<button class="btn-job btn-finish" onclick="finishJob('${row.nopol}', '${row.id}')">SUCCES JOB</button>`;
-                } else if (statusRaw.includes("DELIVERED")) {
+                } 
+                else if (statusRaw.includes("DELIVERED") || statusRaw.includes("SUCCES")) {
                     statusClass = "st-delivered";
                     const savedDuration = localStorage.getItem(`duration_${row.id}`);
-                    actionBtn = `<span style="font-size:9px; color:#4db6ac; font-weight:bold;"><i class="fas fa-check-circle"></i> DONE ${savedDuration ? '('+savedDuration+'m)' : ''}</span>`;
-                } else {
-                    const isReady = row.nopol && row.sopir && row.delivery_to;
-                    if (isReady) {
+                    actionBtn = `<span style="font-size:9px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> DONE ${savedDuration ? '('+savedDuration+'m)' : ''}</span>`;
+                } 
+                else {
+                    // Penentuan warna status berdasarkan teks
+                    if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
+                    else if (statusRaw.includes("OPER")) statusClass = "st-oper";
+                    else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
+                    else statusClass = "st-tunggu";
+
+                    // Logika Tombol Ambil Job: Muncul jika data lengkap DAN status adalah kategori jadwal
+                    const isStatusAmbil = statusRaw.includes("TERJADWAL") || statusRaw.includes("LANGSIR") || statusRaw.includes("OPER");
+                    
+                    if (isDataLengkap && isStatusAmbil) {
                         actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}')">AMBILJOB</button>`;
                     } else {
-                        actionBtn = `<span style="font-size:9px; color:#607d8b;">WAITING INFO</span>`;
+                        statusClass = "st-tunggu"; // Paksa ke merah jika data tidak lengkap
+                        actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAITING INFO</span>`;
                     }
                 }
 
@@ -212,7 +234,7 @@
                         <span class="storage-text">${row.supplier || '-'}</span>
                     </td>
                     <td class="action-cell">
-                        <span class="${statusClass}" style="font-size:10px;">${statusRaw}</span>
+                        <span class="${statusClass}" style="font-size:10px;">${statusRaw || 'TUNGGU INFO'}</span>
                         ${actionBtn}
                     </td>
                 `;
@@ -222,12 +244,9 @@
 
         async function takeJob(nopol, rowId) {
             if (!confirm(`Mulai perjalanan unit ${nopol}?`)) return;
-
             const { error } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
             if (error) return alert("Update Gagal");
-
             localStorage.setItem(`startTime_${rowId}`, new Date().getTime());
-
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition(async (pos) => {
                     await _supabase.from('tracking_unit').upsert({
@@ -244,7 +263,6 @@
 
         async function finishJob(nopol, rowId) {
             if (!confirm("Konfirmasi tiba di lokasi?")) return;
-
             const startStr = localStorage.getItem(`startTime_${rowId}`);
             let duration = 0;
             if (startStr) {
@@ -252,19 +270,15 @@
                 localStorage.setItem(`duration_${rowId}`, duration);
                 localStorage.removeItem(`startTime_${rowId}`);
             }
-
             if (watchId) navigator.geolocation.clearWatch(watchId);
-
             await _supabase.from('data_pengiriman').update({ status: 'DELIVERED' }).eq('id', rowId);
             await _supabase.from('tracking_unit').update({ status: 'SUCCESS' }).eq('nopol', nopol);
-
             alert(`Selesai! Durasi: ${duration} Menit.`);
             loadDashboard();
         }
 
         _supabase.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard()).subscribe();
         setInterval(() => { document.getElementById('clock').innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
-
         loadDashboard();
     </script>
 </body>

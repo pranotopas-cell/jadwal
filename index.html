@@ -288,6 +288,7 @@
                         .from('tracking_unit')
                         .upsert({
                             nopol: nopol,
+                            tujuan: tujuan,
                             sopir: sopir, // <--- Penambahan data sopir
                             lat: pos.coords.latitude,
                             lon: pos.coords.longitude,

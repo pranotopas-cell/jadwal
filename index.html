@@ -266,8 +266,24 @@
             loadDashboard();
         }
 
+        // Clock Update
         setInterval(() => { document.getElementById('clock').innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
-        _supabase.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard()).subscribe();
+        
+        // AUTO REFRESH PER 1 MENIT (60000ms)
+        setInterval(() => {
+            console.log("Auto-refresh data...");
+            loadDashboard();
+        }, 60000);
+
+        // REALTIME UPDATE (Langsung update jika ada perubahan di Supabase)
+        _supabase.channel('db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, (payload) => {
+                console.log('Perubahan terdeteksi:', payload);
+                loadDashboard();
+            })
+            .subscribe();
+
+        // Initial Load
         loadDashboard();
     </script>
 </body>

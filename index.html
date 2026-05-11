@@ -40,8 +40,8 @@
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 2px solid var(--text-gold-soft); flex-shrink: 0; z-index: 101;
         }
-        .header h1 { margin: 0; font-size: 20px; letter-spacing: 2px; font-weight: 800; }
-        #targetDate { font-size: 14px; color: var(--text-gold-soft); font-weight: 700; margin-top: 4px; }
+        .header h1 { margin: 0; font-size: 20px; letter-spacing: 2px; font-weight: 800; color: var(--text-gold-soft); }
+        #targetDate { font-size: 14px; color: var(--text-white-soft); font-weight: 700; margin-top: 4px; }
         #clock { font-size: 18px; font-weight: 700; text-align: right; }
         .cloud-status { font-size: 10px; color: #66bb6a; text-align: right; font-weight: bold; }
 
@@ -63,7 +63,7 @@
             border-bottom: 1px solid var(--text-gold-soft);
         }
 
-        td { padding: 12px 8px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; word-wrap: break-word; }
+        td { padding: 12px 8px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
 
         /* COMPONENT STYLE */
         .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
@@ -74,8 +74,9 @@
         }
         .sopir-name { font-weight: 600; font-size: 12px; color: var(--text-white-soft); }
         
-        .destination-info { font-size: 11px; color: var(--blue-soft); margin-top: 2px; line-height: 1.4; }
-        .loc-label { color: var(--text-gold-soft); font-weight: 500; }
+        .destination-info { font-size: 12px; color: var(--blue-soft); margin-top: 2px; line-height: 1.4; }
+        .ritase-text { color: var(--text-gold-soft); font-weight: bold; }
+        .location-text { color: #e5c07b; font-size: 11px; font-weight: bold; display: block; }
         .storage-text { color: var(--blue-soft); font-size: 11px; font-weight: 500; display: block; }
 
         /* STATUS CLASSES */
@@ -100,8 +101,8 @@
 
         .footer-marquee {
             position: fixed; bottom: 0; width: 100%; background: #000;
-            color: var(--text-gold-soft); height: 35px; line-height: 35px;
-            font-size: 11px; border-top: 1px solid var(--text-gold-soft); z-index: 100;
+            color: var(--text-white-soft); height: 35px; line-height: 35px;
+            font-size: 13px; border-top: 1px solid var(--text-gold-soft); z-index: 100;
         }
     </style>
 </head>
@@ -122,9 +123,9 @@
         <table>
             <thead>
                 <tr>
-                    <th style="text-align: left; width: 45%;">DATA UNIT- DESTINATION</th>
+                    <th style="text-align: left; width: 40%;">UNIT / DESTINATION</th>
                     <th style="text-align: center; width: 10%;">QTY</th>
-                    <th style="text-align: left; width: 20%;">STORAGE</th>
+                    <th style="text-align: left; width: 25%;">LOCATION / STORAGE</th>
                     <th style="text-align: right; width: 25%;">STATUS</th>
                 </tr>
             </thead>
@@ -133,9 +134,7 @@
     </div>
 
     <div class="footer-marquee">
-        <marquee scrollamount="3">
-            NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST: PASTIKAN SEGEL TERPASANG SEMPURNA • PERIKSA TEKANAN BAN DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP (HELM, SEPATU, ROMPI) DI TEMPAT PENGAMBILAN DAN PEMBONGKARAN • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN MAX. DALAM DAN LUAR KOTA • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA BAIK ARMADA, SAAT LOADING BBM DAN SAAT BONGKAR KE BAGIAN OPERASIONAL..
-        </marquee>
+        <marquee scrollamount="3">NOTE : JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST: PASTIKAN SEGEL TERPASANG SEMPURNA • PERIKSA TEKANAN BAN DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP (HELM, SEPATU, ROMPI) DI TEMPAT PENGAMBILAN DAN PEMBONGKARAN • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN MAX. DALAM DAN LUAR KOTA • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA BAIK ARMADA, SAAT LOADING BBM DAN SAAT BONGKAR KE BAGIAN OPERASIONAL..</marquee>
     </div>
 
     <script>
@@ -151,51 +150,33 @@
 
         function formatFullDate(dateString) {
             const date = new Date(dateString);
-            return date.toLocaleDateString('id-ID', { 
-                weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' 
-            }).toUpperCase();
-        }
-
-        function getRitNumber(loc) {
-            if (!loc) return 999;
-            const match = loc.toUpperCase().match(/RIT\s*(\d+)/);
-            return match ? parseInt(match[1]) : 990;
-        }
-
-        function getStatusWeight(statusRaw, isDataLengkap) {
-            const s = (statusRaw || "").toUpperCase();
-            if (s.includes("PROSES")) return 1;
-            if (!isDataLengkap) return 5;
-            if (s.includes("TERJADWAL")) return 2;
-            if (s.includes("OPER")) return 3;
-            if (s.includes("LANGSIR")) return 4;
-            if (s.includes("DELIVERED") || s.includes("SUCCES")) return 6;
-            return 5;
+            return date.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
         }
 
         async function loadDashboard() {
             const isoHariIni = getWIB().toISOString().split('T')[0];
             document.getElementById('targetDate').innerText = formatFullDate(new Date());
 
-            const { data, error } = await _supabase
-                .from('data_pengiriman')
-                .select('*')
-                .gte('tanggal', isoHariIni)
-                .order('tanggal', { ascending: true });
-
-            if (error) return;
-
-            const sortedData = data.sort((a, b) => {
-                if (a.tanggal !== b.tanggal) return a.tanggal.localeCompare(b.tanggal);
-                const ritA = getRitNumber(a.lokasi);
-                const ritB = getRitNumber(b.lokasi);
-                if (ritA !== ritB) return ritA - ritB;
-                const isALengkap = a.nopol && a.sopir && a.delivery_to;
-                const isBLengkap = b.nopol && b.sopir && b.delivery_to;
-                return getStatusWeight(a.status, isALengkap) - getStatusWeight(b.status, isBLengkap);
-            });
-
-            renderData(sortedData);
+            const { data, error } = await _supabase.from('data_pengiriman').select('*').gte('tanggal', isoHariIni);
+            
+            if (!error) {
+                const statusPriority = { "PROSES": 1, "TERJADWAL": 2, "OPER": 3, "LANGSIR": 4, "TUNGGU": 5, "DELIVERED": 6 };
+                const sortedData = data.sort((a, b) => {
+                    if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
+                    
+                    const getRitNum = (row) => {
+                        const match = (row.lokasi || "").match(/RIT\s*(\d+)/i);
+                        return match ? parseInt(match[1]) : (parseInt(row.rit) || 999);
+                    };
+                    
+                    const ritA = getRitNum(a);
+                    const ritB = getRitNum(b);
+                    if (ritA !== ritB) return ritA - ritB;
+                    
+                    return (statusPriority[a.status] || 5) - (statusPriority[b.status] || 5);
+                });
+                renderData(sortedData);
+            }
         }
 
         function renderData(data) {
@@ -211,6 +192,8 @@
                     lastDate = row.tanggal;
                 }
 
+                const ritMatch = (row.lokasi || "").match(/RIT\s*(\d+)/i);
+                const ritDisplay = ritMatch ? ritMatch[1] : (row.rit || '-');
                 const statusRaw = (row.status || "").toUpperCase();
                 let statusClass = "st-terjadwal";
                 let actionBtn = "";
@@ -218,28 +201,18 @@
 
                 if (statusRaw.includes("PROSES")) {
                     statusClass = "st-proses";
-                    actionBtn = `<button class="btn-job btn-finish" onclick="finishJob('${row.nopol}', '${row.id}')">SUCCESS JOB</button>`;
+                    actionBtn = `<button class="btn-job btn-finish" onclick="finishJob('${row.nopol}', '${row.id}')">DONE</button>`;
                 } 
                 else if (statusRaw.includes("DELIVERED") || statusRaw.includes("SUCCES")) {
                     statusClass = "st-delivered";
-                    const savedDuration = localStorage.getItem(`duration_${row.id}`);
-                    actionBtn = `<span style="font-size:9px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> DONE ${savedDuration ? '('+savedDuration+'m)' : ''}</span>`;
+                    actionBtn = `<span style="font-size:10px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> DONE</span>`;
                 } 
-                else {
-                    if (statusRaw.includes("LANGSIR")) statusClass = "st-langsir";
-                    else if (statusRaw.includes("OPER")) statusClass = "st-oper";
-                    else if (statusRaw.includes("TERJADWAL")) statusClass = "st-terjadwal";
-                    else statusClass = "st-tunggu";
-
-                    const isStatusAmbil = statusRaw.includes("TERJADWAL") || statusRaw.includes("LANGSIR") || statusRaw.includes("OPER");
-                    
-                    if (isDataLengkap && isStatusAmbil) {
-                        // Parameter: nopol, id, sopir, tujuan (delivery_to)
-                        actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}', '${row.sopir}', '${row.delivery_to}')">AMBIL JOB</button>`;
-                    } else {
-                        statusClass = "st-tunggu"; 
-                        actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAITING INFO</span>`;
-                    }
+                else if (isDataLengkap && (statusRaw.includes("LANGSIR") || statusRaw.includes("OPER") || statusRaw.includes("TERJADWAL"))) {
+                    statusClass = statusRaw.includes("LANGSIR") ? "st-langsir" : (statusRaw.includes("OPER") ? "st-oper" : "st-terjadwal");
+                    actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}', '${row.sopir}', '${row.delivery_to}')">AMBIL</button>`;
+                } else {
+                    statusClass = "st-tunggu";
+                    actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAIT INFO</span>`;
                 }
 
                 const tr = document.createElement('tr');
@@ -250,16 +223,17 @@
                             <div class="sopir-name">${row.sopir || '-'}</div>
                         </div>
                         <div class="destination-info">
-                            <div>TO CUST: <b>${row.delivery_to || '-'}</b></div>
-                            <div class="loc-label">LOCATION: ${row.lokasi || '-'}</div>
+                            <div>DELIVERY TO : <b>${row.delivery_to || '-'}</b></div>
+                            <div class="ritase-text">RITASE: ${ritDisplay}</div>
                         </div>
                     </td>
-                    <td style="text-align:center; font-weight:bold; color:var(--text-gold-soft); font-size:16px;">${row.jumlah_keluar || '0'}</td>
+                    <td style="text-align:center; font-weight:bold; color:var(--text-white-soft); font-size:16px;">${row.jumlah_keluar || '0'}</td>
                     <td>
+                        <span class="location-text"><i class="fas fa-map-marker-alt"></i> ${row.lokasi || 'GPS AKTIF'}</span>
                         <span class="storage-text">${row.supplier || '-'}</span>
                     </td>
                     <td class="action-cell">
-                        <span class="${statusClass}" style="font-size:10px;">${statusRaw || 'TUNGGU INFO'}</span>
+                        <span class="${statusClass}" style="font-size:10px;">${statusRaw || 'TUNGGU'}</span>
                         ${actionBtn}
                     </td>
                 `;
@@ -269,68 +243,31 @@
 
         async function takeJob(nopol, rowId, sopir, tujuan) {
             if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
-
-            // 1. Update status di tabel pengiriman
-            const { error: errUpdate } = await _supabase
-                .from('data_pengiriman')
-                .update({ status: 'PROSES' })
-                .eq('id', rowId);
-
-            if (errUpdate) return alert("Gagal update status!");
-
-            localStorage.setItem(`startTime_${rowId}`, new Date().getTime());
-
-            // 2. Kirim koordinat, sopir, & tujuan ke tabel tracking_unit
+            const { error } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
+            if (error) return alert("Gagal Update Status");
+            
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition(async (pos) => {
-                    const { error: errTrack } = await _supabase
-                        .from('tracking_unit')
-                        .upsert({
-                            nopol: nopol,
-                            tujuan: tujuan, 
-                            sopir: sopir, 
-                            lat: pos.coords.latitude,
-                            lon: pos.coords.longitude,
-                            status: 'ON_JOB',
-                            last_update: new Date().toISOString()
-                        }, { onConflict: 'nopol' });
-                    
-                    if (errTrack) console.error("Error Tracking:", errTrack.message);
-                }, (err) => {
-                    console.warn("GPS Error:", err.message);
-                }, { enableHighAccuracy: true });
+                    await _supabase.from('tracking_unit').upsert({
+                        nopol: nopol, lat: pos.coords.latitude, lon: pos.coords.longitude,
+                        sopir: sopir, tujuan: tujuan, status: 'ON_JOB', last_update: new Date().toISOString()
+                    }, { onConflict: 'nopol' });
+                }, (err) => console.error(err), { enableHighAccuracy: true });
             }
             loadDashboard();
         }
 
         async function finishJob(nopol, rowId) {
-            if (!confirm("Konfirmasi tiba di lokasi?")) return;
-
-            const startStr = localStorage.getItem(`startTime_${rowId}`);
-            let duration = 0;
-            if (startStr) {
-                duration = Math.round((new Date().getTime() - parseInt(startStr)) / 60000);
-                localStorage.setItem(`duration_${rowId}`, duration);
-                localStorage.removeItem(`startTime_${rowId}`);
-            }
-
+            if (!confirm("Konfirmasi Tugas Selesai?")) return;
             if (watchId) navigator.geolocation.clearWatch(watchId);
-
             await _supabase.from('data_pengiriman').update({ status: 'DELIVERED' }).eq('id', rowId);
-            
-            await _supabase.from('tracking_unit')
-                .update({ 
-                    status: 'SUCCESS',
-                    last_update: new Date().toISOString()
-                })
-                .eq('nopol', nopol);
-
-            alert(`Selesai! Durasi: ${duration} Menit.`);
+            await _supabase.from('tracking_unit').update({ status: 'SUCCESS', last_update: new Date().toISOString() }).eq('nopol', nopol);
+            alert("Terima kasih, tugas selesai!");
             loadDashboard();
         }
 
-        _supabase.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard()).subscribe();
         setInterval(() => { document.getElementById('clock').innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
+        _supabase.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard()).subscribe();
         loadDashboard();
     </script>
 </body>

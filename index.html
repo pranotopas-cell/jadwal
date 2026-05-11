@@ -51,7 +51,7 @@
         
         th {
             background: rgba(5, 8, 17, 0.9); color: var(--text-gold-soft);
-            padding: 14px 8px; font-size: 11px; text-transform: uppercase;
+            padding: 14px 8px; font-size: 14px; text-transform: uppercase;
             position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border-blue);
             font-weight: 900; letter-spacing: 1px;
         }
@@ -76,8 +76,8 @@
         
         .destination-info { font-size: 12px; color: var(--blue-soft); margin-top: 2px; line-height: 1.4; }
         .ritase-text { color: var(--text-gold-soft); font-weight: bold; }
-        .location-text { color: #e5c07b; font-size: 11px; font-weight: bold; display: block; }
-        .storage-text { color: var(--blue-soft); font-size: 11px; font-weight: 500; display: block; }
+        .location-text { color: #e5c07b; font-size: 12px; font-weight: bold; display: block; }
+        .storage-text { color: var(--blue-soft); font-size: 12px; font-weight: 500; display: block; }
 
         /* STATUS CLASSES */
         .st-tunggu { color: var(--color-tunggu); font-weight: 900; }
@@ -85,7 +85,10 @@
         .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; font-weight: 900; }
         .st-langsir { color: var(--color-langsir); animation: blink 1.5s infinite; font-weight: 900; }
         .st-oper { color: var(--color-oper); animation: blink 1.5s infinite; font-weight: 900; }
-        .st-delivered { color: var(--color-delivered); font-weight: 900; opacity: 0.9; }
+        .st-delivered { 
+            color: var(--color-delivered); font-weight: 900; opacity: 0.9; 
+            white-space: pre-line; text-align: right; line-height: 1.2;
+        }
         
         .action-cell { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
         
@@ -163,16 +166,13 @@
                 const statusPriority = { "PROSES": 1, "TERJADWAL": 2, "OPER": 3, "LANGSIR": 4, "TUNGGU": 5, "DELIVERED": 6 };
                 const sortedData = data.sort((a, b) => {
                     if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
-                    
                     const getRitNum = (row) => {
                         const match = (row.lokasi || "").match(/RIT\s*(\d+)/i);
                         return match ? parseInt(match[1]) : (parseInt(row.rit) || 999);
                     };
-                    
                     const ritA = getRitNum(a);
                     const ritB = getRitNum(b);
                     if (ritA !== ritB) return ritA - ritB;
-                    
                     return (statusPriority[a.status] || 5) - (statusPriority[b.status] || 5);
                 });
                 renderData(sortedData);
@@ -233,7 +233,7 @@
                         <span class="storage-text">${row.supplier || '-'}</span>
                     </td>
                     <td class="action-cell">
-                        <span class="${statusClass}" style="font-size:10px;">${statusRaw || 'TUNGGU'}</span>
+                        <span class="${statusClass}">${statusRaw || 'TUNGGU'}</span>
                         ${actionBtn}
                     </td>
                 `;
@@ -259,31 +259,63 @@
 
         async function finishJob(nopol, rowId) {
             if (!confirm("Konfirmasi Tugas Selesai?")) return;
+            
             if (watchId) navigator.geolocation.clearWatch(watchId);
-            await _supabase.from('data_pengiriman').update({ status: 'DELIVERED' }).eq('id', rowId);
-            await _supabase.from('tracking_unit').update({ status: 'SUCCESS', last_update: new Date().toISOString() }).eq('nopol', nopol);
-            alert("Terima kasih, tugas selesai!");
+
+            // 1. Ambil data terakhir unit untuk koordinat POI
+            const { data: unitData } = await _supabase
+                .from('tracking_unit')
+                .select('*')
+                .eq('nopol', nopol)
+                .single();
+
+            if (unitData && unitData.tujuan) {
+                // 2. Logika Cek Duplikat POI berdasarkan Nama Tujuan
+                const { data: existingPOI } = await _supabase
+                    .from('poi_lokasi')
+                    .select('nama')
+                    .eq('nama', unitData.tujuan)
+                    .maybeSingle();
+
+                if (!existingPOI) {
+                    // Jika belum ada, simpan koordinat terakhir sebagai POI tetap
+                    await _supabase.from('poi_lokasi').insert([{ 
+                        nama: unitData.tujuan, 
+                        lat: unitData.lat, 
+                        lon: unitData.lon 
+                    }]);
+                    console.log("POI baru ditambahkan: " + unitData.tujuan);
+                }
+            }
+
+            // 3. Format Waktu DELIVERED (Hari, Tanggal, Jam:Menit)
+            const skrg = getWIB();
+            const fmtWaktu = skrg.toLocaleDateString('id-ID', { 
+                weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
+            }).replace('.', ':');
+
+            // 4. Update status final di kedua tabel
+            await _supabase.from('data_pengiriman').update({ 
+                status: `DELIVERED\n(${fmtWaktu})` 
+            }).eq('id', rowId);
+
+            await _supabase.from('tracking_unit').update({ 
+                status: 'SUCCESS', 
+                last_update: skrg.toISOString() 
+            }).eq('nopol', nopol);
+
+            alert("Terima kasih, tugas selesai & lokasi berhasil diperbarui!");
             loadDashboard();
         }
 
-        // Clock Update
         setInterval(() => { document.getElementById('clock').innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
         
-        // AUTO REFRESH PER 1 MENIT (60000ms)
-        setInterval(() => {
-            console.log("Auto-refresh data...");
-            loadDashboard();
-        }, 60000);
+        setInterval(() => { loadDashboard(); }, 60000);
 
-        // REALTIME UPDATE (Langsung update jika ada perubahan di Supabase)
         _supabase.channel('db-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, (payload) => {
-                console.log('Perubahan terdeteksi:', payload);
-                loadDashboard();
-            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
             .subscribe();
 
-        // Initial Load
         loadDashboard();
     </script>
 </body>

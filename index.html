@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>JADWAL BESOK</title>
+    <title>JADWAL LOGISTIK - TRACKING SYSTEM</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -122,7 +122,7 @@
         <table>
             <thead>
                 <tr>
-                    <th style="text-align: left; width: 45%;">DATA UNIT- DISTINATION</th>
+                    <th style="text-align: left; width: 45%;">DATA UNIT- DESTINATION</th>
                     <th style="text-align: center; width: 10%;">QTY</th>
                     <th style="text-align: left; width: 20%;">STORAGE</th>
                     <th style="text-align: right; width: 25%;">STATUS</th>
@@ -156,14 +156,12 @@
             }).toUpperCase();
         }
 
-        // Fungsi mengekstrak angka RIT (Utamakan RIT 1, 2, 3)
         function getRitNumber(loc) {
             if (!loc) return 999;
             const match = loc.toUpperCase().match(/RIT\s*(\d+)/);
-            return match ? parseInt(match[1]) : 990; // Non-RIT diletakkan setelah RIT terdeteksi
+            return match ? parseInt(match[1]) : 990;
         }
 
-        // Fungsi bobot status
         function getStatusWeight(statusRaw, isDataLengkap) {
             const s = (statusRaw || "").toUpperCase();
             if (s.includes("PROSES")) return 1;
@@ -187,17 +185,11 @@
 
             if (error) return;
 
-            // LOGIKA SORTING PRIORITAS RIT 1, 2, 3
             const sortedData = data.sort((a, b) => {
-                // 1. Tanggal tetap utama
                 if (a.tanggal !== b.tanggal) return a.tanggal.localeCompare(b.tanggal);
-                
-                // 2. PRIORITAS UTAMA: Nomor RIT (1, 2, 3...)
                 const ritA = getRitNumber(a.lokasi);
                 const ritB = getRitNumber(b.lokasi);
                 if (ritA !== ritB) return ritA - ritB;
-
-                // 3. PRIORITAS KEDUA: Status
                 const isALengkap = a.nopol && a.sopir && a.delivery_to;
                 const isBLengkap = b.nopol && b.sopir && b.delivery_to;
                 return getStatusWeight(a.status, isALengkap) - getStatusWeight(b.status, isBLengkap);
@@ -226,7 +218,7 @@
 
                 if (statusRaw.includes("PROSES")) {
                     statusClass = "st-proses";
-                    actionBtn = `<button class="btn-job btn-finish" onclick="finishJob('${row.nopol}', '${row.id}')">SUCCES JOB</button>`;
+                    actionBtn = `<button class="btn-job btn-finish" onclick="finishJob('${row.nopol}', '${row.id}')">SUCCESS JOB</button>`;
                 } 
                 else if (statusRaw.includes("DELIVERED") || statusRaw.includes("SUCCES")) {
                     statusClass = "st-delivered";
@@ -242,7 +234,7 @@
                     const isStatusAmbil = statusRaw.includes("TERJADWAL") || statusRaw.includes("LANGSIR") || statusRaw.includes("OPER");
                     
                     if (isDataLengkap && isStatusAmbil) {
-                        actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}')">AMBILJOB</button>`;
+                        actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}')">AMBIL JOB</button>`;
                     } else {
                         statusClass = "st-tunggu"; 
                         actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAITING INFO</span>`;
@@ -274,27 +266,44 @@
             });
         }
 
+        // FUNGSI UPDATE TRACKING UNIT KE SUPABASE
         async function takeJob(nopol, rowId) {
             if (!confirm(`Mulai perjalanan unit ${nopol}?`)) return;
-            const { error } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
-            if (error) return alert("Update Gagal");
+
+            // 1. Update status di tabel pengiriman
+            const { error: errUpdate } = await _supabase
+                .from('data_pengiriman')
+                .update({ status: 'PROSES' })
+                .eq('id', rowId);
+
+            if (errUpdate) return alert("Gagal update status!");
+
             localStorage.setItem(`startTime_${rowId}`, new Date().getTime());
+
+            // 2. Kirim koordinat ke tabel tracking_unit
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition(async (pos) => {
-                    await _supabase.from('tracking_unit').upsert({
-                        nopol: nopol,
-                        lat: pos.coords.latitude,
-                        lon: pos.coords.longitude,
-                        status: 'ON_JOB',
-                        last_update: new Date()
-                    }, { onConflict: 'nopol' });
-                }, null, { enableHighAccuracy: true });
+                    const { error: errTrack } = await _supabase
+                        .from('tracking_unit')
+                        .upsert({
+                            nopol: nopol,
+                            lat: pos.coords.latitude,
+                            lon: pos.coords.longitude,
+                            status: 'ON_JOB',
+                            last_update: new Date().toISOString()
+                        }, { onConflict: 'nopol' });
+                    
+                    if (errTrack) console.error("Error Tracking:", errTrack.message);
+                }, (err) => {
+                    console.warn("GPS Error:", err.message);
+                }, { enableHighAccuracy: true });
             }
             loadDashboard();
         }
 
         async function finishJob(nopol, rowId) {
             if (!confirm("Konfirmasi tiba di lokasi?")) return;
+
             const startStr = localStorage.getItem(`startTime_${rowId}`);
             let duration = 0;
             if (startStr) {
@@ -302,9 +311,21 @@
                 localStorage.setItem(`duration_${rowId}`, duration);
                 localStorage.removeItem(`startTime_${rowId}`);
             }
+
+            // Berhenti tracking
             if (watchId) navigator.geolocation.clearWatch(watchId);
+
+            // 1. Update status data pengiriman
             await _supabase.from('data_pengiriman').update({ status: 'DELIVERED' }).eq('id', rowId);
-            await _supabase.from('tracking_unit').update({ status: 'SUCCESS' }).eq('nopol', nopol);
+            
+            // 2. Update status terakhir di tracking_unit
+            await _supabase.from('tracking_unit')
+                .update({ 
+                    status: 'SUCCESS',
+                    last_update: new Date().toISOString()
+                })
+                .eq('nopol', nopol);
+
             alert(`Selesai! Durasi: ${duration} Menit.`);
             loadDashboard();
         }

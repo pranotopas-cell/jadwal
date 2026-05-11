@@ -234,7 +234,8 @@
                     const isStatusAmbil = statusRaw.includes("TERJADWAL") || statusRaw.includes("LANGSIR") || statusRaw.includes("OPER");
                     
                     if (isDataLengkap && isStatusAmbil) {
-                        actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}')">AMBIL JOB</button>`;
+                        // Perubahan: Menambahkan argumen sopir pada takeJob
+                        actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}', '${row.sopir}')">AMBIL JOB</button>`;
                     } else {
                         statusClass = "st-tunggu"; 
                         actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAITING INFO</span>`;
@@ -266,8 +267,8 @@
             });
         }
 
-        // FUNGSI UPDATE TRACKING UNIT KE SUPABASE
-        async function takeJob(nopol, rowId) {
+        // FUNGSI UPDATE TRACKING UNIT KE SUPABASE (Updated: Tambah Parameter sopir)
+        async function takeJob(nopol, rowId, sopir) {
             if (!confirm(`Mulai perjalanan unit ${nopol}?`)) return;
 
             // 1. Update status di tabel pengiriman
@@ -280,13 +281,14 @@
 
             localStorage.setItem(`startTime_${rowId}`, new Date().getTime());
 
-            // 2. Kirim koordinat ke tabel tracking_unit
+            // 2. Kirim koordinat & sopir ke tabel tracking_unit
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition(async (pos) => {
                     const { error: errTrack } = await _supabase
                         .from('tracking_unit')
                         .upsert({
                             nopol: nopol,
+                            sopir: sopir, // <--- Penambahan data sopir
                             lat: pos.coords.latitude,
                             lon: pos.coords.longitude,
                             status: 'ON_JOB',

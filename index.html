@@ -42,8 +42,32 @@
         }
         .header h1 { margin: 0; font-size: 20px; letter-spacing: 2px; font-weight: 800; color: var(--text-gold-soft); }
         #targetDate { font-size: 14px; color: var(--text-white-soft); font-weight: 700; margin-top: 4px; }
-        #clock { font-size: 18px; font-weight: 700; text-align: right; }
+        
+        /* New Header Right Container */
+        .header-right { display: flex; align-items: stretch; gap: 12px; }
+        .clock-container { display: flex; flex-direction: column; justify-content: center; }
+        
+        #clock { font-size: 18px; font-weight: 700; text-align: right; line-height: 1.2; }
         .cloud-status { font-size: 10px; color: #66bb6a; text-align: right; font-weight: bold; }
+
+        /* Maps Button Style */
+        .btn-maps {
+            background: #d81b60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+        .btn-maps:active { background: #ad1457; }
+        .btn-maps i { font-size: 18px; margin-bottom: 2px; }
+        .btn-maps span { font-size: 10px; font-weight: 800; }
 
         /* TABLE STYLE */
         .main-content { flex: 1; overflow-y: auto; padding-bottom: 60px; }
@@ -116,9 +140,16 @@
             <h1>LOGISTICS TRACKING</h1>
             <div id="targetDate">MEMUAT...</div>
         </div>
-        <div>
-            <div id="clock">00:00:00</div>
-            <div class="cloud-status">● GPS SYSTEM ACTIVE</div>
+        <div class="header-right">
+            <!-- New Maps Button -->
+            <a href="monitoring.html" class="btn-maps">
+                <i class="fas fa-map-marked-alt"></i>
+                <span>MONITORING</span>
+            </a>
+            <div class="clock-container">
+                <div id="clock">00:00:00</div>
+                <div class="cloud-status">● GPS SYSTEM ACTIVE</div>
+            </div>
         </div>
     </div>
 
@@ -198,7 +229,6 @@
                 const ritMatch = (row.lokasi || "").match(/RIT\s*(\d+)/i);
                 const ritDisplay = ritMatch ? ritMatch[1] : (row.rit || '-');
                 
-                // Pisahkan status utama dari info tambahan (seperti jam)
                 const statusFull = (row.status || "TUNGGU").toUpperCase();
                 const statusRaw = statusFull.split('\n')[0];
                 
@@ -251,11 +281,9 @@
         async function takeJob(nopol, rowId, sopir, tujuan) {
             if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
             
-            // 1. Update status di data_pengiriman
             const { error } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
             if (error) return alert("Gagal Update Status di Database");
             
-            // 2. Aktifkan Geolocation Tracking
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition(async (pos) => {
                     await _supabase.from('tracking_unit').upsert({
@@ -272,7 +300,6 @@
             
             if (watchId) navigator.geolocation.clearWatch(watchId);
 
-            // 1. Ambil data terakhir unit untuk koordinat POI
             const { data: unitData } = await _supabase
                 .from('tracking_unit')
                 .select('*')
@@ -295,13 +322,11 @@
                 }
             }
 
-            // 2. Format Waktu SELESAI
             const skrg = getWIB();
             const fmtWaktu = skrg.toLocaleDateString('id-ID', { 
                 weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
             }).toUpperCase().replace('.', ':');
 
-            // 3. Update status final di data_pengiriman dan tracking_unit
             await _supabase.from('data_pengiriman').update({ 
                 status: `DELIVERED\n(${fmtWaktu})` 
             }).eq('id', rowId);

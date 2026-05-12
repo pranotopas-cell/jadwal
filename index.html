@@ -173,7 +173,10 @@
                     const ritA = getRitNum(a);
                     const ritB = getRitNum(b);
                     if (ritA !== ritB) return ritA - ritB;
-                    return (statusPriority[a.status] || 5) - (statusPriority[b.status] || 5);
+                    
+                    const statA = (a.status || "").split('\n')[0].toUpperCase();
+                    const statB = (b.status || "").split('\n')[0].toUpperCase();
+                    return (statusPriority[statA] || 5) - (statusPriority[statB] || 5);
                 });
                 renderData(sortedData);
             }
@@ -194,7 +197,11 @@
 
                 const ritMatch = (row.lokasi || "").match(/RIT\s*(\d+)/i);
                 const ritDisplay = ritMatch ? ritMatch[1] : (row.rit || '-');
-                const statusRaw = (row.status || "").toUpperCase();
+                
+                // Pisahkan status utama dari info tambahan (seperti jam)
+                const statusFull = (row.status || "TUNGGU").toUpperCase();
+                const statusRaw = statusFull.split('\n')[0];
+                
                 let statusClass = "st-terjadwal";
                 let actionBtn = "";
                 const isDataLengkap = row.nopol && row.sopir && row.delivery_to;
@@ -205,7 +212,7 @@
                 } 
                 else if (statusRaw.includes("DELIVERED") || statusRaw.includes("SUCCES")) {
                     statusClass = "st-delivered";
-                    actionBtn = `<span style="font-size:10px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> DONE</span>`;
+                    actionBtn = `<span style="font-size:10px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> SELESAI</span>`;
                 } 
                 else if (isDataLengkap && (statusRaw.includes("LANGSIR") || statusRaw.includes("OPER") || statusRaw.includes("TERJADWAL"))) {
                     statusClass = statusRaw.includes("LANGSIR") ? "st-langsir" : (statusRaw.includes("OPER") ? "st-oper" : "st-terjadwal");
@@ -233,7 +240,7 @@
                         <span class="storage-text">${row.supplier || '-'}</span>
                     </td>
                     <td class="action-cell">
-                        <span class="${statusClass}">${statusRaw || 'TUNGGU'}</span>
+                        <span class="${statusClass}">${row.status || 'TUNGGU'}</span>
                         ${actionBtn}
                     </td>
                 `;
@@ -243,9 +250,12 @@
 
         async function takeJob(nopol, rowId, sopir, tujuan) {
             if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
-            const { error } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
-            if (error) return alert("Gagal Update Status");
             
+            // 1. Update status di data_pengiriman
+            const { error } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
+            if (error) return alert("Gagal Update Status di Database");
+            
+            // 2. Aktifkan Geolocation Tracking
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition(async (pos) => {
                     await _supabase.from('tracking_unit').upsert({
@@ -270,7 +280,6 @@
                 .single();
 
             if (unitData && unitData.tujuan) {
-                // 2. Logika Cek Duplikat POI berdasarkan Nama Tujuan
                 const { data: existingPOI } = await _supabase
                     .from('poi_lokasi')
                     .select('nama')
@@ -278,23 +287,21 @@
                     .maybeSingle();
 
                 if (!existingPOI) {
-                    // Jika belum ada, simpan koordinat terakhir sebagai POI tetap
                     await _supabase.from('poi_lokasi').insert([{ 
                         nama: unitData.tujuan, 
                         lat: unitData.lat, 
                         lon: unitData.lon 
                     }]);
-                    console.log("POI baru ditambahkan: " + unitData.tujuan);
                 }
             }
 
-            // 3. Format Waktu DELIVERED (Hari, Tanggal, Jam:Menit)
+            // 2. Format Waktu SELESAI
             const skrg = getWIB();
             const fmtWaktu = skrg.toLocaleDateString('id-ID', { 
-                weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
-            }).replace('.', ':');
+                weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
+            }).toUpperCase().replace('.', ':');
 
-            // 4. Update status final di kedua tabel
+            // 3. Update status final di data_pengiriman dan tracking_unit
             await _supabase.from('data_pengiriman').update({ 
                 status: `DELIVERED\n(${fmtWaktu})` 
             }).eq('id', rowId);
@@ -304,7 +311,7 @@
                 last_update: skrg.toISOString() 
             }).eq('nopol', nopol);
 
-            alert("Terima kasih, tugas selesai & lokasi berhasil diperbarui!");
+            alert("Tugas selesai! Status berhasil diperbarui.");
             loadDashboard();
         }
 

@@ -192,8 +192,10 @@
         centerControl.topcenter = L.DomUtil.create('div', 'leaflet-top leaflet-center', map._controlContainer);
         new L.Control.Zoom({ position: 'topcenter' }).addTo(map);
 
-        // Peta TERBARU (CartoDB Voyager - Modern & Bersih)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+        // KEMBALI KE TEMA LAMA (OpenStreetMap Standard) - Lebih Lengkap Jalannya
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
 
         map.on('moveend zoomend rotateend', () => {
             const center = map.getCenter();

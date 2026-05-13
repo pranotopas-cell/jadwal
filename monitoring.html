@@ -155,11 +155,11 @@
         </div>
 
         <div class="distance-menu">
-            <div style="font-size: 11px; font-weight: bold; color: #f1c40f;"><i class="fa-solid fa-ruler-combined"></i> ESTIMASI JARAK JALAN</div>
+            <div style="font-size: 11px; font-weight: bold; color: #f1c40f;"><i class="fa-solid fa-ruler-combined"></i> ESTIMASI JARAK & WAKTU</div>
             <select id="select-dist-poi" onchange="calculateRoadDistance(this.value)">
                 <option value="">Pilih Lokasi POI...</option>
             </select>
-            <div id="dist-res">Jarak: -</div>
+            <div id="dist-res">Jarak: -<br>Waktu: -</div>
         </div>
     </div>
 
@@ -194,7 +194,7 @@
         });
 
         let markers = { units: {}, pois: {} };
-        let routeLayer = null; // Untuk menyimpan garis jalan
+        let routeLayer = null; 
         let userMarker = null;
         let isAddMode = false;
         let userCoords = null;
@@ -312,17 +312,16 @@
             });
         }
 
-        // FUNGSI ESTIMASI JARAK MENGIKUTI JALAN
+        // FUNGSI ESTIMASI JARAK & WAKTU MENGIKUTI JALAN
         async function calculateRoadDistance(coords) {
             const resDiv = document.getElementById('dist-res');
             
-            // Hapus rute lama jika ada
             if (routeLayer) {
                 map.removeLayer(routeLayer);
                 routeLayer = null;
             }
 
-            if (!coords) { resDiv.innerText = "Jarak: -"; return; }
+            if (!coords) { resDiv.innerHTML = "Jarak: -<br>Waktu: -"; return; }
             if (!userCoords) {
                 alert("Aktifkan posisi GPS Anda (tombol crosshairs) terlebih dahulu!");
                 document.getElementById('select-dist-poi').value = "";
@@ -335,18 +334,22 @@
             resDiv.innerText = "Menghitung...";
 
             try {
-                // Menggunakan OSRM Routing API (Public Service)
                 const url = `https://router.project-osrm.org/route/v1/driving/${userLon},${userLat};${poiLon},${poiLat}?overview=full&geometries=geojson`;
                 const response = await fetch(url);
                 const result = await response.json();
 
                 if (result.code === 'Ok') {
                     const data = result.routes[0];
-                    const roadDistance = (data.distance / 1000).toFixed(2); // Meter ke KM
+                    const roadDistance = (data.distance / 1000).toFixed(2); 
                     
-                    resDiv.innerText = `Jarak: ${roadDistance} KM`;
+                    // Hitung Estimasi Waktu (data.duration dalam detik)
+                    const durationSec = data.duration;
+                    const hours = Math.floor(durationSec / 3600);
+                    const minutes = Math.floor((durationSec % 3600) / 60);
+                    let timeStr = hours > 0 ? `${hours} jam ${minutes} mnt` : `${minutes} mnt`;
 
-                    // Gambar garis rute di peta
+                    resDiv.innerHTML = `Jarak: ${roadDistance} KM<br>Waktu: ±${timeStr}`;
+
                     routeLayer = L.geoJSON(data.geometry, {
                         style: {
                             color: '#3498db',
@@ -355,7 +358,6 @@
                         }
                     }).addTo(map);
 
-                    // Zoom peta agar melihat seluruh rute
                     map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
                 } else {
                     resDiv.innerText = "Rute tidak ditemukan";
@@ -394,7 +396,6 @@
             document.getElementById('poi-btn').classList.remove('active-mode');
         });
 
-        // Initialize GPS capture on load
         navigator.geolocation.getCurrentPosition((pos) => {
             userCoords = [pos.coords.latitude, pos.coords.longitude];
         });

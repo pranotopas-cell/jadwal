@@ -343,7 +343,7 @@
                     const roadDistance = (data.distance / 1000).toFixed(2); 
                     
                     // Hitung Estimasi Waktu (data.duration dalam detik)
-                    const durationSec = data.duration * 1.3;
+                    const durationSec = data.duration * 1.5;
                     const hours = Math.floor(durationSec / 3600);
                     const minutes = Math.floor((durationSec % 3600) / 60);
                     let timeStr = hours > 0 ? `${hours} jam ${minutes} mnt` : `${minutes} mnt`;

@@ -193,8 +193,8 @@
         new L.Control.Zoom({ position: 'topcenter' }).addTo(map);
 
         // KEMBALI KE TEMA LAMA (OpenStreetMap Standard) - Lebih Lengkap Jalannya
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
+       L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+        maxZoom: 20
         }).addTo(map);
 
         map.on('moveend zoomend rotateend', () => {

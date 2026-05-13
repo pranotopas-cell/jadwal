@@ -94,7 +94,28 @@
         .active-mode { border: 2px solid #e74c3c; color: #e74c3c; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.5; } }
 
-        .leaflet-control-zoom { margin-top: 310px !important; margin-left: 10px !important; }
+        /* Custom Zoom Control Position: Top Center */
+        .leaflet-top.leaflet-center {
+            left: 50%;
+            transform: translateX(-50%);
+            top: 10px;
+        }
+        .leaflet-center .leaflet-control {
+            margin: 0;
+            display: flex;
+            flex-direction: row;
+        }
+        .leaflet-center .leaflet-control-zoom-in, 
+        .leaflet-center .leaflet-control-zoom-out {
+            border-radius: 8px !important;
+            margin: 0 5px;
+            background: rgba(0, 0, 0, 0.8) !important;
+            color: white !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            width: 40px !important;
+            height: 40px !important;
+            line-height: 40px !important;
+        }
     </style>
 </head>
 <body>
@@ -138,8 +159,41 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const map = L.map('map', { zoomControl: true, attributionControl: false }).setView([-2.5489, 118.0149], 5);
+        // Persistent View Logic
+        const savedLat = localStorage.getItem('map_lat') || -2.5489;
+        const savedLon = localStorage.getItem('map_lon') || 118.0149;
+        const savedZoom = localStorage.getItem('map_zoom') || 5;
+
+        // Initialize Map
+        const map = L.map('map', { 
+            zoomControl: false, // Matikan default
+            attributionControl: false 
+        }).setView([savedLat, savedLon], savedZoom);
+
+        // Add Zoom Control to Top Center
+        L.Control.CenterZoom = L.Control.Zoom.extend({
+            onAdd: function(map) {
+                const container = L.Control.Zoom.prototype.onAdd.call(this, map);
+                L.DomUtil.addClass(container, 'leaflet-control-zoom-horizontal');
+                return container;
+            }
+        });
+
+        // Membuat posisi baru di Leaflet untuk center
+        const centerControl = map._controlCorners;
+        centerControl.topcenter = L.DomUtil.create('div', 'leaflet-top leaflet-center', map._controlContainer);
+        
+        new L.Control.Zoom({ position: 'topcenter' }).addTo(map);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // Save view on change
+        map.on('moveend zoomend', () => {
+            const center = map.getCenter();
+            localStorage.setItem('map_lat', center.lat);
+            localStorage.setItem('map_lon', center.lng);
+            localStorage.setItem('map_zoom', map.getZoom());
+        });
 
         let markers = { units: {}, pois: {} };
         let userMarker = null;

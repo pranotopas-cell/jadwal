@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Plugin Tambahan untuk Rotasi Peta -->
+    <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
     
     <style>
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; background: #1a1a1a; }
@@ -175,9 +177,13 @@
         const savedLon = localStorage.getItem('map_lon') || 118.0149;
         const savedZoom = localStorage.getItem('map_zoom') || 5;
 
+        // Inisialisasi peta dengan opsi rotate enabled
         const map = L.map('map', { 
             zoomControl: false, 
-            attributionControl: false 
+            attributionControl: false,
+            rotate: true, // Mengaktifkan fitur rotasi
+            touchRotate: true, // Mengaktifkan rotasi dengan dua jari di HP
+            shiftKeyRotate: true // Mengaktifkan rotasi dengan Shift + Drag di PC
         }).setView([savedLat, savedLon], savedZoom);
 
         const centerControl = map._controlCorners;
@@ -186,7 +192,7 @@
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        map.on('moveend zoomend', () => {
+        map.on('moveend zoomend rotateend', () => {
             const center = map.getCenter();
             localStorage.setItem('map_lat', center.lat);
             localStorage.setItem('map_lon', center.lng);
@@ -312,52 +318,36 @@
             });
         }
 
-        // FUNGSI ESTIMASI JARAK & WAKTU MENGIKUTI JALAN
         async function calculateRoadDistance(coords) {
             const resDiv = document.getElementById('dist-res');
-            
             if (routeLayer) {
                 map.removeLayer(routeLayer);
                 routeLayer = null;
             }
-
             if (!coords) { resDiv.innerHTML = "Jarak: -<br>Waktu: -"; return; }
             if (!userCoords) {
                 alert("Aktifkan posisi GPS Anda (tombol crosshairs) terlebih dahulu!");
                 document.getElementById('select-dist-poi').value = "";
                 return;
             }
-
             const [poiLat, poiLon] = coords.split(',');
             const [userLat, userLon] = userCoords;
-
             resDiv.innerText = "Menghitung...";
-
             try {
                 const url = `https://router.project-osrm.org/route/v1/driving/${userLon},${userLat};${poiLon},${poiLat}?overview=full&geometries=geojson`;
                 const response = await fetch(url);
                 const result = await response.json();
-
                 if (result.code === 'Ok') {
                     const data = result.routes[0];
                     const roadDistance = (data.distance / 1000).toFixed(2); 
-                    
-                    // Hitung Estimasi Waktu (data.duration dalam detik)
                     const durationSec = data.duration * 1.5;
                     const hours = Math.floor(durationSec / 3600);
                     const minutes = Math.floor((durationSec % 3600) / 60);
                     let timeStr = hours > 0 ? `${hours} jam ${minutes} mnt` : `${minutes} mnt`;
-
                     resDiv.innerHTML = `Jarak: ${roadDistance} KM<br>Waktu: ±${timeStr}`;
-
                     routeLayer = L.geoJSON(data.geometry, {
-                        style: {
-                            color: '#3498db',
-                            weight: 5,
-                            opacity: 0.7
-                        }
+                        style: { color: '#3498db', weight: 5, opacity: 0.7 }
                     }).addTo(map);
-
                     map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
                 } else {
                     resDiv.innerText = "Rute tidak ditemukan";

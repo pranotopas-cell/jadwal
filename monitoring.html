@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LIVE MAP MOBILE</title>
+    <title>MAPS</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Plugin Tambahan untuk Rotasi Peta -->
+    <!-- Plugin Rotasi Peta -->
     <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
     
     <style>
@@ -100,7 +100,7 @@
         .active-mode { border: 2px solid #e74c3c; color: #e74c3c; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.5; } }
 
-        /* Custom Zoom Control */
+        /* Custom Zoom Control Tengah Atas */
         .leaflet-top.leaflet-center {
             left: 50%;
             transform: translateX(-50%);
@@ -177,20 +177,23 @@
         const savedLon = localStorage.getItem('map_lon') || 118.0149;
         const savedZoom = localStorage.getItem('map_zoom') || 5;
 
-        // Inisialisasi peta dengan opsi rotate enabled
+        // Inisialisasi peta dengan plugin rotasi aktif
         const map = L.map('map', { 
             zoomControl: false, 
             attributionControl: false,
-            rotate: true, // Mengaktifkan fitur rotasi
-            touchRotate: true, // Mengaktifkan rotasi dengan dua jari di HP
-            shiftKeyRotate: true // Mengaktifkan rotasi dengan Shift + Drag di PC
+            rotate: true, 
+            touchRotate: true, 
+            shiftKeyRotate: true,
+            bearing: 0 
         }).setView([savedLat, savedLon], savedZoom);
 
+        // Kontrol zoom di tengah atas
         const centerControl = map._controlCorners;
         centerControl.topcenter = L.DomUtil.create('div', 'leaflet-top leaflet-center', map._controlContainer);
         new L.Control.Zoom({ position: 'topcenter' }).addTo(map);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // Peta TERBARU (CartoDB Voyager - Modern & Bersih)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
 
         map.on('moveend zoomend rotateend', () => {
             const center = map.getCenter();
@@ -326,7 +329,7 @@
             }
             if (!coords) { resDiv.innerHTML = "Jarak: -<br>Waktu: -"; return; }
             if (!userCoords) {
-                alert("Aktifkan posisi GPS Anda (tombol crosshairs) terlebih dahulu!");
+                alert("Aktifkan posisi GPS Anda terlebih dahulu!");
                 document.getElementById('select-dist-poi').value = "";
                 return;
             }

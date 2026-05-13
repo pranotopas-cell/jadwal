@@ -193,8 +193,8 @@
         new L.Control.Zoom({ position: 'topcenter' }).addTo(map);
 
         // KEMBALI KE TEMA LAMA (OpenStreetMap Standard) - Lebih Lengkap Jalannya
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri'
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB'
         }).addTo(map);
 
         map.on('moveend zoomend rotateend', () => {

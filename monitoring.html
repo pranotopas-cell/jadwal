@@ -193,8 +193,8 @@
         new L.Control.Zoom({ position: 'topcenter' }).addTo(map);
 
         // KEMBALI KE TEMA LAMA (OpenStreetMap Standard) - Lebih Lengkap Jalannya
-       L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
-        maxZoom: 20
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri'
         }).addTo(map);
 
         map.on('moveend zoomend rotateend', () => {

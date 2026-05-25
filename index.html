@@ -198,7 +198,7 @@
             const { data, error } = await _supabase.from('data_pengiriman').select('*').gte('tanggal', isoHariIni);
             
             if (!error) {
-                const statusPriority = { "PROSES": 1, "LANGSIRAN": 2, "TERJADWAL": 3, "OPER": 4, "NGISI-AJA": 5, "TUNGGU": 6, "DELIVERED": 7 };
+                const statusPriority = { "PROSES": 1, "LANGSIRAN": 2, "TERJADWAL": 3, "OPER": 4, "NGISI AJA": 5, "TUNGGU": 6, "DELIVERED": 7 };
                 const sortedData = data.sort((a, b) => {
                     if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                     const getRitNum = (row) => {
@@ -250,13 +250,13 @@
                 } 
                 else if (isDataLengkap && (
                     statusRaw.includes("LANGSIRAN") || 
-                    statusRaw.includes("NGISI-AJA") || 
+                    statusRaw.includes("NGISI") || 
                     statusRaw.includes("OPER") || 
                     statusRaw.includes("TERJADWAL")
                 )) {
                     if (statusRaw.includes("LANGSIRAN")) {
                         statusClass = "st-langsir";
-                    } else if (statusRaw.includes("NGISI-AJA")) {
+                    } else if (statusRaw.includes("NGISI")) {
                         statusClass = "st-ngisi";
                     } else if (statusRaw.includes("OPER")) {
                         statusClass = "st-oper";

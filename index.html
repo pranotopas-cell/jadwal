@@ -106,6 +106,7 @@
         /* STATUS CLASSES */
         .st-tunggu { color: var(--color-tunggu); font-weight: 900; }
         .st-terjadwal { color: var(--color-terjadwal); font-weight: 900; }
+        .st-langsiran { color: var(--color-langsiran); font-weight: 900; }
         .st-proses { color: var(--color-proses); animation: blink 1.5s infinite; font-weight: 900; }
         .st-langsir { color: var(--color-langsir); animation: blink 1.5s infinite; font-weight: 900; }
         .st-oper { color: var(--color-oper); animation: blink 1.5s infinite; font-weight: 900; }
@@ -194,7 +195,7 @@
             const { data, error } = await _supabase.from('data_pengiriman').select('*').gte('tanggal', isoHariIni);
             
             if (!error) {
-                const statusPriority = { "PROSES": 1, "TERJADWAL": 2, "OPER": 3, "LANGSIR": 4, "TUNGGU": 5, "DELIVERED": 6 };
+                const statusPriority = { "PROSES": 1, "LANGSIRAN": 2, "TERJADWAL": 3, "OPER": 4, "LANGSIR": 5, "TUNGGU": 6, "DELIVERED": 7 };
                 const sortedData = data.sort((a, b) => {
                     if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                     const getRitNum = (row) => {

@@ -196,7 +196,7 @@
             const { data, error } = await _supabase.from('data_pengiriman').select('*').gte('tanggal', isoHariIni);
             
             if (!error) {
-                const statusPriority = { "PROSES": 1, "LANGSIRAN": 2, "TERJADWAL": 3, "OPER": 4, "LANGSIR": 5, "TUNGGU": 6, "DELIVERED": 7 };
+                const statusPriority = { "PROSES": 1, "LANGSIRAN": 2, "TERJADWAL": 3, "OPER": 4, "NGISI AJA": 5, "TUNGGU": 6, "DELIVERED": 7 };
                 const sortedData = data.sort((a, b) => {
                     if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
                     const getRitNum = (row) => {
@@ -216,69 +216,85 @@
         }
 
         function renderData(data) {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
-            let lastDate = "";
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    let lastDate = "";
 
-            data.forEach(row => {
-                if (row.tanggal !== lastDate) {
-                    const dateRow = document.createElement('tr');
-                    dateRow.innerHTML = `<td colspan="4" class="date-divider"><i class="fas fa-calendar-alt"></i> ${formatFullDate(row.tanggal)}</td>`;
-                    tbody.appendChild(dateRow);
-                    lastDate = row.tanggal;
-                }
-
-                const ritMatch = (row.lokasi || "").match(/RIT\s*(\d+)/i);
-                const ritDisplay = ritMatch ? ritMatch[1] : (row.rit || '-');
-                
-                const statusFull = (row.status || "TUNGGU").toUpperCase();
-                const statusRaw = statusFull.split('\n')[0];
-                
-                let statusClass = "st-terjadwal";
-                let actionBtn = "";
-                const isDataLengkap = row.nopol && row.sopir && row.delivery_to;
-
-                if (statusRaw.includes("PROSES")) {
-                    statusClass = "st-proses";
-                    actionBtn = `<button class="btn-job btn-finish" onclick="finishJob('${row.nopol}', '${row.id}')">DONE</button>`;
-                } 
-                else if (statusRaw.includes("DELIVERED") || statusRaw.includes("SUCCES")) {
-                    statusClass = "st-delivered";
-                    actionBtn = `<span style="font-size:10px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> SELESAI</span>`;
-                } 
-                else if (isDataLengkap && (statusRaw.includes("LANGSIR") || statusRaw.includes("OPER") || statusRaw.includes("TERJADWAL"))) {
-                    statusClass = statusRaw.includes("LANGSIR") ? "st-langsir" : (statusRaw.includes("OPER") ? "st-oper" : "st-terjadwal");
-                    actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}', '${row.sopir}', '${row.delivery_to}')">AMBIL</button>`;
-                } else {
-                    statusClass = "st-tunggu";
-                    actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAIT INFO</span>`;
-                }
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <div class="flight-cell">
-                            <div class="nopol-block">${row.nopol || '-'}</div>
-                            <div class="sopir-name">${row.sopir || '-'}</div>
-                        </div>
-                        <div class="destination-info">
-                            <div>DELIVERY TO : <b>${row.delivery_to || '-'}</b></div>
-                            <div class="ritase-text">RITASE: ${ritDisplay}</div>
-                        </div>
-                    </td>
-                    <td style="text-align:center; font-weight:bold; color:var(--text-white-soft); font-size:16px;">${row.jumlah_keluar || '0'}</td>
-                    <td>
-                        <span class="location-text"><i class="fas fa-map-marker-alt"></i> ${row.lokasi || 'GPS AKTIF'}</span>
-                        <span class="storage-text">${row.supplier || '-'}</span>
-                    </td>
-                    <td class="action-cell">
-                        <span class="${statusClass}">${row.status || 'TUNGGU'}</span>
-                        ${actionBtn}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+    data.forEach(row => {
+        if (row.tanggal !== lastDate) {
+            const dateRow = document.createElement('tr');
+            dateRow.innerHTML = `<td colspan="4" class="date-divider"><i class="fas fa-calendar-alt"></i> ${formatFullDate(row.tanggal)}</td>`;
+            tbody.appendChild(dateRow);
+            lastDate = row.tanggal;
         }
+
+        const ritMatch = (row.lokasi || "").match(/RIT\s*(\d+)/i);
+        const ritDisplay = ritMatch ? ritMatch[1] : (row.rit || '-');
+        
+        const statusFull = (row.status || "TUNGGU").toUpperCase();
+        const statusRaw = statusFull.split('\n')[0];
+        
+        let statusClass = "st-terjadwal";
+        let actionBtn = "";
+        const isDataLengkap = row.nopol && row.sopir && row.delivery_to;
+
+        if (statusRaw.includes("PROSES")) {
+            statusClass = "st-proses";
+            actionBtn = `<button class="btn-job btn-finish" onclick="finishJob('${row.nopol}', '${row.id}')">DONE</button>`;
+        } 
+        else if (statusRaw.includes("DELIVERED") || statusRaw.includes("SUCCES")) {
+            statusClass = "st-delivered";
+            actionBtn = `<span style="font-size:10px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> SELESAI</span>`;
+        } 
+        // UPDATE: Logika menggunakan "LANGSIRAN" dan ditambah "NGISI AJA"
+        else if (isDataLengkap && (
+            statusRaw.includes("LANGSIRAN") || 
+            statusRaw.includes("NGISI AJA") || 
+            statusRaw.includes("OPER") || 
+            statusRaw.includes("TERJADWAL")
+        )) {
+            // Menentukan class CSS berdasarkan teks status
+            if (statusRaw.includes("LANGSIRAN")) {
+                statusClass = "st-langsir";
+            } else if (statusRaw.includes("NGISI AJA")) {
+                statusClass = "st-ngisi"; // Class CSS baru untuk status NGISI AJA
+            } else if (statusRaw.includes("OPER")) {
+                statusClass = "st-oper";
+            } else {
+                statusClass = "st-terjadwal";
+            }
+
+            actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}', '${row.sopir}', '${row.delivery_to}')">AMBIL</button>`;
+        } else {
+            statusClass = "st-tunggu";
+            actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAIT INFO</span>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>
+                <div class="flight-cell">
+                    <div class="nopol-block">${row.nopol || '-'}</div>
+                    <div class="sopir-name">${row.sopir || '-'}</div>
+                </div>
+                <div class="destination-info">
+                    <div>DELIVERY TO : <b>${row.delivery_to || '-'}</b></div>
+                    <div class="ritase-text">RITASE: ${ritDisplay}</div>
+                </div>
+            </td>
+            <td style="text-align:center; font-weight:bold; color:var(--text-white-soft); font-size:16px;">${row.jumlah_keluar || '0'}</td>
+            <td>
+                <span class="location-text"><i class="fas fa-map-marker-alt"></i> ${row.lokasi || 'GPS AKTIF'}</span>
+                <span class="storage-text">${row.supplier || '-'}</span>
+            </td>
+            <td class="action-cell">
+                <span class="${statusClass}">${row.status || 'TUNGGU'}</span>
+                ${actionBtn}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
         async function takeJob(nopol, rowId, sopir, tujuan) {
             if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;

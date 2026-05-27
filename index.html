@@ -198,9 +198,21 @@
             const { data, error } = await _supabase.from('data_pengiriman').select('*').gte('tanggal', isoHariIni);
             
             if (!error) {
-                const statusPriority = { "PROSES": 1, "LANGSIRAN": 2, "TERJADWAL": 3, "OPER": 4, "NGISI AJA": 5, "TUNGGU": 6, "DELIVERED": 7 };
+                // 1. Tentukan priority dasar
+                // Kita beri jarak angka (gap) agar bisa diselipkan logika custom di bawah
+                const statusPriority = { 
+                    "PROSES": 10, 
+                    "LANGSIRAN": 20, 
+                    "TERJADWAL": 30, 
+                    "OPER": 40, 
+                    "NGISI AJA": 50, 
+                    "TUNGGU": 60, 
+                    "DELIVERED": 70 
+                };
+
                 const sortedData = data.sort((a, b) => {
                     if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
+                    
                     const getRitNum = (row) => {
                         const match = (row.lokasi || "").match(/RIT\s*(\d+)/i);
                         return match ? parseInt(match[1]) : (parseInt(row.rit) || 999);
@@ -209,9 +221,25 @@
                     const ritB = getRitNum(b);
                     if (ritA !== ritB) return ritA - ritB;
                     
+                    // --- LOGIKA BARU UNTUK MENYELIPKAN "SO SIAP" / "READY" ---
                     const statA = (a.status || "").split('\n')[0].toUpperCase();
                     const statB = (b.status || "").split('\n')[0].toUpperCase();
-                    return (statusPriority[statA] || 5) - (statusPriority[statB] || 5);
+                    const lokA = (a.lokasi || "").toUpperCase();
+                    const lokB = (b.lokasi || "").toUpperCase();
+
+                    let scoreA = statusPriority[statA] || 55;
+                    let scoreB = statusPriority[statB] || 55;
+
+                    // KONDISI KHUSUS: Jika status TERJADWAL tapi di kolom LOKASI ada kata "SO SIAP" / "READY"
+                    // Maka skornya diubah jadi 25 (Di antara LANGSIRAN [20] dan TERJADWAL biasa [30])
+                    if (statA === "TERJADWAL" && (lokA.includes("SO SIAP") || lokA.includes("READY"))) {
+                        scoreA = 25; 
+                    }
+                    if (statB === "TERJADWAL" && (lokB.includes("SO SIAP") || lokB.includes("READY"))) {
+                        scoreB = 25;
+                    }
+                    
+                    return scoreA - scoreB;
                 });
                 renderData(sortedData);
             }

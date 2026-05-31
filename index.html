@@ -212,68 +212,87 @@
             }
         }
 
-        // GERBANG LOGIN UTAMA (Mengeblok HP lain dengan mendeteksi nomor HP yang sama)
+        // GERBANG LOGIN UTAMA (Validasi berlapis ke database Supabase)
         async function cekGerbangLogin() {
             let infoSopirNama = localStorage.getItem('login_sopir_nama');
             let infoSopirPhone = localStorage.getItem('login_sopir_phone');
 
-            if (!infoSopirNama || !infoSopirPhone) {
-                const inputPhone = prompt("Sistem Terkunci!\nSilakan masukkan Nomor HP Anda untuk masuk ke sistem jadwal:");
+            // 1. Validasi berkala bagi yang sudah login (Mencegah bypass di HP ke-2)
+            if (infoSopirNama && infoSopirPhone) {
+                const { data: cekSesiAktif } = await _supabase
+                    .from('tracking_unit')
+                    .select('status')
+                    .eq('sopir', infoSopirNama)
+                    .in('status', ['ON_JOB', 'LOGIN_ACTIVE'])
+                    .maybeSingle();
                 
-                if (!inputPhone || inputPhone.trim() === "") {
-                    alert("Akses ditolak! Nomor HP Tidak Terdaftar.");
+                // Jika data session di DB hilang (misal di-force logout dari pusat/HP lain), tendang keluar
+                if (!cekSesiAktif) {
+                    localStorage.removeItem('login_sopir_nama');
+                    localStorage.removeItem('login_sopir_phone');
+                    alert("Sesi Anda telah berakhir atau login di tempat lain.");
                     window.location.reload();
                     return false;
                 }
+                return true;
+            }
 
-                let nomorCocok = false;
-                let namaTerverifikasi = "";
-                let nomorTerverifikasi = inputPhone.trim();
+            // 2. Alur Login Baru / HP Baru jika memori kosong
+            const inputPhone = prompt("Sistem Terkunci!\nSilakan masukkan Nomor HP Anda untuk masuk ke sistem jadwal:");
+            
+            if (!inputPhone || inputPhone.trim() === "") {
+                alert("Akses ditolak! Nomor HP Tidak Terdaftar.");
+                window.location.reload();
+                return false;
+            }
 
-                for (let namaMaster in sopirPhoneMap) {
-                    if (sopirPhoneMap[namaMaster] === nomorTerverifikasi) {
-                        nomorCocok = true;
-                        namaTerverifikasi = namaMaster;
-                        break;
-                    }
-                }
+            let nomorCocok = false;
+            let namaTerverifikasi = "";
+            let nomorTerverifikasi = inputPhone.trim();
 
-                if (nomorCocok) {
-                    // CEK KE DATABASE: Apakah nomor HP ini sudah login / aktif di HP manapun?
-                    const { data: cekDevice, error } = await _supabase
-                        .from('tracking_unit')
-                        .select('status, nopol, sopir')
-                        .eq('sopir', namaTerverifikasi)
-                        .in('status', ['ON_JOB', 'LOGIN_ACTIVE'])
-                        .maybeSingle();
-
-                    if (cekDevice) {
-                        alert(`Gagal Masuk! Nomor HP ini sudah login di HP lain!`);
-                        window.location.reload();
-                        return false;
-                    }
-
-                    // Kunci session login di database berdasarkan nama/nomor terverifikasi
-                    await _supabase.from('tracking_unit').upsert({
-                        nopol: 'LOGIN_ONLY',
-                        sopir: namaTerverifikasi,
-                        status: 'LOGIN_ACTIVE',
-                        last_update: new Date().toISOString()
-                    }, { onConflict: 'sopir' });
-
-                    localStorage.setItem('login_sopir_nama', namaTerverifikasi);
-                    localStorage.setItem('login_sopir_phone', nomorTerverifikasi);
-                    
-                    alert(`Login Berhasil!\nSelamat Datang, ${namaTerverifikasi}`);
-                    updateHeaderStatus();
-                    return true;
-                } else {
-                    alert("Nomor HP tidak terdaftar!");
-                    window.location.reload();
-                    return false;
+            for (let namaMaster in sopirPhoneMap) {
+                if (sopirPhoneMap[namaMaster] === nomorTerverifikasi) {
+                    nomorCocok = true;
+                    namaTerverifikasi = namaMaster;
+                    break;
                 }
             }
-            return true;
+
+            if (nomorCocok) {
+                // CEK DB UTAMA: Apakah Nama pemilik No HP ini memiliki status aktif di database?
+                const { data: cekDevice, error } = await _supabase
+                    .from('tracking_unit')
+                    .select('status')
+                    .eq('sopir', namaTerverifikasi)
+                    .in('status', ['ON_JOB', 'LOGIN_ACTIVE'])
+                    .maybeSingle();
+
+                // JIKA COCOK DAN SEDANG AKTIF DI HP 1, MAKA HP 2 DI-BLOKIR TOTAL DI SINI
+                if (cekDevice) {
+                    alert("Nomor sudah login.");
+                    window.location.reload();
+                    return false;
+                }
+
+                // Jika benar-benar bersih, baru daftarkan status login ke DB Supabase
+                await _supabase.from('tracking_unit').upsert({
+                    nopol: 'LOGIN_ONLY',
+                    sopir: namaTerverifikasi,
+                    status: 'LOGIN_ACTIVE',
+                    last_update: new Date().toISOString()
+                }, { onConflict: 'sopir' });
+
+                localStorage.setItem('login_sopir_nama', namaTerverifikasi);
+                localStorage.setItem('login_sopir_phone', nomorTerverifikasi);
+                
+                alert(`Login Berhasil!\nSelamat Datang, ${namaTerverifikasi}`);
+                updateHeaderStatus();
+                return true;
+            } else {
+                alert("Nomor HP tidak terdaftar!");
+                window.location.reload();
+                return false;
+            }
         }
 
         async function mintaLogout() {
@@ -295,7 +314,6 @@
             }
         }
 
-        // VERIFIKASI SEBELUM AMBIL JOB (Mendukung multitugas jika ada 2 nama dalam satu baris jadwal)
         function verifikasiHakAksesSopir(sopirDariDb) {
             const loginNama = localStorage.getItem('login_sopir_nama');
             if (!loginNama) return false;
@@ -303,7 +321,7 @@
             const namaClean = loginNama.toUpperCase().trim();
             const dbSopirClean = sopirDariDb.toUpperCase().trim();
 
-            // Mendukung sistem multi-driver (Contoh data DB: "AGUS EFENDI / WAHID KHUMAINI" atau "AGUS EFENDI & ALFIN")
+            // Logika multi-name dalam satu baris tugas
             if (dbSopirClean.includes(namaClean)) {
                 return true;
             } else {

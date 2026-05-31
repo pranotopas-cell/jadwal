@@ -223,7 +223,7 @@
                 const inputPhone = prompt("Sistem Terkunci!\nSilakan masukkan Nomor HP Anda untuk masuk ke sistem jadwal:");
                 
                 if (!inputPhone || inputPhone.trim() === "") {
-                    alert("Akses ditolak! Anda harus memasukkan nomor HP.");
+                    alert("Akses ditolak!Nomor HP Tidak Terdaftar.");
                     window.location.reload();
                     return false;
                 }
@@ -289,7 +289,7 @@
                 localStorage.removeItem('login_sopir_phone');
                 if (watchId) navigator.geolocation.clearWatch(watchId);
                 
-                alert("Anda berhasil Log Out! Sistem akan dimuat ulang.");
+                alert("Anda berhasil Log Out!.");
                 window.location.reload();
             }
         }
@@ -307,7 +307,7 @@
                 return true;
             } else {
                 // UPDATE: Pesan peringatan diubah sesuai permintaan Anda
-                alert("jadwal ini buat sopir yang tercantum namanya.");
+                alert("jadwal Tidak Cocok Dengan Nama Anda.");
                 return false;
             }
         }
@@ -453,7 +453,7 @@
             // Cek otoritas hak akses
             if (!verifikasiHakAksesSopir(sopir)) return;
 
-            if (!confirm("Konfirmasi Tugas Selesai?")) return;
+            if (!confirm("Tugas Selesai?")) return;
             
             if (watchId) navigator.geolocation.clearWatch(watchId);
 

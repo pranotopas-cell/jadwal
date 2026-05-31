@@ -212,36 +212,21 @@
             }
         }
 
-        // GERBANG LOGIN UTAMA (Validasi berlapis ke database Supabase)
+        // GERBANG LOGIN UTAMA (Fix Refresh Menyimpan & Kunci 2 HP Akurat)
         async function cekGerbangLogin() {
             let infoSopirNama = localStorage.getItem('login_sopir_nama');
             let infoSopirPhone = localStorage.getItem('login_sopir_phone');
 
-            // 1. Validasi berkala bagi yang sudah login (Mencegah bypass di HP ke-2)
+            // FIX: Jika local storage browser sudah menyimpan data, loloskan langsung (tidak looping minta login lagi saat refresh)
             if (infoSopirNama && infoSopirPhone) {
-                const { data: cekSesiAktif } = await _supabase
-                    .from('tracking_unit')
-                    .select('status')
-                    .eq('sopir', infoSopirNama)
-                    .in('status', ['ON_JOB', 'LOGIN_ACTIVE'])
-                    .maybeSingle();
-                
-                // Jika data session di DB hilang (misal di-force logout dari pusat/HP lain), tendang keluar
-                if (!cekSesiAktif) {
-                    localStorage.removeItem('login_sopir_nama');
-                    localStorage.removeItem('login_sopir_phone');
-                    alert("Sesi Anda telah berakhir atau login di tempat lain.");
-                    window.location.reload();
-                    return false;
-                }
                 return true;
             }
 
-            // 2. Alur Login Baru / HP Baru jika memori kosong
+            // Alur input jika browser benar-benar kosong kosong/baru pertama buka
             const inputPhone = prompt("Sistem Terkunci!\nSilakan masukkan Nomor HP Anda untuk masuk ke sistem jadwal:");
             
             if (!inputPhone || inputPhone.trim() === "") {
-                alert("Akses ditolak! Nomor HP Tidak Terdaftar.");
+                alert("Akses ditolak! Nomor HP Tidak Boleh Kosong.");
                 window.location.reload();
                 return false;
             }
@@ -259,7 +244,7 @@
             }
 
             if (nomorCocok) {
-                // CEK DB UTAMA: Apakah Nama pemilik No HP ini memiliki status aktif di database?
+                // KUNCI COCOK: Cek ke database apakah NAMA sopir ini sedang aktif/ON JOB di HP lain
                 const { data: cekDevice, error } = await _supabase
                     .from('tracking_unit')
                     .select('status')
@@ -267,14 +252,14 @@
                     .in('status', ['ON_JOB', 'LOGIN_ACTIVE'])
                     .maybeSingle();
 
-                // JIKA COCOK DAN SEDANG AKTIF DI HP 1, MAKA HP 2 DI-BLOKIR TOTAL DI SINI
+                // FIX ANTI-TEMBUS: Jika sudah tercatat aktif di DB, maka HP kedua otomatis DITOLAK MASUK
                 if (cekDevice) {
-                    alert("Nomor sudah login.");
+                    alert(`Gagal Masuk!\nNomor HP / Akun ${namaTerverifikasi} ini sedang aktif digunakan di HP lain.\nSilakan LOGOUT terlebih dahulu dari perangkat sebelumnya.`);
                     window.location.reload();
                     return false;
                 }
 
-                // Jika benar-benar bersih, baru daftarkan status login ke DB Supabase
+                // Jika di database kosong/bersih, daftarkan data baru ke Supabase
                 await _supabase.from('tracking_unit').upsert({
                     nopol: 'LOGIN_ONLY',
                     sopir: namaTerverifikasi,
@@ -282,6 +267,7 @@
                     last_update: new Date().toISOString()
                 }, { onConflict: 'sopir' });
 
+                // Amankan data ke dalam memori browser lokal
                 localStorage.setItem('login_sopir_nama', namaTerverifikasi);
                 localStorage.setItem('login_sopir_phone', nomorTerverifikasi);
                 
@@ -301,6 +287,7 @@
 
             if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\nSetelah ini, nomor Anda baru bisa digunakan login di HP lain.`)) {
                 
+                // Hapus jejak login aktif di database Supabase agar HP lain bisa masuk
                 await _supabase.from('tracking_unit')
                     .delete()
                     .eq('sopir', loginNama);
@@ -309,7 +296,7 @@
                 localStorage.removeItem('login_sopir_phone');
                 if (watchId) navigator.geolocation.clearWatch(watchId);
                 
-                alert("Anda berhasil Log Out!.");
+                alert("Anda berhasil Log Out! Perangkat lain sekarang dapat menggunakan nomor ini.");
                 window.location.reload();
             }
         }
@@ -321,7 +308,6 @@
             const namaClean = loginNama.toUpperCase().trim();
             const dbSopirClean = sopirDariDb.toUpperCase().trim();
 
-            // Logika multi-name dalam satu baris tugas
             if (dbSopirClean.includes(namaClean)) {
                 return true;
             } else {

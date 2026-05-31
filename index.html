@@ -212,51 +212,21 @@
             }
         }
 
-        // Fungsi pembuat Token Sesi Unik untuk membedakan HP vs Laptop browser
-        function generateSessionToken() {
-            let token = localStorage.getItem('login_session_token');
-            if (!token) {
-                token = 'SESSION_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-                localStorage.setItem('login_session_token', token);
-            }
-            return token;
-        }
-
-        // GERBANG LOGIN TOTAL MUTLAK (Anti bypass multi-device & Simpan State Refresh)
+        // GERBANG LOGIN UTAMA (Fix Refresh Menyimpan & Kunci 2 HP Akurat)
         async function cekGerbangLogin() {
             let infoSopirNama = localStorage.getItem('login_sopir_nama');
             let infoSopirPhone = localStorage.getItem('login_sopir_phone');
-            let tokenSesiLokal = generateSessionToken();
 
-            // 1. VALIDASI UTAMA: Jika status memori browser terdeteksi login
+            // FIX: Jika local storage browser sudah menyimpan data, loloskan langsung (tidak looping minta login lagi saat refresh)
             if (infoSopirNama && infoSopirPhone) {
-                // Tembak DB langsung untuk validasi silang (Apakah token sesi di browser ini COCOK dengan yang aktif di DB?)
-                const { data: cekDataDB, error } = await _supabase
-                    .from('tracking_unit')
-                    .select('tujuan') // Kita gunakan kolom 'tujuan' sementara atau kolom text kosong untuk menyimpan Token Sesi unik jika tabel tidak diubah struktur kolomnya
-                    .eq('sopir', infoSopirNama)
-                    .in('status', ['ON_JOB', 'LOGIN_ACTIVE'])
-                    .maybeSingle();
-
-                // Jika di DB ternyata kosong, atau kolom penanda sesi di DB diisi token perangkat lain, FORCE LOGOUT
-                if (!cekDataDB || cekDataDB.tujuan?.includes("TOKEN_") && cekDataDB.tujuan !== "TOKEN_" + tokenSesiLokal && !cekDataDB.tujuan.includes("RIT")) {
-                    // Kecuali jika sedang ON_JOB perjalanan membawa muatan ritase asli
-                    if(cekDataDB && !cekDataDB.tujuan?.includes("TOKEN_")){
-                         return true; // Izinkan bypass jika driver sedang benar-benar berjalan membawa job agar koordinat gps tidak mati
-                    }
-                    localStorage.clear();
-                    alert("Akses diblokir! Akun ini telah aktif di perangkat/HP/Laptop lain.");
-                    window.location.reload();
-                    return false;
-                }
                 return true;
             }
 
-            // 2. Alur Pengisian nomor HP baru (Jika perangkat belum pernah login)
+            // Alur input jika browser benar-benar kosong kosong/baru pertama buka
             const inputPhone = prompt("Sistem Terkunci!\nSilakan masukkan Nomor HP Anda untuk masuk ke sistem jadwal:");
             
             if (!inputPhone || inputPhone.trim() === "") {
-                alert("Akses ditolak! Nomor HP Tidak Terdaftar.");
+                alert("Akses ditolak! Nomor HP Tidak Boleh Kosong.");
                 window.location.reload();
                 return false;
             }
@@ -274,31 +244,30 @@
             }
 
             if (nomorCocok) {
-                // KUNCI DB TOTAL: Periksa apakah NAMA akun sopir ini sudah nangkring aktif di database?
-                const { data: cekDevice } = await _supabase
+                // KUNCI COCOK: Cek ke database apakah NAMA sopir ini sedang aktif/ON JOB di HP lain
+                const { data: cekDevice, error } = await _supabase
                     .from('tracking_unit')
                     .select('status')
                     .eq('sopir', namaTerverifikasi)
                     .in('status', ['ON_JOB', 'LOGIN_ACTIVE'])
                     .maybeSingle();
 
-                // JIKALAU ADA DATA AKTIF, BLOKIR TOTAL SIAPA PUN YANG MENCOBA MASUK DI PERANGKAT KEDUA!
+                // FIX ANTI-TEMBUS: Jika sudah tercatat aktif di DB, maka HP kedua otomatis DITOLAK MASUK
                 if (cekDevice) {
-                    alert(`AKSES DITOLAK!\nAkun atas nama ${namaTerverifikasi} sedang aktif dibuka di perangkat lain (HP/Laptop).\nSilakan klik tombol LOGOUT terlebih dahulu di perangkat lama.`);
+                    alert(`Gagal Masuk!\nNomor HP / Akun ${namaTerverifikasi} ini sedang aktif digunakan di HP lain.\nSilakan LOGOUT terlebih dahulu dari perangkat sebelumnya.`);
                     window.location.reload();
                     return false;
                 }
 
-                // Jika bersih, daftarkan token sesi unik perangkat ini ke database Supabase
+                // Jika di database kosong/bersih, daftarkan data baru ke Supabase
                 await _supabase.from('tracking_unit').upsert({
                     nopol: 'LOGIN_ONLY',
                     sopir: namaTerverifikasi,
-                    tujuan: 'TOKEN_' + tokenSesiLokal, // Mengunci tanda pengenal token browser unik di database
                     status: 'LOGIN_ACTIVE',
                     last_update: new Date().toISOString()
                 }, { onConflict: 'sopir' });
 
-                // Simpan data kredensial ke browser agar saat direfresh tidak meminta login ulang
+                // Amankan data ke dalam memori browser lokal
                 localStorage.setItem('login_sopir_nama', namaTerverifikasi);
                 localStorage.setItem('login_sopir_phone', nomorTerverifikasi);
                 
@@ -316,17 +285,18 @@
             const loginNama = localStorage.getItem('login_sopir_nama');
             if (!loginNama) return; 
 
-            if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\nSetelah ini, nomor Anda baru bisa digunakan login di HP/Laptop lain.`)) {
+            if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\nSetelah ini, nomor Anda baru bisa digunakan login di HP lain.`)) {
                 
-                // Bersihkan baris pelacakan aktif di database Supabase secara permanen
+                // Hapus jejak login aktif di database Supabase agar HP lain bisa masuk
                 await _supabase.from('tracking_unit')
                     .delete()
                     .eq('sopir', loginNama);
                 
-                localStorage.clear(); // Bersihkan seluruh isi local storage memori browser
+                localStorage.removeItem('login_sopir_nama');
+                localStorage.removeItem('login_sopir_phone');
                 if (watchId) navigator.geolocation.clearWatch(watchId);
                 
-                alert("Anda berhasil Log Out! Sekarang akun bebas dibuka di manapun.");
+                alert("Anda berhasil Log Out! Perangkat lain sekarang dapat menggunakan nomor ini.");
                 window.location.reload();
             }
         }
@@ -507,11 +477,9 @@
 
             await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
             
-            let tokenSesiLokal = generateSessionToken();
             await _supabase.from('tracking_unit').update({ 
                 nopol: 'LOGIN_ONLY', 
                 status: 'LOGIN_ACTIVE', 
-                tujuan: 'TOKEN_' + tokenSesiLokal,
                 last_update: skrg.toISOString() 
             }).eq('sopir', localStorage.getItem('login_sopir_nama'));
 
@@ -520,9 +488,7 @@
         }
 
         setInterval(() => { document.getElementById('clock').innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
-        
-        // Cek dashboard & validasi token ganda ke database secara berkala setiap 15 detik
-        setInterval(() => { loadDashboard(); }, 6000);
+        setInterval(() => { loadDashboard(); }, 30000);
 
         _supabase.channel('db-changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())

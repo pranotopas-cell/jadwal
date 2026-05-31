@@ -20,8 +20,8 @@
             --color-terjadwal: #42a5f5; /* BIRU */
             --color-langsiran: #42a5f5; /* BIRU */
             --color-proses: #66bb6a;    /* HIJAU */
-            --color-ngisi: #fdd835;     /* KUNING */
-            --color-oper: #fb8c00;      /* ORANGE */
+            --color-ngisi: #fdd835;      /* KUNING */
+            --color-oper: #fb8c00;       /* ORANGE */
             --color-delivered: #ffffff; /* PUTIH */
         }
 
@@ -178,7 +178,7 @@
             "SUPRIYADI": "082330138377",
             "ALFIN": "082253835106",
             "WIYANTO": "082353008608",
-            "IPUL": "08952341899",
+            "IPUL": "089523413899",
             "KOMAR": "082253430545",
             "NOTO": "08114558778",
             "ANDI": "082252359023",
@@ -198,7 +198,6 @@
             return date.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
         }
 
-        // Fungsi memperbarui tampilan status login di pojok kanan atas
         function updateHeaderStatus() {
             const loginNama = localStorage.getItem('login_sopir_nama');
             const loginPhone = localStorage.getItem('login_sopir_phone');
@@ -213,17 +212,16 @@
             }
         }
 
-        // GERBANG LOGIN UTAMA (Dijalankan otomatis saat web dibuka)
+        // GERBANG LOGIN UTAMA (Mengeblok HP lain dengan mendeteksi nomor HP yang sama)
         async function cekGerbangLogin() {
             let infoSopirNama = localStorage.getItem('login_sopir_nama');
             let infoSopirPhone = localStorage.getItem('login_sopir_phone');
 
-            // Jika HP ini belum punya riwayat login aktif
             if (!infoSopirNama || !infoSopirPhone) {
                 const inputPhone = prompt("Sistem Terkunci!\nSilakan masukkan Nomor HP Anda untuk masuk ke sistem jadwal:");
                 
                 if (!inputPhone || inputPhone.trim() === "") {
-                    alert("Akses ditolak!Nomor HP Tidak Terdaftar.");
+                    alert("Akses ditolak! Nomor HP Tidak Terdaftar.");
                     window.location.reload();
                     return false;
                 }
@@ -232,7 +230,6 @@
                 let namaTerverifikasi = "";
                 let nomorTerverifikasi = inputPhone.trim();
 
-                // Cari kecocokan nomor HP di kamus master data
                 for (let namaMaster in sopirPhoneMap) {
                     if (sopirPhoneMap[namaMaster] === nomorTerverifikasi) {
                         nomorCocok = true;
@@ -242,21 +239,28 @@
                 }
 
                 if (nomorCocok) {
-                    // CEK KE DATABASE SUPABASE: Apakah user ini sudah terikat aktif/ON_JOB di HP lain?
+                    // CEK KE DATABASE: Apakah nomor HP ini sudah login / aktif di HP manapun?
                     const { data: cekDevice, error } = await _supabase
                         .from('tracking_unit')
-                        .select('status, nopol')
+                        .select('status, nopol, sopir')
                         .eq('sopir', namaTerverifikasi)
-                        .eq('status', 'ON_JOB')
+                        .in('status', ['ON_JOB', 'LOGIN_ACTIVE'])
                         .maybeSingle();
 
                     if (cekDevice) {
-                        alert(`Gagal Masuk! Akun Anda sedang aktif digunakan di HP lain pada unit ${cekDevice.nopol}.\n\nAnda tidak bisa masuk sebelum akun di-LOGOUT dari HP sebelumnya!`);
+                        alert(`Gagal Masuk! Nomor HP ini sudah login di HP lain!`);
                         window.location.reload();
                         return false;
                     }
 
-                    // Jika tidak ada duplikasi, simpan status login ke memori internal HP
+                    // Kunci session login di database berdasarkan nama/nomor terverifikasi
+                    await _supabase.from('tracking_unit').upsert({
+                        nopol: 'LOGIN_ONLY',
+                        sopir: namaTerverifikasi,
+                        status: 'LOGIN_ACTIVE',
+                        last_update: new Date().toISOString()
+                    }, { onConflict: 'sopir' });
+
                     localStorage.setItem('login_sopir_nama', namaTerverifikasi);
                     localStorage.setItem('login_sopir_phone', nomorTerverifikasi);
                     
@@ -272,19 +276,16 @@
             return true;
         }
 
-        // FUNGSI LOGOUT (Melepas ikatan nomor HP agar bisa login di tempat lain)
         async function mintaLogout() {
             const loginNama = localStorage.getItem('login_sopir_nama');
             if (!loginNama) return; 
 
             if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\nSetelah ini, nomor Anda baru bisa digunakan login di HP lain.`)) {
                 
-                // Update status di database agar kunci lepas
                 await _supabase.from('tracking_unit')
-                    .update({ status: 'LOGOUT', last_update: new Date().toISOString() })
+                    .delete()
                     .eq('sopir', loginNama);
                 
-                // Hapus penyimpanan lokal di HP
                 localStorage.removeItem('login_sopir_nama');
                 localStorage.removeItem('login_sopir_phone');
                 if (watchId) navigator.geolocation.clearWatch(watchId);
@@ -294,26 +295,24 @@
             }
         }
 
-        // VERIFIKASI SAAT KLIK TOMBOL JOB (Hanya nama pemilik HP yang bisa ambil tugasnya)
+        // VERIFIKASI SEBELUM AMBIL JOB (Mendukung multitugas jika ada 2 nama dalam satu baris jadwal)
         function verifikasiHakAksesSopir(sopirDariDb) {
             const loginNama = localStorage.getItem('login_sopir_nama');
             if (!loginNama) return false;
 
-            // Pecah kata untuk akurasi pencocokan nama substring
-            const kataMaster = loginNama.split(" ");
-            const cocokTugas = kataMaster.every(kata => sopirDariDb.toUpperCase().includes(kata));
+            const namaClean = loginNama.toUpperCase().trim();
+            const dbSopirClean = sopirDariDb.toUpperCase().trim();
 
-            if (cocokTugas) {
+            // Mendukung sistem multi-driver (Contoh data DB: "AGUS EFENDI / WAHID KHUMAINI" atau "AGUS EFENDI & ALFIN")
+            if (dbSopirClean.includes(namaClean)) {
                 return true;
             } else {
-                // UPDATE: Pesan peringatan diubah sesuai permintaan Anda
                 alert("STOP !! jadwal Tidak Cocok Dengan Nama Anda.");
                 return false;
             }
         }
 
         async function loadDashboard() {
-            // Pastikan gerbang login lolos terlebih dahulu
             const loginValid = await cekGerbangLogin();
             if (!loginValid) return;
 
@@ -430,7 +429,6 @@
         }
 
         async function takeJob(nopol, rowId, sopir, tujuan) {
-            // Cek apakah yang klik tombol AMBIL JOB adalah sopir bersangkutan
             if (!verifikasiHakAksesSopir(sopir)) return;
 
             if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
@@ -441,25 +439,29 @@
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition(async (pos) => {
                     await _supabase.from('tracking_unit').upsert({
-                        nopol: nopol, lat: pos.coords.latitude, lon: pos.coords.longitude,
-                        sopir: localStorage.getItem('login_sopir_nama'), tujuan: tujuan, status: 'ON_JOB', last_update: new Date().toISOString()
-                    }, { onConflict: 'nopol' });
+                        nopol: nopol, 
+                        lat: pos.coords.latitude, 
+                        lon: pos.coords.longitude,
+                        sopir: localStorage.getItem('login_sopir_nama'), 
+                        tujuan: tujuan, 
+                        status: 'ON_JOB', 
+                        last_update: new Date().toISOString()
+                    }, { onConflict: 'sopir' });
                 }, (err) => console.error(err), { enableHighAccuracy: true });
             }
             loadDashboard();
         }
 
         async function finishJob(nopol, rowId, sopir) {
-            // Cek otoritas hak akses
             if (!verifikasiHakAksesSopir(sopir)) return;
 
             if (!confirm("Tugas Selesai?")) return;
             
             if (watchId) navigator.geolocation.clearWatch(watchId);
 
-            const { data: unitData } = await _supabase.from('tracking_unit').select('*').eq('nopol', nopol).single();
+            const { data: unitData } = await _supabase.from('tracking_unit').select('*').eq('sopir', localStorage.getItem('login_sopir_nama')).maybeSingle();
 
-            if (unitData && unitData.tujuan) {
+            if (unitData && unitData.tujuan && unitData.lat && unitData.lon) {
                 const { data: existingPOI } = await _supabase.from('poi_lokasi').select('nama').eq('nama', unitData.tujuan).maybeSingle();
                 if (!existingPOI) {
                     await _supabase.from('poi_lokasi').insert([{ nama: unitData.tujuan, lat: unitData.lat, lon: unitData.lon }]);
@@ -470,20 +472,24 @@
             const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
 
             await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
-            await _supabase.from('tracking_unit').update({ status: 'SUCCESS', last_update: skrg.toISOString() }).eq('nopol', nopol);
+            
+            await _supabase.from('tracking_unit').update({ 
+                nopol: 'LOGIN_ONLY', 
+                status: 'LOGIN_ACTIVE', 
+                last_update: skrg.toISOString() 
+            }).eq('sopir', localStorage.getItem('login_sopir_nama'));
 
             alert("Tugas selesai!.");
             loadDashboard();
         }
 
         setInterval(() => { document.getElementById('clock').innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
-        setInterval(() => { loadDashboard(); }, 60000);
+        setInterval(() => { loadDashboard(); }, 30000);
 
         _supabase.channel('db-changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
             .subscribe();
 
-        // Inisialisasi awal saat web diakses
         loadDashboard();
     </script>
 </body>

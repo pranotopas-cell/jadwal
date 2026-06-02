@@ -409,23 +409,76 @@
         }
 
         async function takeJob(nopol, rowId, sopir, tujuan) {
-            if (!verifikasiHakAksesSopir(sopir)) return;
-            if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
-            
-            const { error } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
-            if (error) return alert("Gagal Update Status di Database");
-            
-            if (navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition(async (pos) => {
-                    await _supabase.from('tracking_unit').upsert({
-                        nopol: nopol, lat: pos.coords.latitude, lon: pos.coords.longitude,
-                        sopir: localStorage.getItem('login_sopir_nama'), tujuan: tujuan, status: 'ON_JOB', 
-                        last_update: new Date().toISOString()
-                    }, { onConflict: 'sopir' });
-                }, (err) => console.error(err), { enableHighAccuracy: true });
-            }
-            loadDashboard();
+    if (!verifikasiHakAksesSopir(sopir)) return;
+    if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
+    
+    // Cek apakah browser mendukung GPS
+    if (!navigator.geolocation) {
+        alert("Waduh! HP/Browser Anda tidak mendukung fitur GPS Tracking.");
+        return;
+    }
+
+    alert("Sedang mengunci sinyal GPS... Mohon tunggu sebentar.");
+
+    // Ambil lokasi awal secara instan untuk memastikan GPS aktif
+    navigator.geolocation.getCurrentPosition(async (posAwal) => {
+        const latitude = posAwal.coords.latitude;
+        const longitude = posAwal.coords.longitude;
+
+        // 1. Update status pengiriman menjadi PROSES
+        const { error: errStatus } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
+        if (errStatus) return alert("Gagal update status " + errStatus.message);
+        
+        // 2. Kirim koordinat pertama ke tracking_unit
+        const { error: errTrack } = await _supabase.from('tracking_unit').upsert({
+            nopol: nopol, 
+            lat: latitude, 
+            lon: longitude,
+            sopir: localStorage.getItem('login_sopir_nama'), 
+            tujuan: tujuan, 
+            status: 'ON_JOB', 
+            last_update: new Date().toISOString()
+        }, { onConflict: 'sopir' });
+
+        if (errTrack) {
+            alert("GPS Gagal " + errTrack.message);
+            return;
         }
+
+        alert("GPS Berhasil");
+
+        // 3. Jalankan watchPosition untuk pantau pergerakan realtime di jalan
+        if (watchId) navigator.geolocation.clearWatch(watchId);
+        
+        watchId = navigator.geolocation.watchPosition(async (pos) => {
+            await _supabase.from('tracking_unit').upsert({
+                nopol: nopol, 
+                lat: pos.coords.latitude, 
+                lon: pos.coords.longitude,
+                sopir: localStorage.getItem('login_sopir_nama'), 
+                tujuan: tujuan, 
+                status: 'ON_JOB', 
+                last_update: new Date().toISOString()
+            }, { onConflict: 'sopir' });
+        }, (err) => {
+            console.error("Gagal", err);
+        }, { 
+            enableHighAccuracy: true, 
+            timeout: 10000, 
+            maximumAge: 0 
+        });
+
+        // 4. Render ulang dashboard
+        loadDashboard();
+
+    }, (error) => {
+        // Switch error dihilangkan, langsung menampilkan pesan error dari sistem browser
+        alert("Gagal mengunci GPS! " + error.message);
+    }, { 
+        enableHighAccuracy: true, 
+        timeout: 15000 
+    });
+}
 
         async function finishJob(nopol, rowId, sopir) {
             if (!verifikasiHakAksesSopir(sopir)) return;

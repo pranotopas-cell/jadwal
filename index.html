@@ -249,7 +249,7 @@
                 }
 
                 await _supabase.from('tracking_unit').upsert({
-                    nopol: 'LOGIN_ONLY',
+                    nopol: 'LOGIN-' + namaTerverifikasi.replace(/\s+/g, '_'),
                     sopir: namaTerverifikasi,
                     status: 'LOGIN_ACTIVE',
                     last_update: new Date().toISOString()
@@ -499,8 +499,8 @@
             const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
 
             await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
-            await _supabase.from('tracking_unit').update({ nopol: 'LOGIN_ONLY', status: 'LOGIN_ACTIVE', last_update: skrg.toISOString() }).eq('sopir', localStorage.getItem('login_sopir_nama'));
-
+            await _supabase.from('tracking_unit').update({ nopol: 'LOGIN-' + localStorage.getItem('login_sopir_nama').replace(/\s+/g, '_'), status: 'LOGIN_ACTIVE', last_update: skrg.toISOString() }).eq('sopir', localStorage.getItem('login_sopir_nama'));
+            
             alert("Tugas selesai!.");
             loadDashboard();
         }

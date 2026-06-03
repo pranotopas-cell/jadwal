@@ -125,7 +125,7 @@
             line-height: 40px !important;
         }
 
-        /* ANIMASI BARU: Ikon Truk Tangki Bergetar Luwes */
+        /* Container khusus untuk Ikon Navigasi */
         .custom-truck-container {
             display: flex;
             justify-content: center;
@@ -134,17 +134,18 @@
             height: 40px;
         }
 
+        /* ANIMASI BARU: Tanda Panah Navigasi Berdenyut Luwes */
         .truck-icon-style {
-            font-size: 24px;
-            color: #2ecc71; /* Warna hijau khas ON_JOB */
-            text-shadow: 0 0 6px rgba(46, 204, 113, 0.8), 0 2px 4px rgba(0,0,0,0.5);
-            animation: truck-pulse 2s infinite ease-in-out;
+            font-size: 22px;
+            color: #3498db; /* Warna biru navigasi modern */
+            text-shadow: 0 0 8px rgba(52, 152, 219, 0.8), 0 2px 4px rgba(0,0,0,0.6);
+            animation: arrow-pulse 1.5s infinite ease-in-out;
         }
 
-        @keyframes truck-pulse {
-            0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(46, 204, 113, 0.4)); }
-            50% { transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(46, 204, 113, 0.9)); }
-            100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(46, 204, 113, 0.4)); }
+        @keyframes arrow-pulse {
+            0% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 2px rgba(52, 152, 219, 0.4)); }
+            50% { transform: translateY(-3px) scale(1.1); filter: drop-shadow(0 0 10px rgba(52, 152, 219, 0.9)); }
+            100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 2px rgba(52, 152, 219, 0.4)); }
         }
     </style>
 </head>
@@ -289,9 +290,9 @@
             const currentVal = selectUnit.value;
             selectUnit.innerHTML = '<option value="">Cari Unit...</option>';
             
-            // Membuat Custom HTML DivIcon untuk Truk Tangki Beranimasi
-            const truckMovingIcon = L.divIcon({
-                html: `<div class="custom-truck-container"><i class="fa-solid fa-truck-field truck-icon-style"></i></div>`,
+            // Membuat Custom HTML DivIcon untuk Tanda Panah Navigasi (Miring -45deg agar presisi lurus ke atas)
+            const arrowMovingIcon = L.divIcon({
+                html: `<div class="custom-truck-container"><i class="fa-solid fa-location-arrow truck-icon-style" style="transform: rotate(-45deg);"></i></div>`,
                 className: 'custom-truck-marker',
                 iconSize: [40, 40],
                 iconAnchor: [20, 20]
@@ -308,7 +309,7 @@
 
                 const popupContent = `
                     <div style="line-height:1.6; color:#fff;">
-                        <b style="color:#2ecc71; font-size:14px;">${u.nopol}</b><br>
+                        <b style="color:#3498db; font-size:14px;">${u.nopol}</b><br>
                         <b>Sopir:</b> ${u.sopir}<br>
                         <b>Tujuan:</b> ${u.tujuan || '-'}
                     </div>
@@ -318,7 +319,7 @@
                     markers.units[u.nopol].setLatLng([lat, lon]);
                     markers.units[u.nopol].getPopup().setContent(popupContent);
                 } else {
-                    markers.units[u.nopol] = L.marker([lat, lon], { icon: truckMovingIcon })
+                    markers.units[u.nopol] = L.marker([lat, lon], { icon: arrowMovingIcon })
                     .addTo(map)
                     .bindPopup(popupContent, { className: 'unit-popup', offset: [0, -10] });
                 }

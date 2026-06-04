@@ -190,7 +190,7 @@ const sopirPhoneMap = {
     "AGUS MULYANTO": "081255852929", "SUPRIYADI": "082330138377",
     "ALFIN": "082253835106", "WIYANTO": "082353008608",
     "IPUL": "089523413899", "KOMAR": "082253430545",
-    "NOTO": "08114558778", "ANDI": "082252359023",
+    "PRANOTO": "08114558778", "ANDI": "082252359023",
     "IPHONE":"08158841410", "ELA": "08115273322", "TEST": "123" 
 };
 
@@ -276,7 +276,7 @@ async function cekGerbangLogin() {
         updateHeaderStatus();
         return true;
     } else {
-        alert("Nomor HP tidak terdaftar!");
+        alert("Nomor Tidak Terdaftar Hub Admin");
         window.location.reload();
         return false;
     }
@@ -286,13 +286,13 @@ async function mintaLogout() {
     const loginNama = localStorage.getItem('login_sopir_nama');
     if (!loginNama) return; 
 
-    if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\nSetelah ini, nomor Anda baru bisa digunakan login di HP lain.`)) {
+    if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\n`)) {
         await _supabase.from('tracking_unit').delete().eq('sopir', loginNama);
         localStorage.removeItem('login_sopir_nama');
         localStorage.removeItem('login_sopir_phone');
         if (watchId) navigator.geolocation.clearWatch(watchId);
         
-        alert("Anda berhasil Log Out! Perangkat lain sekarang dapat menggunakan nomor ini.");
+        alert("Anda berhasil Log Out!");
         window.location.reload();
     }
 }
@@ -304,7 +304,7 @@ function verifikasiHakAksesSopir(sopirDariDb) {
     if (sopirDariDb.toUpperCase().trim().includes(loginNama.toUpperCase().trim())) {
         return true;
     } else {
-        alert("STOP !! Jadwal Tidak Cocok Dengan Nama Anda.");
+        alert("STOP !! Jadwal Sesuai Nama");
         return false;
     }
 }
@@ -422,14 +422,14 @@ function renderData(data) {
 
 async function takeJob(nopol, rowId, sopir, tujuan) {
     if (!verifikasiHakAksesSopir(sopir)) return;
-    if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
+    if (!confirm(`Start ${nopol} ke ${tujuan}?`)) return;
     
     if (!navigator.geolocation) {
-        alert("Waduh! HP/Browser Anda tidak mendukung fitur GPS Tracking.");
+        alert("HP tidak mendukung");
         return;
     }
 
-    alert("Sedang mengunci sinyal GPS... Mohon tunggu sebentar.");
+    alert("Loading...Mohon Tunggu");
 
     navigator.geolocation.getCurrentPosition(async (posAwal) => {
         const latitude = posAwal.coords.latitude;
@@ -453,7 +453,7 @@ async function takeJob(nopol, rowId, sopir, tujuan) {
             return;
         }
 
-        alert("GPS Berhasil");
+        alert("Succes");
 
         if (watchId) navigator.geolocation.clearWatch(watchId);
         
@@ -478,7 +478,7 @@ async function takeJob(nopol, rowId, sopir, tujuan) {
         loadDashboard();
 
     }, (error) => {
-        alert("Gagal mengunci GPS! " + error.message);
+        alert("Error " + error.message);
     }, { 
         enableHighAccuracy: true, 
         timeout: 15000 

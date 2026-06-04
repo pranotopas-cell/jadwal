@@ -190,7 +190,7 @@ const sopirPhoneMap = {
     "AGUS MULYANTO": "081255852929", "SUPRIYADI": "082330138377",
     "ALFIN": "082253835106", "WIYANTO": "082353008608",
     "IPUL": "089523413899", "KOMAR": "082253430545",
-    "PRANOTO": "08114558778", "ANDI": "082252359023",
+    "NOTO": "08114558778", "ANDI": "082252359023",
     "IPHONE":"08158841410", "ELA": "08115273322", "TEST": "123" 
 };
 
@@ -276,7 +276,7 @@ async function cekGerbangLogin() {
         updateHeaderStatus();
         return true;
     } else {
-        alert("Nomor Tidak Terdaftar Hub Admin");
+        alert("Nomor HP tidak terdaftar!");
         window.location.reload();
         return false;
     }
@@ -286,13 +286,13 @@ async function mintaLogout() {
     const loginNama = localStorage.getItem('login_sopir_nama');
     if (!loginNama) return; 
 
-    if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\n`)) {
+    if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\nSetelah ini, nomor Anda baru bisa digunakan login di HP lain.`)) {
         await _supabase.from('tracking_unit').delete().eq('sopir', loginNama);
         localStorage.removeItem('login_sopir_nama');
         localStorage.removeItem('login_sopir_phone');
         if (watchId) navigator.geolocation.clearWatch(watchId);
         
-        alert("Anda berhasil Log Out!");
+        alert("Anda berhasil Log Out! Perangkat lain sekarang dapat menggunakan nomor ini.");
         window.location.reload();
     }
 }
@@ -304,7 +304,7 @@ function verifikasiHakAksesSopir(sopirDariDb) {
     if (sopirDariDb.toUpperCase().trim().includes(loginNama.toUpperCase().trim())) {
         return true;
     } else {
-        alert("STOP !! Jadwal Sesuai Nama");
+        alert("STOP !! Jadwal Tidak Cocok Dengan Nama Anda.");
         return false;
     }
 }
@@ -391,6 +391,10 @@ function renderData(data) {
             actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAIT INFO</span>`;
         }
 
+        // TATA CARA MEMBERIKAN ID REALTIME PADA KOLOM LAT DAN LON BERDASARKAN NOPOL
+        // Mengubah spasi nopol menjadi underscore (contoh: KH 7787 menjadi KH_7787) agar aman digunakan sebagai ID HTML
+        const cleanNopolId = (row.nopol || 'EMPTY').replace(/\s+/g, '_');
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
@@ -405,7 +409,10 @@ function renderData(data) {
             </td>
             <td style="text-align:center; font-weight:bold; color:var(--text-white-soft); font-size:16px;">${row.jumlah_keluar || '0'}</td>
             <td>
-                <span class="location-text"><i class="fas fa-map-marker-alt"></i>LOKASI : ${row.lokasi || 'GPS AKTIF'}</span>
+                <span class="location-text">
+                    <i class="fas fa-map-marker-alt"></i>LOKASI : 
+                    <span id="coords-${cleanNopolId}">${row.lokasi || 'GPS AKTIF'}</span>
+                </span>
                 <span class="storage-text"> DEPO : ${row.supplier || '-'}</span>
             </td>
             <td class="action-cell">
@@ -422,14 +429,14 @@ function renderData(data) {
 
 async function takeJob(nopol, rowId, sopir, tujuan) {
     if (!verifikasiHakAksesSopir(sopir)) return;
-    if (!confirm(`Start ${nopol} ke ${tujuan}?`)) return;
+    if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
     
     if (!navigator.geolocation) {
-        alert("HP tidak mendukung");
+        alert("Waduh! HP/Browser Anda tidak mendukung fitur GPS Tracking.");
         return;
     }
 
-    alert("Loading...Mohon Tunggu");
+    alert("Sedang mengunci sinyal GPS... Mohon tunggu sebentar.");
 
     navigator.geolocation.getCurrentPosition(async (posAwal) => {
         const latitude = posAwal.coords.latitude;
@@ -453,7 +460,7 @@ async function takeJob(nopol, rowId, sopir, tujuan) {
             return;
         }
 
-        alert("Succes");
+        alert("GPS Berhasil");
 
         if (watchId) navigator.geolocation.clearWatch(watchId);
         
@@ -478,7 +485,7 @@ async function takeJob(nopol, rowId, sopir, tujuan) {
         loadDashboard();
 
     }, (error) => {
-        alert("Error " + error.message);
+        alert("Gagal mengunci GPS! " + error.message);
     }, { 
         enableHighAccuracy: true, 
         timeout: 15000 
@@ -521,10 +528,48 @@ async function finishJob(nopol, rowId, sopir) {
 const clockEl = document.getElementById('clock');
 setInterval(() => { clockEl.innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
 
+
+// ==========================================
+// LOGIKA PENYETELAN REAL-TIME SUPABASE (DB-CHANGES)
+// ==========================================
+
+// 1. Pemantauan Real-time untuk perubahan tabel 'data_pengiriman'
 _supabase.channel('db-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
     .subscribe();
 
+// 2. LOGIKA BARU: Pemantauan koordinat langsung (Real-time Lat & Lon) dari tabel 'tracking_unit'
+_supabase.channel('realtime-koordinat-unit')
+    .on(
+        'postgres_changes', 
+        { event: 'UPDATE', schema: 'public', table: 'tracking_unit' }, 
+        (payload) => {
+            console.log("Koordinat Terupdate masuk secara Live:", payload.new);
+            
+            const { nopol, lat, lon } = payload.new;
+            if (!nopol) return;
+
+            // Sesuaikan format ID Dom dengan apa yang ditulis di fungsi renderData
+            const cleanNopolId = nopol.replace(/\s+/g, '_');
+            const targetCell = document.getElementById(`coords-${cleanNopolId}`);
+
+            // Jika baris unit tersebut ditemukan di layar monitor, ganti teks koordinatnya langsung
+            if (targetCell && lat && lon) {
+                targetCell.innerHTML = `${lat}, ${lon}`;
+                
+                // Beri efek highlight warna agar user tahu data baru saja berubah live
+                targetCell.style.color = '#eab308'; // Warna kuning emas
+                targetCell.style.fontWeight = 'bold';
+                
+                setTimeout(() => {
+                    targetCell.style.color = ''; // kembalikan warna teks semula setelah 1.2 detik
+                }, 1200);
+            }
+        }
+    )
+    .subscribe();
+
+// Menjalankan inisialisasi awal dashboard pertama kali halaman dibuka
 loadDashboard();
     </script>
 </body>

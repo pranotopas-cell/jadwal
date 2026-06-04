@@ -405,8 +405,7 @@ function renderData(data) {
             <td style="text-align:center; font-weight:bold; color:var(--text-white-soft); font-size:16px;">${row.jumlah_keluar || '0'}</td>
             <td>
                 <span class="location-text">
-                    <i class="fas fa-map-marker-alt"></i>STATUS SISTEM : 
-                    <span style="color:#66bb6a; font-weight:bold;">GPS AKTIF MELACAK</span>
+                    <i class="fas fa-map-marker-alt"></i>LOKASI : ${row.lokasi || '-'}
                 </span>
                 <span class="storage-text"> DEPO : ${row.supplier || '-'}</span>
             </td>
@@ -561,7 +560,6 @@ _supabase.channel('realtime-koordinat-unit')
         'postgres_changes', 
         { event: 'UPDATE', schema: 'public', table: 'tracking_unit' }, 
         (payload) => {
-            // Pemantauan diabaikan di sisi HP sopir karena tampilan koordinat telah dihapus.
             console.log("Data koordinat terdeteksi berubah di server.");
         }
     )

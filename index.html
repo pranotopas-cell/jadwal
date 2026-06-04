@@ -197,6 +197,9 @@ const sopirPhoneMap = {
 let watchId = null;
 let isFetching = false; // Flag anti-spam request
 
+// Variabel Tambahan Penyelamat Sesi Saat Layar Mati
+let currentActiveJob = null; 
+
 function getWIB() {
     return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
 }
@@ -290,6 +293,7 @@ async function mintaLogout() {
         await _supabase.from('tracking_unit').delete().eq('sopir', loginNama);
         localStorage.removeItem('login_sopir_nama');
         localStorage.removeItem('login_sopir_phone');
+        localStorage.removeItem('active_tracking_job'); // hapus backup job
         if (watchId) navigator.geolocation.clearWatch(watchId);
         
         alert("Anda berhasil Log Out! Perangkat lain sekarang dapat menggunakan nomor ini.");
@@ -350,6 +354,9 @@ async function loadDashboard() {
             return scoreA - scoreB;
         });
         renderData(data);
+        
+        // Cek apakah ada sesi job jalan yang menggantung saat reload/layar hidup kembali
+        cekSesiGantungMatiLayar();
     }
 }
 
@@ -391,8 +398,6 @@ function renderData(data) {
             actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAIT INFO</span>`;
         }
 
-        // TATA CARA MEMBERIKAN ID REALTIME PADA KOLOM LAT DAN LON BERDASARKAN NOPOL
-        // Mengubah spasi nopol menjadi underscore (contoh: KH 7787 menjadi KH_7787) agar aman digunakan sebagai ID HTML
         const cleanNopolId = (row.nopol || 'EMPTY').replace(/\s+/g, '_');
 
         const tr = document.createElement('tr');
@@ -425,6 +430,35 @@ function renderData(data) {
 
     tbody.innerHTML = '';
     tbody.appendChild(fragment);
+}
+
+// LOGIKA UTAMA EKSEKUSI PELACAKAN (DIPISAH SUPAYA BISA DI-RESTART KAPAN SAJA)
+function eksekusiMulaiGpsWatch(nopol, tujuan) {
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    
+    // Simpan ke memory lokal backup jika browser/tab sempat terhenti akibat mati layar
+    currentActiveJob = { nopol, tujuan };
+    localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
+
+    watchId = navigator.geolocation.watchPosition(async (pos) => {
+        console.log("GPS Mengirim Data Koordinat Baru:", pos.coords.latitude, pos.coords.longitude);
+        
+        await _supabase.from('tracking_unit').upsert({
+            nopol: nopol, 
+            lat: pos.coords.latitude, 
+            lon: pos.coords.longitude,
+            sopir: localStorage.getItem('login_sopir_nama'), 
+            tujuan: tujuan, 
+            status: 'ON_JOB', 
+            last_update: new Date().toISOString()
+        }, { onConflict: 'sopir' });
+    }, (err) => {
+        console.error("Gagal mendapatkan GPS koordinat", err);
+    }, { 
+        enableHighAccuracy: true, 
+        timeout: 12000, 
+        maximumAge: 0 
+    });
 }
 
 async function takeJob(nopol, rowId, sopir, tujuan) {
@@ -460,28 +494,10 @@ async function takeJob(nopol, rowId, sopir, tujuan) {
             return;
         }
 
-        alert("GPS Berhasil");
+        alert("GPS Berhasil Terkunci!");
 
-        if (watchId) navigator.geolocation.clearWatch(watchId);
-        
-        watchId = navigator.geolocation.watchPosition(async (pos) => {
-            await _supabase.from('tracking_unit').upsert({
-                nopol: nopol, 
-                lat: pos.coords.latitude, 
-                lon: pos.coords.longitude,
-                sopir: localStorage.getItem('login_sopir_nama'), 
-                tujuan: tujuan, 
-                status: 'ON_JOB', 
-                last_update: new Date().toISOString()
-            }, { onConflict: 'sopir' });
-        }, (err) => {
-            console.error("Gagal", err);
-        }, { 
-            enableHighAccuracy: true, 
-            timeout: 10000, 
-            maximumAge: 0 
-        });
-
+        // Jalankan siklus pelacakan kontinu
+        eksekusiMulaiGpsWatch(nopol, tujuan);
         loadDashboard();
 
     }, (error) => {
@@ -492,12 +508,15 @@ async function takeJob(nopol, rowId, sopir, tujuan) {
     });
 }
 
-// PERBAIKAN 2: Menggunakan .update() murni agar koordinat terakhir di jalan tetap awet (tidak NULL)
 async function finishJob(nopol, rowId, sopir) {
     if (!verifikasiHakAksesSopir(sopir)) return;
     if (!confirm("Tugas Selesai?")) return;
     
     if (watchId) navigator.geolocation.clearWatch(watchId);
+    
+    // Hapus backup data job berjalan
+    currentActiveJob = null;
+    localStorage.removeItem('active_tracking_job');
 
     const { data: unitData } = await _supabase.from('tracking_unit').select('*').eq('sopir', localStorage.getItem('login_sopir_nama')).maybeSingle();
 
@@ -511,10 +530,8 @@ async function finishJob(nopol, rowId, sopir) {
     const skrg = getWIB();
     const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
 
-    // Update status pengiriman di tabel utama
     await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
     
-    // Perubahan krusial: Gunakan .update() tanpa menimpa nopol/koordinat menjadi NULL
     await _supabase.from('tracking_unit').update({ 
         status: 'LOGIN_ACTIVE', 
         last_update: skrg.toISOString() 
@@ -524,21 +541,42 @@ async function finishJob(nopol, rowId, sopir) {
     loadDashboard();
 }
 
+// PERBAIKAN EMAS: Pemicu Penyambung Otomatis Saat Layar HP Dihidupkan Kembali
+function cekSesiGantungMatiLayar() {
+    const backupJob = localStorage.getItem('active_tracking_job');
+    if (backupJob) {
+        const dataJob = JSON.parse(backupJob);
+        console.log("Mendeteksi Sesi Terputus Akibat Layar Mati. Me-restart GPS secara otomatis untuk unit:", dataJob.nopol);
+        eksekusiMulaiGpsWatch(dataJob.nopol, dataJob.tujuan);
+    }
+}
+
+// Event Listener Page Visibility untuk Menangkap momen saat Layar Hidup Kembali
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        console.log("Layar dihidupkan/Tab dibuka kembali! Memeriksa ulang koneksi...");
+        
+        // 1. Re-koneksi Channel Realtime Supabase yang terputus imbas layar mati
+        _supabase.channel('db-changes').subscribe();
+        _supabase.channel('realtime-koordinat-unit').subscribe();
+        
+        // 2. Paksa sinkronisasi ulang GPS pelacakan
+        cekSesiGantungMatiLayar();
+    }
+});
+
 // Jam tetap realtime per detik
 const clockEl = document.getElementById('clock');
 setInterval(() => { clockEl.innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
-
 
 // ==========================================
 // LOGIKA PENYETELAN REAL-TIME SUPABASE (DB-CHANGES)
 // ==========================================
 
-// 1. Pemantauan Real-time untuk perubahan tabel 'data_pengiriman'
 _supabase.channel('db-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
     .subscribe();
 
-// 2. LOGIKA BARU: Pemantauan koordinat langsung (Real-time Lat & Lon) dari tabel 'tracking_unit'
 _supabase.channel('realtime-koordinat-unit')
     .on(
         'postgres_changes', 
@@ -549,27 +587,23 @@ _supabase.channel('realtime-koordinat-unit')
             const { nopol, lat, lon } = payload.new;
             if (!nopol) return;
 
-            // Sesuaikan format ID Dom dengan apa yang ditulis di fungsi renderData
             const cleanNopolId = nopol.replace(/\s+/g, '_');
             const targetCell = document.getElementById(`coords-${cleanNopolId}`);
 
-            // Jika baris unit tersebut ditemukan di layar monitor, ganti teks koordinatnya langsung
             if (targetCell && lat && lon) {
                 targetCell.innerHTML = `${lat}, ${lon}`;
                 
-                // Beri efek highlight warna agar user tahu data baru saja berubah live
-                targetCell.style.color = '#eab308'; // Warna kuning emas
+                targetCell.style.color = '#eab308'; 
                 targetCell.style.fontWeight = 'bold';
                 
                 setTimeout(() => {
-                    targetCell.style.color = ''; // kembalikan warna teks semula setelah 1.2 detik
+                    targetCell.style.color = ''; 
                 }, 1200);
             }
         }
     )
     .subscribe();
 
-// Menjalankan inisialisasi awal dashboard pertama kali halaman dibuka
 loadDashboard();
     </script>
 </body>

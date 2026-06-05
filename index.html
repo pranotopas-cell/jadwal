@@ -283,14 +283,14 @@ async function mintaLogout() {
     const loginNama = localStorage.getItem('login_sopir_nama');
     if (!loginNama) return; 
 
-    if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\nSetelah ini, nomor Anda baru bisa digunakan login di HP lain.`)) {
+    if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\n`)) {
         await _supabase.from('tracking_unit').delete().eq('sopir', loginNama);
         localStorage.removeItem('login_sopir_nama');
         localStorage.removeItem('login_sopir_phone');
         localStorage.removeItem('active_tracking_job'); 
         if (watchId) navigator.geolocation.clearWatch(watchId);
         
-        alert("Anda berhasil Log Out! Perangkat lain sekarang dapat menggunakan nomor ini.");
+        alert("Anda berhasil Log Out!");
         window.location.reload();
     }
 }
@@ -302,7 +302,7 @@ function verifikasiHakAksesSopir(sopirDariDb) {
     if (sopirDariDb.toUpperCase().trim().includes(loginNama.toUpperCase().trim())) {
         return true;
     } else {
-        alert("STOP !! Jadwal Tidak Cocok Dengan Nama Anda.");
+        alert("STOP !! Jadwal Tidak Sesuai Nama");
         return false;
     }
 }

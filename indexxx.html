@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>IKAEN GROUP SCHEDULE</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-airport: #0a0f1d;
+            --header-bg: #050811;
+            --text-gold-soft: #e5c07b;
+            --text-white-soft: #d1d5db;
+            --blue-soft: #7fb4ca;
+            --border-blue: #1e293b;
+            
+            /* Warna Status */
+            --color-tunggu: #ff5252;    /* MERAH */
+            --color-terjadwal: #42a5f5; /* BIRU */
+            --color-langsiran: #42a5f5; /* BIRU */
+            --color-proses: #66bb6a;    /* HIJAU */
+            --color-ngisi: #fdd835;      /* KUNING */
+            --color-oper: #fb8c00;       /* ORANGE */
+            --color-delivered: #ffffff; /* PUTIH */
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; background-color: var(--bg-airport); 
+            color: var(--text-white-soft); height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden; 
+            width: 100%;
+        }
+
+        /* HEADER STYLE */
+        .header {
+            background: var(--header-bg); padding: 12px 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid var(--text-gold-soft); flex-shrink: 0; z-index: 101;
+        }
+        .header h1 { margin: 0; font-size: 20px; letter-spacing: 2px; font-weight: 800; color: var(--text-gold-soft); }
+        #targetDate { font-size: 14px; color: var(--text-white-soft); font-weight: 700; margin-top: 4px; }
+        
+        /* Header Right Container */
+        .header-right { display: flex; align-items: stretch; gap: 12px; }
+        .clock-container { display: flex; flex-direction: column; justify-content: center; }
+        
+        #clock { font-size: 18px; font-weight: 700; text-align: right; line-height: 1.2; }
+        .cloud-status { font-size: 10px; color: #66bb6a; text-align: right; font-weight: bold; }
+
+        /* Maps Button Style */
+        .btn-maps {
+            background: #d81b60; color: white; border: none; border-radius: 6px; padding: 0 15px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-decoration: none; transition: background 0.3s; cursor: pointer;
+        }
+        .btn-maps:active { background: #ad1457; }
+        .btn-maps i { font-size: 18px; margin-bottom: 2px; }
+        .btn-maps span { font-size: 10px; font-weight: 800; }
+
+        /* TABLE STYLE */
+        .main-content { flex: 1; overflow-y: auto; padding-bottom: 60px; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        
+        th {
+            background: rgba(5, 8, 17, 0.9); color: var(--text-gold-soft);
+            padding: 14px 8px; font-size: 14px; text-transform: uppercase;
+            position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border-blue);
+            font-weight: 900; letter-spacing: 1px;
+        }
+
+        .date-divider {
+            background: #16213e; color: var(--text-gold-soft);
+            font-weight: 800; font-size: 11px; padding: 10px 15px;
+            text-transform: uppercase; letter-spacing: 1px;
+            border-bottom: 1px solid var(--text-gold-soft);
+        }
+
+        td { padding: 12px 8px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+
+        /* COMPONENT STYLE */
+        .flight-cell { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .nopol-block { 
+            background: #e2e8f0; color: #1e293b; padding: 3px 6px; 
+            border-radius: 4px; font-weight: 800; font-size: 11px; 
+            display: inline-block; min-width: 75px; text-align: center;
+        }
+        .sopir-name { font-weight: 600; font-size: 12px; color: var(--text-white-soft); }
+        
+        .destination-info { font-size: 12px; color: var(--blue-soft); margin-top: 2px; line-height: 1.4; }
+        .ritase-text { color: var(--text-gold-soft); font-weight: bold; }
+        .location-text { color: #e5c07b; font-size: 12px; font-weight: bold; display: block; }
+        .storage-text { color: var(--blue-soft); font-size: 14px; font-weight: 500; display: block; }
+
+        /* STATUS CLASSES */
+        .st-tunggu { color: var(--color-tunggu); font-weight: 900; }
+        .st-terjadwal { color: var(--color-terjadwal); font-weight: 900; }
+        .st-langsir { color: var(--color-langsiran); font-weight: 900; }
+        
+        .st-proses { color: var(--color-proses); animation: pulse-light 2s infinite ease-in-out; font-weight: 900; will-change: opacity; }
+        .st-ngisi { color: var(--color-ngisi); animation: pulse-light 2s infinite ease-in-out; font-weight: 900; will-change: opacity; }
+        .st-oper { color: var(--color-oper); animation: pulse-light 2s infinite ease-in-out; font-weight: 900; will-change: opacity; }
+        
+        .st-delivered { 
+            color: var(--color-delivered); font-weight: 900; opacity: 0.9; 
+            white-space: pre-line; text-align: right; line-height: 1.2;
+        }
+        
+        .action-cell { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        
+        .btn-job {
+            padding: 5px 10px; border-radius: 4px; font-size: 10px;
+            font-weight: 800; cursor: pointer; border: none;
+            text-transform: uppercase; transition: 0.2s;
+        }
+        .btn-ambil { background: #2e7d32; color: white; }
+        .btn-finish { background: #0288d1; color: white; }
+        
+        @keyframes pulse-light { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        .footer-marquee-container {
+            position: fixed; bottom: 0; width: 100%; background: #000;
+            color: var(--text-white-soft); height: 35px; overflow: hidden;
+            border-top: 1px solid var(--text-gold-soft); z-index: 100;
+            display: flex; align-items: center;
+        }
+        .marquee-content {
+            display: inline-block; white-space: nowrap; padding-left: 100%;
+            animation: marquee-spin 85s linear infinite; font-size: 13px;
+        }
+        @keyframes marquee-spin {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1>JADWAL IKAEN GROUP</h1>
+            <div id="targetDate">MEMUAT...</div>
+        </div>
+        <div class="header-right">
+            <a href="maps.html" class="btn-maps">
+                <i class="fas fa-map-marked-alt"></i>
+                <span>MAPS</span>
+            </a>
+            <div class="clock-container">
+                <div id="clock">00:00:00</div>
+                <div class="cloud-status" id="systemStatus" onclick="mintaLogout()" style="cursor:pointer;">● GPS SYSTEM ACTIVE</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <table>
+            <thead>
+                <tr>
+                    <th style="text-align: left; width: 40%;">UNIT/DRIVER/CUSTOMER</th>
+                    <th style="text-align: center; width: 10%;">QTY</th>
+                    <th style="text-align: left; width: 25%;">LOCATION/STORAGE</th>
+                    <th style="text-align: right; width: 25%;">STATUS</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="footer-marquee-container">
+        <div class="marquee-content">
+            NOTE : JANGAN LUPA AMBIL JOB SEBELUM BERANGKAT DAN SAMPAI LOKASI KLIK DONE SERTA JADWAL DAPAT BERUBAH SEWAKTU WAKTU HUBUNGI OPERASIONAL SEBELUM BERANGKAT • SAFETY FIRST: PASTIKAN SEGEL TERPASANG SEMPURNA • PERIKSA TEKANAN BAN DAN FUNGSI REM SEBELUM BERANGKAT • GUNAKAN APD LENGKAP (HELM, SEPATU, ROMPI) DI TEMPAT PENGAMBILAN DAN PEMBONGKARAN • PATUHI RAMBU RAMBU LALU LINTAS • PATUHI BATAS KECEPATAN MAX. DALAM DAN LUAR KOTA • DILARANG MENGOPERASIKAN HP SAAT MENGEMUDI • LAPORKAN SEGERA JIKA ADA KENDALA BAIK ARMADA, SAAT LOADING BBM DAN SAAT BONGKAR KE BAGIAN OPERASIONAL..
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // ==========================================
+        // KONFIGURASI FIREBASE (Ganti dengan data Anda)
+        // ==========================================
+        const firebaseConfig = {
+  		apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
+ 		authDomain: "ikaen-tracking.firebaseapp.com",
+ 		projectId: "ikaen-tracking",
+ 		storageBucket: "ikaen-tracking.firebasestorage.app",
+ 		messagingSenderId: "390072449388",
+		appId: "1:390072449388:web:78b880e0abd8793b69db49"
+	};
+
+	// Initialize Firebase
+	const app = initializeApp(firebaseConfig);
+
+        // Buat objek fungsi Firebase agar bisa diakses secara global oleh fungsi sisa script lama
+        window.saveToFirebase = async function(sopir, data) {
+            try {
+                // Menyimpan koordinat dengan Document ID berdasarkan nama sopir
+                await setDoc(doc(dbFirestore, "tracking_unit", sopir), data, { merge: true });
+                console.log("Berhasil sinkronisasi ke Firebase Firestore.");
+            } catch (e) {
+                console.error("Gagal menyimpan ke Firebase: ", e);
+            }
+        };
+    </script>
+
+    <script>
+        const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const sopirPhoneMap = {
+            "AGUS EFENDI": "082264220069", "WAHID KHUMAINI": "08115232946",
+            "AGUS WANTO": "081228008887", "NUR KHOLIS": "082151512123",
+            "AGUS MULYANTO": "081255852929", "SUPRIYADI": "082330138377",
+            "ALFIN": "082253835106", "WIYANTO": "082353008608",
+            "IPUL": "089523413899", "KOMAR": "082253430545",
+            "NOTO": "08114558778", "ANDI": "082252359023",
+            "IPHONE":"08158841410", "ELA": "08115273322", "TEST": "123" ,
+            "COBA":"021" , "WAHYUDI": "9900866754434", 
+            "M.ADHAR": "9988773455", "HENGKI": "886245645436" , "FARID HABIBI": "6677755443188"
+        };
+
+        let watchId = null;
+        let isFetching = false;
+        let currentActiveJob = null; 
+
+        function getWIB() {
+            return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+        }
+
+        function formatFullDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
+        }
+
+        function updateHeaderStatus() {
+            const loginNama = localStorage.getItem('login_sopir_nama');
+            const statusEl = document.getElementById('systemStatus');
+            
+            if (loginNama) {
+                statusEl.innerHTML = `● ${loginNama}<span style="background:#ff5252; color:#fff; padding:2px 5px; border-radius:3px; font-size:9px; margin-left:4px; font-weight:800;">LOGOUT</span>`;
+            } else {
+                statusEl.innerHTML = `● GPS SYSTEM ACTIVE`;
+            }
+            statusEl.style.color = "#66bb6a";
+        }
+
+        async function cekGerbangLogin() {
+            let infoSopirNama = localStorage.getItem('login_sopir_nama');
+            let infoSopirPhone = localStorage.getItem('login_sopir_phone');
+
+            if (infoSopirNama && infoSopirPhone) return true;
+
+            const inputPhone = prompt("Sistem Terkunci!\nSilakan masukkan Nomor HP Anda untuk masuk ke sistem jadwal:");
+            if (!inputPhone || inputPhone.trim() === "") {
+                alert("Akses ditolak!");
+                window.location.reload();
+                return false;
+            }
+
+            let nomorTerverifikasi = inputPhone.trim();
+            let namaTerverifikasi = Object.keys(sopirPhoneMap).find(key => sopirPhoneMap[key] === nomorTerverifikasi);
+
+            if (namaTerverifikasi) {
+                const { data: cekDevice } = await _supabase
+                    .from('tracking_unit')
+                    .select('status')
+                    .eq('sopir', namaTerverifikasi)
+                    .in('status', ['ON_JOB', 'LOGIN_ACTIVE'])
+                    .maybeSingle();
+
+                if (cekDevice) {
+                    alert(`Gagal Masuk!\nNomor HP / Akun ${namaTerverifikasi} ini sedang aktif digunakan di HP lain.\nSilakan LOGOUT terlebih dahulu dari perangkat sebelumnya.`);
+                    window.location.reload();
+                    return false;
+                }
+
+                const { data: eksis } = await _supabase.from('tracking_unit').select('sopir').eq('sopir', namaTerverifikasi).maybeSingle();
+
+                if (eksis) {
+                    await _supabase.from('tracking_unit').update({
+                        nopol: 'LOGIN-' + namaTerverifikasi.replace(/\s+/g, '_'),
+                        status: 'LOGIN_ACTIVE',
+                        last_update: new Date().toISOString()
+                    }).eq('sopir', namaTerverifikasi);
+                } else {
+                    await _supabase.from('tracking_unit').insert({
+                        nopol: 'LOGIN-' + namaTerverifikasi.replace(/\s+/g, '_'),
+                        sopir: namaTerverifikasi,
+                        status: 'LOGIN_ACTIVE',
+                        last_update: new Date().toISOString()
+                    });
+                }
+
+                localStorage.setItem('login_sopir_nama', namaTerverifikasi);
+                localStorage.setItem('login_sopir_phone', nomorTerverifikasi);
+                
+                alert(`Login Berhasil!\nSelamat Datang, ${namaTerverifikasi}`);
+                updateHeaderStatus();
+                return true;
+            } else {
+                alert("Nomor HP tidak terdaftar!");
+                window.location.reload();
+                return false;
+            }
+        }
+
+        async function mintaLogout() {
+            const loginNama = localStorage.getItem('login_sopir_nama');
+            if (!loginNama) return; 
+
+            if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\n`)) {
+                await _supabase.from('tracking_unit').delete().eq('sopir', loginNama);
+                localStorage.removeItem('login_sopir_nama');
+                localStorage.removeItem('login_sopir_phone');
+                localStorage.removeItem('active_tracking_job'); 
+                if (watchId) navigator.geolocation.clearWatch(watchId);
+                
+                alert("Anda berhasil Log Out!");
+                window.location.reload();
+            }
+        }
+
+        function verifikasiHakAksesSopir(sopirDariDb) {
+            const loginNama = localStorage.getItem('login_sopir_nama');
+            if (!loginNama) return false;
+
+            if (sopirDariDb.toUpperCase().trim().includes(loginNama.toUpperCase().trim())) {
+                return true;
+            } else {
+                alert("STOP !! Jadwal Tidak Sesuai Nama");
+                return false;
+            }
+        }
+
+        async function loadDashboard() {
+            if (isFetching) return; 
+            isFetching = true;
+
+            const loginValid = await cekGerbangLogin();
+            if (!loginValid) { isFetching = false; return; }
+
+            const isoHariIni = getWIB().toISOString().split('T')[0];
+            document.getElementById('targetDate').innerText = formatFullDate(new Date());
+            updateHeaderStatus();
+
+            const { data, error } = await _supabase.from('data_pengiriman').select('*').gte('tanggal', isoHariIni);
+            isFetching = false;
+            
+            if (!error && data) {
+                const statusPriority = { "PROSES": 10, "LANGSIRAN": 20, "TERJADWAL": 30, "OPER": 40, "NGISI AJA": 50, "TUNGGU": 60, "DELIVERED": 70 };
+
+                data.sort((a, b) => {
+                    if (a.tanggal !== b.tanggal) return new Date(a.tanggal) - new Date(b.tanggal);
+                    
+                    const getRitNum = (row) => {
+                        const match = (row.lokasi || "").match(/RIT\s*(\d+)/i);
+                        return match ? parseInt(match[1]) : (parseInt(row.rit) || 999);
+                    };
+                    const ritA = getRitNum(a); const ritB = getRitNum(b);
+                    if (ritA !== ritB) return ritA - ritB;
+                    
+                    const statA = (a.status || "").split('\n')[0].toUpperCase();
+                    const statB = (b.status || "").split('\n')[0].toUpperCase();
+                    const lokA = (a.lokasi || "").toUpperCase();
+                    const lokB = (b.lokasi || "").toUpperCase();
+
+                    let scoreA = statusPriority[statA] || 55;
+                    let scoreB = statusPriority[statB] || 55;
+
+                    if (statA === "TERJADWAL" && (lokA.includes("SO SIAP") || lokA.includes("READY"))) scoreA = 25;
+                    if (statB === "TERJADWAL" && (lokB.includes("SO SIAP") || lokB.includes("READY"))) scoreB = 25;
+                    
+                    return scoreA - scoreB;
+                });
+                renderData(data);
+                cekSesiGantungMatiLayar();
+            }
+        }
+
+        function renderData(data) {
+            const tbody = document.getElementById('tableBody');
+            const fragment = document.createDocumentFragment();
+            let lastDate = "";
+
+            data.forEach(row => {
+                if (row.tanggal !== lastDate) {
+                    const dateRow = document.createElement('tr');
+                    dateRow.innerHTML = `<td colspan="4" class="date-divider"><i class="fas fa-calendar-alt"></i> ${formatFullDate(row.tanggal)}</td>`;
+                    fragment.appendChild(dateRow);
+                    lastDate = row.tanggal;
+                }
+
+                const ritMatch = (row.lokasi || "").match(/RIT\s*(\d+)/i);
+                const ritDisplay = ritMatch ? ritMatch[1] : (row.rit || '-');
+                const statusFull = (row.status || "TUNGGU").toUpperCase();
+                const statusRaw = statusFull.split('\n')[0];
+                
+                let statusClass = "st-terjadwal";
+                let actionBtn = "";
+                const isDataLengkap = row.nopol && row.sopir && row.delivery_to;
+
+                if (statusRaw.includes("PROSES")) {
+                    statusClass = "st-proses";
+                    actionBtn = `<button class="btn-job btn-finish" onclick="finishJob('${row.nopol}', '${row.id}', '${row.sopir}')">DONE</button>`;
+                } else if (statusRaw.includes("DELIVERED") || statusRaw.includes("SUCCES")) {
+                    statusClass = "st-delivered";
+                    actionBtn = `<span style="font-size:10px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> SELESAI</span>`;
+                } else if (isDataLengkap && (statusRaw.includes("LANGSIRAN") || statusRaw.includes("NGISI") || statusRaw.includes("OPER") || statusRaw.includes("TERJADWAL"))) {
+                    if (statusRaw.includes("LANGSIRAN")) statusClass = "st-langsir";
+                    else if (statusRaw.includes("NGISI")) statusClass = "st-ngisi";
+                    else if (statusRaw.includes("OPER")) statusClass = "st-oper";
+                    actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}', '${row.sopir}', '${row.delivery_to}')">AMBIL JOB</button>`;
+                } else {
+                    statusClass = "st-tunggu";
+                    actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAIT INFO</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div class="flight-cell">
+                            <div class="nopol-block">${row.nopol || '-'}</div>
+                            <div class="sopir-name">${row.sopir || '-'}</div>
+                        </div>
+                        <div class="destination-info">
+                            <div>DELIVERY TO : <b>${row.delivery_to || '-'}</b></div>
+                            <div class="ritase-text">RITASE: ${ritDisplay}</div>
+                        </div>
+                    </td>
+                    <td style="text-align:center; font-weight:bold; color:var(--text-white-soft); font-size:16px;">${row.jumlah_keluar || '0'}</td>
+                    <td>
+                        <span class="location-text">
+                            <i class="fas fa-map-marker-alt"></i>LOKASI : ${row.lokasi || '-'}
+                        </span>
+                        <span class="storage-text"> DEPO : ${row.supplier || '-'}</span>
+                    </td>
+                    <td class="action-cell">
+                        <span class="${statusClass}">${row.status || 'TUNGGU'}</span>
+                        ${actionBtn}
+                    </td>
+                `;
+                fragment.appendChild(tr);
+            });
+
+            tbody.innerHTML = '';
+            tbody.appendChild(fragment);
+        }
+
+        function eksekusiMulaiGpsWatch(nopol, tujuan) {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            
+            currentActiveJob = { nopol, tujuan };
+            localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
+
+            watchId = navigator.geolocation.watchPosition(async (pos) => {
+                console.log("GPS Mengirim Data Koordinat Baru:", pos.coords.latitude, pos.coords.longitude);
+                const currentDriver = localStorage.getItem('login_sopir_nama');
+                const updateTime = new Date().toISOString();
+
+                // 1. KIRIM DATA KE SUPABASE
+                await _supabase.from('tracking_unit').upsert({
+                    nopol: nopol, 
+                    lat: pos.coords.latitude, 
+                    lon: pos.coords.longitude,
+                    sopir: currentDriver, 
+                    tujuan: tujuan, 
+                    status: 'ON_JOB', 
+                    last_update: updateTime
+                }, { onConflict: 'sopir' });
+
+                // 2. KIRIM DATA KE FIREBASE (Double Save)
+                if (window.saveToFirebase) {
+                    window.saveToFirebase(currentDriver, {
+                        nopol: nopol,
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        tujuan: tujuan,
+                        status: 'ON_JOB',
+                        last_update: updateTime
+                    });
+                }
+            }, (err) => {
+                console.error("Gagal mendapatkan GPS koordinat", err);
+            }, { 
+                enableHighAccuracy: true, 
+                timeout: 12000, 
+                maximumAge: 0 
+            });
+        }
+
+        async function takeJob(nopol, rowId, sopir, tujuan) {
+            if (!verifikasiHakAksesSopir(sopir)) return;
+            if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
+            
+            if (!navigator.geolocation) {
+                alert("Waduh! HP/Browser Anda tidak mendukung fitur GPS Tracking.");
+                return;
+            }
+
+            alert("Sedang mengunci sinyal GPS... Mohon tunggu sebentar.");
+
+            navigator.geolocation.getCurrentPosition(async (posAwal) => {
+                const latitude = posAwal.coords.latitude;
+                const longitude = posAwal.coords.longitude;
+                const currentDriver = localStorage.getItem('login_sopir_nama');
+                const updateTime = new Date().toISOString();
+
+                const { error: errStatus } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
+                if (errStatus) return alert("Gagal update status " + errStatus.message);
+                
+                // Kirim koordinat awal ke Supabase
+                const { error: errTrack } = await _supabase.from('tracking_unit').upsert({
+                    nopol: nopol, 
+                    lat: latitude, 
+                    lon: longitude,
+                    sopir: currentDriver, 
+                    tujuan: tujuan, 
+                    status: 'ON_JOB', 
+                    last_update: updateTime
+                }, { onConflict: 'sopir' });
+
+                if (errTrack) {
+                    alert("GPS Gagal " + errTrack.message);
+                    return;
+                }
+
+                // Kirim koordinat awal ke Firebase
+                if (window.saveToFirebase) {
+                    window.saveToFirebase(currentDriver, {
+                        nopol: nopol,
+                        lat: latitude,
+                        lon: longitude,
+                        tujuan: tujuan,
+                        status: 'ON_JOB',
+                        last_update: updateTime
+                    });
+                }
+
+                alert("GPS Berhasil Terkunci!");
+
+                eksekusiMulaiGpsWatch(nopol, tujuan);
+                loadDashboard();
+
+            }, (error) => {
+                alert("Gagal mengunci GPS! " + error.message);
+            }, { 
+                enableHighAccuracy: true, 
+                timeout: 15000 
+            });
+        }
+
+        async function finishJob(nopol, rowId, sopir) {
+            if (!verifikasiHakAksesSopir(sopir)) return;
+            if (!confirm("Tugas Selesai?")) return;
+            
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            
+            currentActiveJob = null;
+            localStorage.removeItem('active_tracking_job');
+            const currentDriver = localStorage.getItem('login_sopir_nama');
+
+            const { data: unitData } = await _supabase.from('tracking_unit').select('*').eq('sopir', currentDriver).maybeSingle();
+
+            if (unitData && unitData.tujuan && unitData.lat && unitData.lon) {
+                const { data: existingPOI } = await _supabase.from('poi_lokasi').select('nama').eq('nama', unitData.tujuan).maybeSingle();
+                if (!existingPOI) {
+                    await _supabase.from('poi_lokasi').insert([{ nama: unitData.tujuan, lat: unitData.lat, lon: unitData.lon }]);
+                }
+            }
+
+            const skrg = getWIB();
+            const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
+
+            await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
+            
+            // Update status selesai di Supabase
+            await _supabase.from('tracking_unit').update({ 
+                status: 'LOGIN_ACTIVE', 
+                last_update: skrg.toISOString() 
+            }).eq('sopir', currentDriver);
+
+            // Update status selesai di Firebase
+            if (window.saveToFirebase) {
+                window.saveToFirebase(currentDriver, {
+                    status: 'LOGIN_ACTIVE',
+                    last_update: skrg.toISOString()
+                });
+            }
+            
+            alert("Tugas selesai!.");
+            loadDashboard();
+        }
+
+        function cekSesiGantungMatiLayar() {
+            const backupJob = localStorage.getItem('active_tracking_job');
+            if (backupJob) {
+                const dataJob = JSON.parse(backupJob);
+                console.log("Mendeteksi Sesi Terputus Akibat Layar Mati. Me-restart GPS secara otomatis untuk unit:", dataJob.nopol);
+                eksekusiMulaiGpsWatch(dataJob.nopol, dataJob.tujuan);
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                console.log("Layar dihidupkan/Tab dibuka kembali! Memeriksa ulang koneksi...");
+                _supabase.channel('db-changes').subscribe();
+                _supabase.channel('realtime-koordinat-unit').subscribe();
+                cekSesiGantungMatiLayar();
+            }
+        });
+
+        const clockEl = document.getElementById('clock');
+        setInterval(() => { clockEl.innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
+
+        _supabase.channel('db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
+            .subscribe();
+
+        _supabase.channel('realtime-koordinat-unit')
+            .on(
+                'postgres_changes', 
+                { event: 'UPDATE', schema: 'public', table: 'tracking_unit' }, 
+                (payload) => {
+                    console.log("Data koordinat terdeteksi berubah di server.");
+                }
+            )
+            .subscribe();
+
+        loadDashboard();
+    </script>
+</body>
+</html>

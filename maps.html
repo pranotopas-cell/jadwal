@@ -354,7 +354,7 @@
 
                 // Proteksi awal: Hanya kunci jika benar-benar berstatus DONE/SELESAI
                 const statusRaw = (dataUnit.status || '').toUpperCase();
-                if (statusRaw.includes('DELIVERED' ) || statusRaw.includes('SELESAI') {
+                if (statusRaw.includes('DELIVERED' ) || statusRaw.includes('SELESAI')) {
                     handleTrackingDone();
                     return;
                 }
@@ -371,7 +371,7 @@
                     const { data: reCheck } = await _supabase.from('data_pengiriman').select('status').eq('id', targetId).maybeSingle();
                     if (reCheck) {
                         const currentStatus = (reCheck.status || '').toUpperCase();
-                        if (currentStatus.includes('DELIVERED' ) || currentStatus.includes('SELESAI') {
+                        if (currentStatus.includes('DELIVERED' ) || currentStatus.includes('SELESAI')) {
                             handleTrackingDone();
                             return;
                         }

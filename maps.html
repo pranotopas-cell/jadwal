@@ -193,7 +193,7 @@
 
     <div id="map"></div>
 
-    <script type="module">
+   <script type="module">
         // 1. IMPORT FIREBASE LIBRARIES
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -260,7 +260,7 @@
         let searchMarker = null;
         let isAddMode = false;
         let userCoords = null;
-        let firebaseUnsubscribe = null; // Menyimpan fungsi pembatal listener real-time
+        let firebaseUnsubscribe = null;
 
         const poiIcons = {
             black: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png',
@@ -302,21 +302,17 @@
             return (brng + 360) % 360;
         }
 
-        // FUNGSI UNTUK MERESET DAN MEMBERSIHKAN TAMPILAN JIKA DONE / SELESAI
         function handleTrackingDone() {
-            // 1. Matikan pendengar data Firebase biar tidak makan kuota/ram
             if (firebaseUnsubscribe) {
                 firebaseUnsubscribe();
                 firebaseUnsubscribe = null;
             }
 
-            // 2. Hapus semua marker armada yang tersisa di peta
             Object.keys(markers.units).forEach(nopol => {
                 map.removeLayer(markers.units[nopol]);
                 delete markers.units[nopol];
             });
 
-            // 3. Blokir total tampilan HTML dengan pesan Berhasil/Selesai
             document.body.innerHTML = `
                 <div style="text-align:center; margin-top:100px; font-family:sans-serif; padding:20px;">
                     <div style="font-size:60px; color:#2ecc71; margin-bottom:20px;">🔒</div>
@@ -326,7 +322,7 @@
                 </div>`;
         }
 
-        // 3. DATA REAL-TIME & KONTROL LEAFLET DENGAN FITUR CLEAR MARKER AMAN
+        // 3. DATA REAL-TIME & KONTROL LEAFLET
         async function initTrackingRealtime() {
             const urlParams = new URLSearchParams(window.location.search);
             const targetId = urlParams.get('id');
@@ -341,12 +337,11 @@
             }
 
             try {
-                // Tarik data awal dari Supabase
                 const { data: dataUnit, error } = await _supabase
                     .from('NAMA_TABEL_ABANG') 
                     .select('*')
                     .eq('id', targetId)
-                    .single(); 
+                    .maybeSingle(); // Menggunakan maybeSingle agar tidak throw error berat jika kosong
 
                 if (error || !dataUnit) {
                     document.body.innerHTML = `
@@ -357,29 +352,26 @@
                     return;
                 }
 
-                // Proteksi awal: Jika status terdeteksi SELESAI/DONE saat halaman dibuka
+                // Proteksi awal: Hanya kunci jika benar-benar berstatus DONE/SELESAI
                 const statusRaw = (dataUnit.status || '').toUpperCase();
-                if (statusRaw.includes('DONE') || statusRaw.includes('SELESAI')) {
+                if (statusRaw === 'DONE' || statusRaw === 'SELESAI') {
                     handleTrackingDone();
                     return;
                 }
 
                 const nopolSupabase = dataUnit.nopol || dataUnit.Nopol || dataUnit.unit;
 
-                // Set up filter pencarian presisi di Firebase
                 const q = query(
                     collection(dbFirestore, "tracking_unit"), 
                     where("nopol", "==", nopolSupabase)
                 );
                 
-                // Menjalankan Snapshot Real-time dan mengikat fungsinya ke variabel pembatal
                 firebaseUnsubscribe = onSnapshot(q, async (snapshot) => {
-                    
-                    // VALIDASI KEDUA: Cek ulang berkala ke Supabase apakah di tengah jalan statusnya berubah jadi DONE
-                    const { data: reCheck } = await _supabase.from('NAMA_TABEL_ABANG').select('status').eq('id', targetId).single();
+                    // Validasi berkala status Supabase
+                    const { data: reCheck } = await _supabase.from('NAMA_TABEL_ABANG').select('status').eq('id', targetId).maybeSingle();
                     if (reCheck) {
                         const currentStatus = (reCheck.status || '').toUpperCase();
-                        if (currentStatus.includes('DONE') || currentStatus.includes('SELESAI')) {
+                        if (currentStatus === 'DONE' || currentStatus === 'SELESAI') {
                             handleTrackingDone();
                             return;
                         }
@@ -457,7 +449,6 @@
                         }
                     });
 
-                    // Loop penghapusan marker usang
                     Object.keys(markers.units).forEach(nopol => {
                         if (!activeNopols.includes(nopol)) {
                             map.removeLayer(markers.units[nopol]);
@@ -602,12 +593,15 @@
         window.focusLoc = function(lat, lon) { map.flyTo([lat, lon], 16); togglePOI(); }
         window.fitAllUnits = function() { const all = Object.values(markers.units); if (all.length) map.fitBounds(L.featureGroup(all).getBounds(), {padding:[20,20]}); }
         
-        // PERBAIKAN TYPO DI BAGIKAN STRING URL UNTUK TOMBOL MULAI JALAN (GOOGLE MAPS)
+        // --- PERBAIKAN UTAMA PADA STRUKTUR URL GOOGLE MAPS ---
         window.openNav = function() {
             const coords = document.getElementById('select-dest').value;
             if (!coords) return alert("Pilih tujuan!");
             if (!userCoords) return alert("Aktifkan posisi GPS Anda terlebih dahulu!");
-            window.open(`https://www.google.com/maps/dir/?api=1&origin=${userCoords[0]},${userCoords[1]}&destination=${coords}&travelmode=driving`, '_blank');
+            
+            // Format URL Google Maps resmi dan benar menggunakan Template Literals
+            const url = `https://www.google.com/maps/dir/?api=1&origin=${userCoords[0]},${userCoords[1]}&destination=${coords}&travelmode=driving`;
+            window.open(url, '_blank');
         }
 
         window.startAddPOIMode = function() {
@@ -640,6 +634,6 @@
 
         loadPOIs(); 
         initTrackingRealtime();
-    </script>
+    </script> 
 </body>
 </html>

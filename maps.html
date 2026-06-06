@@ -338,7 +338,7 @@
 
             try {
                 const { data: dataUnit, error } = await _supabase
-                    .from('NAMA_TABEL_ABANG') 
+                    .from('data_pengiriman') 
                     .select('*')
                     .eq('id', targetId)
                     .maybeSingle(); // Menggunakan maybeSingle agar tidak throw error berat jika kosong

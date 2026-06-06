@@ -178,29 +178,30 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ==========================================
-        // KONFIGURASI FIREBASE (Ganti dengan data Anda)
+        // KONFIGURASI FIREBASE RESMI (SUDAH FIX)
         // ==========================================
         const firebaseConfig = {
-  		apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
- 		authDomain: "ikaen-tracking.firebaseapp.com",
- 		projectId: "ikaen-tracking",
- 		storageBucket: "ikaen-tracking.firebasestorage.app",
- 		messagingSenderId: "390072449388",
-		appId: "1:390072449388:web:78b880e0abd8793b69db49"
-	};
+            apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
+            authDomain: "ikaen-tracking.firebaseapp.com",
+            projectId: "ikaen-tracking",
+            storageBucket: "ikaen-tracking.firebasestorage.app",
+            messagingSenderId: "390072449388",
+            appId: "1:390072449388:web:78b880e0abd8793b69db49"
+        };
 
-	// Initialize Firebase
-	const app = initializeApp(firebaseConfig);
+        // Inisialisasi Firebase & Firestore (PERBAIKAN UTAMA)
+        const app = initializeApp(firebaseConfig);
+        const dbFirestore = getFirestore(app);
 
         // Buat objek fungsi Firebase agar bisa diakses secara global oleh fungsi sisa script lama
-        window.saveToFirebase = async function(sopir, data) {
+        window.saveToFirebase = async function(nopol, data) {
             try {
-                // Menyimpan koordinat dengan Document ID berdasarkan nama sopir
-                await setDoc(doc(dbFirestore, "tracking_unit", sopir), data, { merge: true });
-                console.log("Berhasil sinkronisasi ke Firebase Firestore.");
+                // Diubah menggunakan nopol sebagai Document ID agar sinkron sempurna dengan maps001.html
+                await setDoc(doc(dbFirestore, "tracking_unit", nopol), data, { merge: true });
+                console.log("Berhasil sinkronisasi ke Firebase Firestore untuk unit: " + nopol);
             } catch (e) {
                 console.error("Gagal menyimpan ke Firebase: ", e);
             }

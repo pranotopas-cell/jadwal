@@ -318,7 +318,8 @@
 
                 snapshot.forEach((doc) => {
                     const u = doc.data();
-                    const nopol = doc.id; // Karena ID dokumen Firestore menggunakan Plat Nomor (Nopol)
+                    const sopir= doc.id; 
+					const nopol = u.nopol || sopir;
                     activeNopols.push(nopol);
 
                     const lat = parseFloat(u.lat), lon = parseFloat(u.lon);
@@ -327,7 +328,7 @@
                     // Masukkan ke dropdown Focus Unit
                     const opt = document.createElement('option');
                     opt.value = `${lat},${lon}`;
-                    opt.textContent = `${nopol} - ${u.sopir}`;
+                    opt.textContent = `${nopol} - ${sopir}`;
                     selectUnit.appendChild(opt);
 
                     const popupContent = `

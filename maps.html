@@ -146,7 +146,7 @@
         <button class="float-item nav-btn btn-toggle-menu" onclick="toggleRightMenu()"><i class="fa-solid fa-bars"></i></button>
 
         <div id="poi-panel">
-            <button style="width:100%; background:#2ecc71; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; margin-bottom:10px; cursor:pointer;" onclick="startAddPOIMode()"><i class="fa-solid fa-plus"></i> Tambah Lokasi</button>
+            <button id="poi-btn" style="width:100%; background:#2ecc71; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; margin-bottom:10px; cursor:pointer;" onclick="startAddPOIMode()"><i class="fa-solid fa-plus"></i> Tambah Lokasi</button>
             <div id="poi-list"></div>
         </div>
     </div>
@@ -205,17 +205,17 @@
 
         // 2. CONFIG FIREBASE FIRESTORE (Ganti dengan Kredensial Firebase Proyekmu)
         const firebaseConfig = {
-  	apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
- 	authDomain: "ikaen-tracking.firebaseapp.com",
- 	projectId: "ikaen-tracking",
- 	storageBucket: "ikaen-tracking.firebasestorage.app",
- 	messagingSenderId: "390072449388",
-	appId: "1:390072449388:web:78b880e0abd8793b69db49"
-	};
+            apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
+            authDomain: "ikaen-tracking.firebaseapp.com",
+            projectId: "ikaen-tracking",
+            storageBucket: "ikaen-tracking.firebasestorage.app",
+            messagingSenderId: "390072449388",
+            appId: "1:390072449388:web:78b880e0abd8793b69db49"
+        };
 
-	// Initialize Firebase
-	const app = initializeApp(firebaseConfig);
-	const dbFirestore = getFirestore(app);
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const dbFirestore = getFirestore(app);
 
         // SETUP MAPS UTAMA
         const savedLat = localStorage.getItem('map_lat') || -2.5489;
@@ -302,101 +302,151 @@
             return (brng + 360) % 360;
         }
 
-        // 3. SEKARANG AMBIL DATA SECARA REAL-TIME LANGSUNG DARI FIREBASE FIRESTORE
-        function initTrackingRealtime() {
-            const q = query(collection(dbFirestore, "tracking_unit"), where("status", "==", "ON_JOB"));
-            
-            onSnapshot(q, (snapshot) => {
-                const selectUnit = document.getElementById('select-unit');
-                const currentVal = selectUnit.value;
+        // 3. SEKARANG AMBIL DATA SECARA REAL-TIME HANYA UNTUK 1 UNIT & CEK STATUS DONE
+        async function initTrackingRealtime() {
+            // Ambil ID dari link WA (?id=abc-123)
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetId = urlParams.get('id');
+
+            // Jika link tidak menyertakan ID armada
+            if (!targetId) {
+                document.body.innerHTML = `
+                    <div style="text-align:center; margin-top:100px; font-family:sans-serif; padding:20px;">
+                        <h2 style="color:#e74c3c;">⚠️ Akses Ditolak</h2>
+                        <p style="color:#555;">Link tidak valid. Silakan gunakan link resmi dari WhatsApp.</p>
+                    </div>`;
+                return;
+            }
+
+            try {
+                // Tarik data dari Supabase HANYA untuk ID ini saja
+                // Catatan: Ganti 'NAMA_TABEL_ABANG' dengan nama tabel Supabase Anda yang asli jika berbeda
+                const { data: dataUnit, error } = await _supabase
+                    .from('data_pengiriman') 
+                    .select('*')
+                    .eq('id', targetId)
+                    .single(); 
+
+                if (error || !dataUnit) {
+                    document.body.innerHTML = `
+                        <div style="text-align:center; margin-top:100px; font-family:sans-serif; padding:20px;">
+                            <h2 style="color:#e74c3c;">Data Tidak Ditemukan</h2>
+                            <p style="color:#555;">ID Pengiriman tidak terdaftar di sistem kami.</p>
+                        </div>`;
+                    return;
+                }
+
+                // Cek statusnya, jika DONE atau SELESAI maka BLOKIR total halaman
+                const statusRaw = (dataUnit.status || '').toUpperCase();
+                if (statusRaw.includes('DONE') || statusRaw.includes('SELESAI')) {
+                    document.body.innerHTML = `
+                        <div style="text-align:center; margin-top:100px; font-family:sans-serif; padding:20px;">
+                            <div style="font-size:60px; color:#e74c3c; margin-bottom:20px;">🔒</div>
+                            <h2 style="color:#2c3e50;">Link Pelacakan Kedaluwarsa</h2>
+                            <p style="color:#7f8c8d; font-size:16px;">Unit armada telah sampai di tujuan dan status pengiriman telah selesai (DONE).</p>
+                            <p style="color:#bdc3c7; font-size:12px; margin-top:20px;">Demi keamanan data, pelacakan otomatis dinonaktifkan.</p>
+                        </div>`;
+                    return; // Berhenti di sini, peta tidak akan digambar dan radar Firebase mati
+                }
+
+                // Jika lolos seleksi status (Masih PROSES / ON_JOB), ambil nopol dari Supabase
+                const nopolSupabase = dataUnit.nopol || dataUnit.Nopol || dataUnit.unit;
+
+                // Ambil koordinat real-time dari Firebase terfilter hanya untuk nopol ini
+                const q = query(
+                    collection(dbFirestore, "tracking_unit"), 
+                    where("nopol", "==", nopolSupabase)
+                );
                 
-                // Reset daftar pilihan unit di kanan menu, sisakan default option
-                selectUnit.innerHTML = '<option value="">Cari Unit...</option>';
+                onSnapshot(q, (snapshot) => {
+                    const selectUnit = document.getElementById('select-unit');
+                    const currentVal = selectUnit.value;
+                    
+                    selectUnit.innerHTML = '<option value="">Cari Unit...</option>';
+                    const activeNopols = [];
 
-                // Ambil daftar plat nomor terbaru yang ada di snapshot untuk deteksi unit off-job
-                const activeNopols = [];
+                    snapshot.forEach((doc) => {
+                        const u = doc.data();
+                        const sopir = doc.id; 
+                        const nopol = u.nopol || sopir;
+                        activeNopols.push(nopol);
 
-                snapshot.forEach((doc) => {
-                    const u = doc.data();
-                    const sopir= doc.id; 
-					const nopol = u.nopol || sopir;
-                    activeNopols.push(nopol);
+                        const lat = parseFloat(u.lat), lon = parseFloat(u.lon);
+                        if (isNaN(lat) || isNaN(lon)) return;
 
-                    const lat = parseFloat(u.lat), lon = parseFloat(u.lon);
-                    if (isNaN(lat) || isNaN(lon)) return;
+                        const opt = document.createElement('option');
+                        opt.value = `${lat},${lon}`;
+                        opt.textContent = `${nopol} - ${sopir}`;
+                        selectUnit.appendChild(opt);
 
-                    // Masukkan ke dropdown Focus Unit
-                    const opt = document.createElement('option');
-                    opt.value = `${lat},${lon}`;
-                    opt.textContent = `${nopol} - ${sopir}`;
-                    selectUnit.appendChild(opt);
+                        const popupContent = `
+                            <div style="line-height:1.6; color:#fff;">
+                                <b style="color:#3498db; font-size:14px;">📍 ${nopol} (ON JOB)</b><br>
+                                <b>Sopir:</b> ${sopir}<br>
+                                <b>Tujuan:</b> ${u.tujuan || '-'}
+                            </div>
+                        `;
 
-                    const popupContent = `
-                        <div style="line-height:1.6; color:#fff;">
-                            <b style="color:#3498db; font-size:14px;">📍 ${nopol} (ON JOB)</b><br>
-                            <b>Sopir:</b> ${sopir}<br>
-                            <b>Tujuan:</b> ${u.tujuan || '-'}
-                        </div>
-                    `;
-
-                    // Jika marker unit ini sudah ada di map, update lokasinya secara smooth
-                    if (markers.units[nopol]) {
-                        const currentLatLng = markers.units[nopol].getLatLng();
-                        
-                        let bearing = u.bearing || 0;
-                        if (currentLatLng.lat !== lat || currentLatLng.lng !== lon) {
-                            bearing = calculateBearing(currentLatLng.lat, currentLatLng.lng, lat, lon);
-                        }
-
-                        // Update rotasi penunjuk arah
-                        const markerElement = markers.units[nopol].getElement();
-                        if (markerElement) {
-                            const iconContainer = markerElement.querySelector('.truck-icon-container');
-                            if (iconContainer) {
-                                iconContainer.style.transform = `rotate(${bearing}deg)`;
+                        if (markers.units[nopol]) {
+                            const currentLatLng = markers.units[nopol].getLatLng();
+                            
+                            let bearing = u.bearing || 0;
+                            if (currentLatLng.lat !== lat || currentLatLng.lng !== lon) {
+                                bearing = calculateBearing(currentLatLng.lat, currentLatLng.lng, lat, lon);
                             }
+
+                            const markerElement = markers.units[nopol].getElement();
+                            if (markerElement) {
+                                const iconContainer = markerElement.querySelector('.truck-icon-container');
+                                if (iconContainer) {
+                                    iconContainer.style.transform = `rotate(${bearing}deg)`;
+                                }
+                            }
+
+                            markers.units[nopol].slideTo([lat, lon], {
+                                duration: 3500,
+                                keepAtCenter: false
+                            });
+                            
+                            markers.units[nopol].getPopup().setContent(popupContent);
+                        } else {
+                            const initialIcon = L.divIcon({
+                                html: `
+                                    <div class="truck-icon-container" style="transform: rotate(${u.bearing || 0}deg);">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/>
+                                        </svg>
+                                    </div>
+                                `,
+                                className: '',
+                                iconSize: [32, 32],
+                                iconAnchor: [16, 16]
+                            });
+
+                            markers.units[nopol] = L.marker([lat, lon], { icon: initialIcon })
+                            .addTo(map)
+                            .bindPopup(popupContent, { className: 'unit-popup', offset: [0, -12] });
+
+                            // Fokuskan peta secara otomatis ke unit tujuan customer saat pertama dimuat
+                            map.flyTo([lat, lon], 14);
                         }
+                    });
 
-                        // Jalankan animasi transisi pergerakan peta agar lancar
-                        markers.units[nopol].slideTo([lat, lon], {
-                            duration: 3500, // Kecepatan gerak marker mengikuti update data
-                            keepAtCenter: false
-                        });
-                        
-                        markers.units[nopol].getPopup().setContent(popupContent);
-                    } else {
-                        // Jika marker unit belum terdaftar, buat marker baru dengan gaya Google Maps
-                        const initialIcon = L.divIcon({
-                            html: `
-                                <div class="truck-icon-container" style="transform: rotate(${u.bearing || 0}deg);">
-                                    <svg viewBox="0 0 24 24">
-                                        <path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/>
-                                    </svg>
-                                </div>
-                            `,
-                            className: '',
-                            iconSize: [32, 32],
-                            iconAnchor: [16, 16]
-                        });
+                    Object.keys(markers.units).forEach(nopol => {
+                        if (!activeNopols.includes(nopol)) {
+                            map.removeLayer(markers.units[nopol]);
+                            delete markers.units[nopol];
+                        }
+                    });
 
-                        markers.units[nopol] = L.marker([lat, lon], { icon: initialIcon })
-                        .addTo(map)
-                        .bindPopup(popupContent, { className: 'unit-popup', offset: [0, -12] });
-                    }
+                    selectUnit.value = currentVal;
+                }, (error) => {
+                    console.error("Firebase error tracking: ", error);
                 });
 
-                // Hapus marker dari map jika ada unit yang statusnya berubah menjadi OFF_JOB
-                Object.keys(markers.units).forEach(nopol => {
-                    if (!activeNopols.includes(nopol)) {
-                        map.removeLayer(markers.units[nopol]);
-                        delete markers.units[nopol];
-                    }
-                });
-
-                selectUnit.value = currentVal;
-            }, (error) => {
-                console.error("Firebase error tracking: ", error);
-            });
+            } catch (err) {
+                console.error("Sistem Error Pelacakan:", err);
+            }
         }
 
         async function loadPOIs() {
@@ -530,7 +580,7 @@
             const coords = document.getElementById('select-dest').value;
             if (!coords) return alert("Pilih tujuan!");
             if (!userCoords) return alert("Aktifkan posisi GPS Anda terlebih dahulu!");
-            window.open(`https://www.google.com/maps/dir/?api=1&origin=${userCoords[0]},${userCoords[1]}&destination=${coords}&travelmode=driving`, '_blank');
+            window.open(`http://maps.google.com/?saddr=${userCoords[0]},${userCoords[1]}&daddr=${coords}&directionsmode=driving`, '_blank');
         }
 
         window.startAddPOIMode = function() {
@@ -563,7 +613,7 @@
 
         // Jalankan Inisialisasi awal
         loadPOIs(); 
-        initTrackingRealtime(); // Menghidupkan listener real-time dari Firebase Firestore
+        initTrackingRealtime(); // Menghidupkan validasi Supabase dilanjutkan listener real-time dari Firebase
     </script>
 </body>
 </html>

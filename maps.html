@@ -338,7 +338,7 @@
 
             try {
                 const { data: dataUnit, error } = await _supabase
-                    .from('planning_delivery') 
+                    .from('tracking_unit') 
                     .select('*')
                     .eq('id', targetId)
                     .maybeSingle(); // Menggunakan maybeSingle agar tidak throw error berat jika kosong
@@ -368,7 +368,7 @@
                 
                 firebaseUnsubscribe = onSnapshot(q, async (snapshot) => {
                     // Validasi berkala status Supabase
-                    const { data: reCheck } = await _supabase.from('planning_delivery').select('status').eq('id', targetId).maybeSingle();
+                    const { data: reCheck } = await _supabase.from('tracking_unit').select('status').eq('id', targetId).maybeSingle();
                     if (reCheck) {
                         const currentStatus = (reCheck.status || '').toUpperCase();
                         if (currentStatus === 'DONE' || currentStatus === 'SELESAI') {

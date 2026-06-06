@@ -181,7 +181,7 @@
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ==========================================
-        // KONFIGURASI FIREBASE RESMI (SUDAH FIX)
+        // KONFIGURASI FIREBASE (SUDAH FIX DAN DISINKRONKAN)
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
@@ -192,16 +192,17 @@
             appId: "1:390072449388:web:78b880e0abd8793b69db49"
         };
 
-        // Inisialisasi Firebase & Firestore (PERBAIKAN UTAMA)
+        // Inisialisasi Firebase & Firestore
         const app = initializeApp(firebaseConfig);
         const dbFirestore = getFirestore(app);
 
-        // Buat objek fungsi Firebase agar bisa diakses secara global oleh fungsi sisa script lama
-        window.saveToFirebase = async function(nopol, data) {
+        // Buat objek fungsi Firebase agar bisa diakses secara global oleh script lama
+        window.saveToFirebase = async function(sopir, data) {
+            if (!sopir) return; // Mencegah error jika nama sopir kosong
             try {
-                // Diubah menggunakan nopol sebagai Document ID agar sinkron sempurna dengan maps001.html
-                await setDoc(doc(dbFirestore, "tracking_unit", nopol), data, { merge: true });
-                console.log("Berhasil sinkronisasi ke Firebase Firestore untuk unit: " + nopol);
+                // Menyimpan ke Firebase menggunakan NAMA SOPIR sebagai Document ID
+                await setDoc(doc(dbFirestore, "tracking_unit", sopir), data, { merge: true });
+                console.log("Berhasil sinkronisasi ke Firebase Firestore untuk Sopir: " + sopir);
             } catch (e) {
                 console.error("Gagal menyimpan ke Firebase: ", e);
             }

@@ -371,7 +371,7 @@
                     const { data: reCheck } = await _supabase.from('data_pengiriman').select('status').eq('id', targetId).maybeSingle();
                     if (reCheck) {
                         const currentStatus = (reCheck.status || '').toUpperCase();
-                        if (currentStatus === 'DELIVERD' || currentStatus === 'SELESAI') {
+                        if (currentStatus === 'DELIVERED' || currentStatus === 'SELESAI') {
                             handleTrackingDone();
                             return;
                         }

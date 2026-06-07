@@ -61,7 +61,6 @@
 
         .nav-btn { width: 48px; height: 48px; font-size: 20px; text-decoration: none; }
         .btn-toggle-menu { background: #3498db; color: white; border: none; }
-        .btn-home { background: #f39c12; color: white; border: none; }
 
         .btn-route, .btn-search {
             background: #2ecc71; color: white; border: none;
@@ -139,7 +138,6 @@
 <body>
 
     <div class="side-menu">
-        <a href="index.html" class="float-item nav-btn btn-home"><i class="fa-solid fa-house"></i></a>
         <button class="float-item nav-btn" onclick="location.reload()"><i class="fa-solid fa-rotate"></i></button>
         <button class="float-item nav-btn btn-toggle-menu" onclick="toggleRightMenu()"><i class="fa-solid fa-bars"></i></button>
 
@@ -156,6 +154,13 @@
                 <option value="osm">Standard (OSM)</option>
                 <option value="satelit">Satelit (Hybrid)</option>
                 <option value="terrain">Gelap (CartoDB)</option>
+            </select>
+        </div>
+
+        <div class="focus-menu">
+            <div style="font-size: 11px; font-weight: bold; color: #3498db;"><i class="fa-solid fa-truck"></i> PELACAKAN UNIT</div>
+            <select id="select-unit" onchange="focusUnit(this.value)">
+                <option value="">Cari Unit...</option>
             </select>
         </div>
 
@@ -184,7 +189,7 @@
 
     <div id="map"></div>
 
-  <script type="module">
+    <script type="module">
         // 1. IMPORT FIREBASE LIBRARIES
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -332,7 +337,7 @@
                     .from('data_pengiriman') 
                     .select('*')
                     .eq('id', targetId)
-                    .maybeSingle(); // Menggunakan maybeSingle agar tidak throw error berat jika kosong
+                    .maybeSingle();
 
                 if (error || !dataUnit) {
                     document.body.innerHTML = `
@@ -343,9 +348,8 @@
                     return;
                 }
 
-                // Proteksi awal: Hanya kunci jika benar-benar berstatus DONE/SELESAI
                 const statusRaw = (dataUnit.status || '').toUpperCase();
-                if (statusRaw.includes ('DELIVERED') || statusRaw.includes ('DONE')) {
+                if (statusRaw.includes('DELIVERED') || statusRaw.includes('DONE')) {
                     handleTrackingDone();
                     return;
                 }
@@ -358,11 +362,11 @@
                 );
                 
                 firebaseUnsubscribe = onSnapshot(q, async (snapshot) => {
-                    // Validasi berkala status Supabase
+                    // Validasi berkala status Supabase (Perbaikan typo)
                     const { data: reCheck } = await _supabase.from('data_pengiriman').select('status').eq('id', targetId).maybeSingle();
                     if (reCheck) {
                         const currentStatus = (reCheck.status || '').toUpperCase();
-                        if (currentStatus.incudes('DELIVERED') || currentStatus.includes('done')0 {
+                        if (currentStatus.includes('DELIVERED') || currentStatus.includes('DONE')) {
                             handleTrackingDone();
                             return;
                         }
@@ -584,13 +588,13 @@
         window.focusLoc = function(lat, lon) { map.flyTo([lat, lon], 16); togglePOI(); }
         window.fitAllUnits = function() { const all = Object.values(markers.units); if (all.length) map.fitBounds(L.featureGroup(all).getBounds(), {padding:[20,20]}); }
         
-        // --- PERBAIKAN UTAMA PADA STRUKTUR URL GOOGLE MAPS ---
+        // --- PERBAIKAN STRUKTUR URL GOOGLE MAPS ---
         window.openNav = function() {
             const coords = document.getElementById('select-dest').value;
             if (!coords) return alert("Pilih tujuan!");
             if (!userCoords) return alert("Aktifkan posisi GPS Anda terlebih dahulu!");
             
-            // Format URL Google Maps resmi dan benar menggunakan Template Literals
+            // Menggunakan struktur URL resmi Google Maps Intent yang valid
             const url = `https://www.google.com/maps/dir/?api=1&origin=${userCoords[0]},${userCoords[1]}&destination=${coords}&travelmode=driving`;
             window.open(url, '_blank');
         }

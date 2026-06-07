@@ -1,74 +1,67 @@
 // service-worker.js
 
 const FIREBASE_PROJECT_ID = "ikaen-tracking";
-let lastKnownLocation = null;
 let trackingInterval = null;
-let driverInfo = null;
+let lastLat = null;
+let lastLon = null;
+let currentDriver = null;
 
-self.addEventListener('install', (event) => {
-    self.skipWaiting();
-    console.log('Service Worker Installed.');
-});
+self.addEventListener('install', (event) => { self.skipWaiting(); });
+self.addEventListener('activate', (event) => { event.waitUntil(self.clients.claim()); });
 
-self.addEventListener('activate', (event) => {
-    event.waitUntil(self.clients.claim());
-    console.log('Service Worker Activated.');
-});
-
-// Mendengarkan pesan dari aplikasi utama (HTML)
+// Mendengarkan pesan dari aplikasi utama
 self.addEventListener('message', (event) => {
     const data = event.data;
-    
-    // 1. Setiap kali halaman utama dapat koordinat baru (saat background/foreground), simpan di SW
-    if (data.action === 'UPDATE_LOCATION') {
-        lastKnownLocation = {
-            lat: data.latitude,
-            lon: data.longitude
-        };
-        driverInfo = data.driverData; // Menyimpan data sopir, nopol, qty, dll.
+
+    // A. Terima setoran lokasi terbaru dari index.html saat foreground
+    if (data.action === 'UPDATE_LATEST_COORDINATE') {
+        lastLat = data.latitude;
+        lastLon = data.longitude;
     }
 
+    // B. Jalankan perintah tracking
     if (data.action === 'START_TRACKING') {
-        console.log('Background Tracking Dimulai untuk:', data.sopir);
-        driverInfo = data;
-        
+        currentDriver = data.sopir; // Contoh: "NOTO"
+        console.log('Background Tracking Aktif untuk:', currentDriver);
+
         if (!trackingInterval) {
             trackingInterval = setInterval(() => {
-                // Kirim koordinat terakhir yang tersimpan langsung ke Firestore dari SW (Tanpa nanya client lagi)
-                if (lastKnownLocation && driverInfo) {
-                    kirimKeFirestoreREST(driverInfo, lastKnownLocation);
+                // HANYA KIRIM JIKA KOORDINAT SUDAH TERSEDIA
+                if (lastLat && lastLon && currentDriver) {
+                    updateFirestoreViaREST(currentDriver, lastLat, lastLon);
                 }
-            }, 15000); // Eksekusi tiap 15 detik
+            }, 15000); // Eksekusi kirim ke Firebase tiap 15 detik
         }
-    } else if (data.action === 'STOP_TRACKING') {
-        console.log('Background Tracking Dihentikan.');
+    } 
+    
+    // C. Hentikan tracking
+    else if (data.action === 'STOP_TRACKING') {
         if (trackingInterval) {
             clearInterval(trackingInterval);
             trackingInterval = null;
         }
+        console.log('Background Tracking Dimatikan.');
     }
 });
 
-// Fungsi menembak langsung ke REST API Firestore tanpa Firebase SDK standar
-function kirimKeFirestoreREST(driver, lokasi) {
-    // Sesuaikan dengan nama collection database Firestore Abang (misal: data_pengiriman atau tracking_sopir)
-    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/tracking_sopir/${driver.sopir}`;
+// Fungsi menembak langsung ke Firestore tanpa bergantung pada halaman web
+function updateFirestoreViaREST(sopir, lat, lon) {
+    // Sesuaikan lokasi dokumen "NOTO" di dalam collection "tracking_unit"
+    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/tracking_unit/${sopir}?updateMask.fieldPaths=lat&updateMask.fieldPaths=lon&updateMask.fieldPaths=last_update`;
 
     const payload = {
         fields: {
-            sopir: { stringValue: driver.sopir },
-            nopol: { stringValue: driver.nopol || "" },
-            latitude: { doubleValue: lokasi.lat },
-            longitude: { doubleValue: lokasi.lon },
+            lat: { doubleValue: lat },
+            lon: { doubleValue: lon },
             last_update: { stringValue: new Date().toISOString() }
         }
     };
 
     fetch(url, {
-        method: 'PATCH', // Pakai PATCH agar meng-update atau membuat baru jika belum ada
+        method: 'PATCH', // Menggunakan PATCH untuk memperbarui field tertentu saja
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     })
-    .then(res => console.log('SW Berhasil Update Lokasi ke Firestore via REST API'))
-    .catch(err => console.error('SW Gagal kirim REST API:', err));
+    .then(res => console.log(`SW: Berhasil update Firestore untuk ${sopir}`))
+    .catch(err => console.error('SW REST API Error:', err));
 }

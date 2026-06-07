@@ -504,7 +504,7 @@
         return;
     }
 
-    alert("Sedang mengunci sinyal GPS... Mohon tunggu sebentar.");
+    alert("Koneksi GPS.......Mohon tunggu sebentar.");
 
     navigator.geolocation.getCurrentPosition(async (posAwal) => {
         const latitude = posAwal.coords.latitude;
@@ -541,7 +541,7 @@
             });
         }
 
-        alert("GPS Berhasil Terkunci!");
+        alert("GPS Sukses");
 
         eksekusiMulaiGpsWatch(nopol, tujuan);
         loadDashboard();

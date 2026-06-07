@@ -296,9 +296,9 @@
         return (brng + 360) % 360;
     }
 
-    // 3. REAL-TIME DATA FROM FIREBASE FIRESTORE (DENGAN LOGIKA BLOKIR KADALUWARSA)
+     // 3. REAL-TIME DATA FROM FIREBASE FIRESTORE (PERBAIKAN LOGIKA PENGUNCIAN TOTAL)
     function initTrackingRealtime() {
-        // Query membaca semua unit aktif untuk mendeteksi perubahan status di lapangan secara real-time
+        // HAPUS WHERE FILTER: Biarkan Firestore mendengarkan semua perubahan data termasuk status DELIVERED/DONE/SELESAI
         const q = query(collection(dbFirestore, "tracking_unit"));
         
         onSnapshot(q, (snapshot) => {
@@ -313,9 +313,10 @@
                 const sopir = doc.id; 
                 const nopol = u.nopol || sopir;
 
-                // LOGIKA CRITICAL BLOKIR AKSES JIKA STATUS Selesai / Delivered / Done
+                // LOGIKA CRITICAL: Deteksi status selesai langsung dari database lapangan
                 const statusRaw = (u.status || '').toUpperCase();
                 if (statusRaw.includes('DELIVERED') || statusRaw.includes('DONE') || statusRaw.includes('SELESAI')) {
+                    // Kunci layar total, ganti seluruh isi body HTML
                     document.body.innerHTML = `
                         <div style="text-align:center; margin-top:120px; font-family:sans-serif; padding:20px;">
                             <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
@@ -325,7 +326,7 @@
                     return;
                 }
 
-                // Hanya masukkan unit yang berstatus "ON_JOB" ke dalam daftar peta aktif
+                // Jika statusnya bukan ON_JOB (misal data kosong atau status lain), lewati marker-nya
                 if (u.status !== "ON_JOB") return;
 
                 activeNopols.push(nopol);
@@ -366,7 +367,7 @@
                         }
                     }
 
-                    // SISTEM EMERGENSI: Jika slideTo macet/gagal karena isu library, setLatLng akan langsung memindahkan posisi
+                    // SISTEM EMERGENSI
                     if (typeof markers.units[nopol].slideTo === "function") {
                         markers.units[nopol].slideTo([lat, lon], {
                             duration: 3000,

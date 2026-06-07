@@ -141,12 +141,6 @@
         <button class="float-item nav-btn" onclick="location.reload()"><i class="fa-solid fa-rotate"></i></button>
         <button class="float-item nav-btn btn-toggle-menu" onclick="toggleRightMenu()"><i class="fa-solid fa-bars"></i></button>
 
-        <div id="poi-panel">
-            <button id="poi-btn" style="width:100%; background:#2ecc71; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; margin-bottom:10px; cursor:pointer;" onclick="startAddPOIMode()"><i class="fa-solid fa-plus"></i> Tambah Lokasi</button>
-            <div id="poi-list"></div>
-        </div>
-    </div>
-
     <div class="right-menu-container" id="right-menu">
         <div class="layer-menu">
             <div style="font-size: 11px; font-weight: bold; color: #e67e22;"><i class="fa-solid fa-layer-group"></i> TAMPILAN PETA</div>
@@ -157,36 +151,7 @@
             </select>
         </div>
 
-        <div class="focus-menu">
-            <div style="font-size: 11px; font-weight: bold; color: #3498db;"><i class="fa-solid fa-truck"></i> PELACAKAN UNIT</div>
-            <select id="select-unit" onchange="focusUnit(this.value)">
-                <option value="">Cari Unit...</option>
-            </select>
-        </div>
-
-        <div class="route-menu">
-            <div style="font-size: 11px; font-weight: bold; color: #2ecc71;"><i class="fa-solid fa-route"></i> NAVIGASI RUTE</div>
-            <select id="select-dest">
-                <option value="">Pilih Tujuan...</option>
-            </select>
-            <button class="btn-route" onclick="openNav()"><i class="fa-solid fa-location-arrow"></i> Mulai Jalan</button>
-        </div>
-
-        <div class="distance-menu">
-            <div style="font-size: 11px; font-weight: bold; color: #f1c40f;"><i class="fa-solid fa-ruler-combined"></i> ESTIMASI JARAK & WAKTU</div>
-            <select id="select-dist-poi" onchange="calculateRoadDistance(this.value)">
-                <option value="">Pilih Lokasi POI...</option>
-            </select>
-            <div id="dist-res">Jarak: -<br>Waktu: -</div>
-        </div>
-
-        <div class="search-menu">
-            <div style="font-size: 11px; font-weight: bold; color: #9b59b6;"><i class="fa-solid fa-magnifying-glass"></i> CARI TEMPAT LAIN</div>
-            <input type="text" id="search-input" placeholder="Ketik nama tempat..." onkeyup="if(event.key === 'Enter') searchLocation()">
-            <button class="btn-search" onclick="searchLocation()"><i class="fa-solid fa-search"></i> Cari</button>
-        </div>
-    </div>
-
+        
     <div id="map"></div>
 
     <script type="module">

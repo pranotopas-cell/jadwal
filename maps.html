@@ -92,6 +92,7 @@
             width: 16px;
             height: 16px;
             fill: white;
+            transition: transform 0.4s ease-in-out;
         }
     </style>
 </head>
@@ -298,33 +299,31 @@
                                 bearing = calculateBearing(currentLatLng.lat, currentLatLng.lng, lat, lon);
                             }
 
-                            // Update HTML Icon konten secara langsung agar rotasi ter-apply selaras saat meluncur (slide)
-                            const updatedIcon = L.divIcon({
-                                html: `
-                                    <div class="truck-icon-container" style="transform: rotate(${bearing}deg);">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/>
-                                        </svg>
-                                    </div>
-                                `,
-                                className: '',
-                                iconSize: [32, 32],
-                                iconAnchor: [16, 16]
-                            });
-                            markers.units[nopol].setIcon(updatedIcon);
+                            // Perbaikan Rotasi: Targetkan struktur SVG internal secara spesifik sebelum/saat slide berjalan
+                            const markerElement = markers.units[nopol].getElement();
+                            if (markerElement) {
+                                const svgElement = markerElement.querySelector('svg');
+                                if (svgElement) {
+                                    svgElement.style.transform = `rotate(${bearing}deg)`;
+                                }
+                            }
 
-                            // Jalankan kembali peluncuran koordinat tanpa hambatan DOM internal
-                            markers.units[nopol].slideTo([lat, lon], {
-                                duration: 3500,
-                                keepAtCenter: false
-                            });
+                            // SISTEM EMERGENSI: Jika slideTo macet/gagal karena isu library, setLatLng akan langsung memindahkan posisi
+                            if (typeof markers.units[nopol].slideTo === "function") {
+                                markers.units[nopol].slideTo([lat, lon], {
+                                    duration: 3500,
+                                    keepAtCenter: false
+                                });
+                            } else {
+                                markers.units[nopol].setLatLng([lat, lon]);
+                            }
                             
                             markers.units[nopol].getPopup().setContent(popupContent);
                         } else {
                             const initialIcon = L.divIcon({
                                 html: `
-                                    <div class="truck-icon-container" style="transform: rotate(${u.bearing || 0}deg);">
-                                        <svg viewBox="0 0 24 24">
+                                    <div class="truck-icon-container">
+                                        <svg viewBox="0 0 24 24" style="transform: rotate(${u.bearing || 0}deg);">
                                             <path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/>
                                         </svg>
                                     </div>

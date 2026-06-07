@@ -500,37 +500,53 @@
             }
 
             watchId = navigator.geolocation.watchPosition(async (pos) => {
-                console.log("GPS Tracker: Koordinat baru dikirim HANYA ke Firebase ->", pos.coords.latitude, pos.coords.longitude);
-                const updateTime = new Date().toISOString();
+    console.log("GPS Tracker: Koordinat baru dideteksi ->", pos.coords.latitude, pos.coords.longitude);
+    const updateTime = new Date().toISOString();
 
-                const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
-                const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
+    const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
+    const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
 
-                await _supabase.from('tracking_unit').update({
-                    nopol: nopolValid, 
-                    tujuan: tujuanValid, 
-                    status: 'ON_JOB', 
-                    last_update: updateTime
-                }).eq('sopir', currentDriver);
+    // 1. KIRIM LOGIKA KE SERVICE WORKER AGAR TETAP JALAN SAAT MINIMIZE (Tambahan Baru)
+    if (navigator.serviceWorker && navigator.serviceWorker.controller && currentDriver) {
+        navigator.serviceWorker.controller.postMessage({
+            action: 'UPDATE_LATEST_COORDINATE',
+            sopir: currentDriver,
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            driverData: {
+                nopol: nopolValid,
+                tujuan: tujuanValid,
+                status: 'ON_JOB'
+            }
+        });
+    }
 
-                if (window.saveToFirebase && currentDriver) {
-                    window.saveToFirebase(currentDriver, {
-                        nopol: nopolValid,
-                        lat: pos.coords.latitude,
-                        lon: pos.coords.longitude,
-                        tujuan: tujuanValid,
-                        status: 'ON_JOB',
-                        last_update: updateTime
-                    });
-                }
-            }, (err) => {
-                console.error("Gagal mendapatkan GPS koordinat", err);
-            }, { 
-                enableHighAccuracy: true, 
-                timeout: 12000, 
-                maximumAge: 0 
-            });
-        }
+    // 2. Kode Supabase Bawaan Abang (Tetap berjalan normal saat aplikasi dibuka)
+    await _supabase.from('tracking_unit').update({
+        nopol: nopolValid, 
+        tujuan: tujuanValid, 
+        status: 'ON_JOB', 
+        last_update: updateTime
+    }).eq('sopir', currentDriver);
+
+    // 3. Kode Firebase Bawaan Abang (Tetap berjalan normal saat aplikasi dibuka)
+    if (window.saveToFirebase && currentDriver) {
+        window.saveToFirebase(currentDriver, {
+            nopol: nopolValid,
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude,
+            tujuan: tujuanValid,
+            status: 'ON_JOB',
+            last_update: updateTime
+        });
+    }
+}, (err) => {
+    console.error("Gagal mendapatkan GPS koordinat", err);
+}, { 
+    enableHighAccuracy: true, 
+    timeout: 12000, 
+    maximumAge: 0 
+});
 
         async function takeJob(nopol, rowId, sopir, tujuan) {
             if (!verifikasiHakAksesSopir(sopir)) return;

@@ -307,7 +307,8 @@
 
     // 3. REAL-TIME DATA FROM FIREBASE FIRESTORE (UPDATE PROTECTION LOGIC)
     function initTrackingRealtime() {
-        const q = query(collection(dbFirestore, "tracking_unit"), where("status", "==", "ON_JOB"));
+        // Query dimodifikasi agar fleksibel mengambil data status ON_JOB maupun DELIVERED untuk pengecekan logika kedaluwarsa
+        const q = query(collection(dbFirestore, "tracking_unit"), where("status", "in", ["ON_JOB", "DELIVERED"]));
         
         onSnapshot(q, (snapshot) => {
             const selectUnit = document.getElementById('select-unit');
@@ -320,6 +321,13 @@
                 const u = doc.data();
                 const sopir = doc.id; 
                 const nopol = u.nopol || sopir;
+                const statusJob = u.status ? u.status.toUpperCase() : '';
+
+                // LOGIKAL UPDATE: Jika status mengandung kata 'DELIVERED', blokir akses data unit di peta/sistem search
+                if (statusJob.includes("DELIVERED")) {
+                    return; // Lewati unit ini, sehingga otomatis terhapus dari daftar aktif peta dan select option
+                }
+
                 activeNopols.push(nopol);
 
                 // Keamanan Tipe Data: Konversi paksa string koordinat menjadi Float
@@ -535,6 +543,8 @@
         const coords = document.getElementById('select-dest').value;
         if (!coords) return alert("Pilih tujuan!");
         if (!userCoords) return alert("Aktifkan posisi GPS Anda terlebih dahulu!");
+        
+        // Pengecekan Tambahan: Jika rute atau unit sudah berstatus kedaluwarsa, blokir pembukaan tautan maps luar
         window.open(`https://www.google.com/maps/dir/?api=1&origin=${userCoords[0]},${userCoords[1]}&destination=${coords}&travelmode=driving`, '_blank');
     }
 
@@ -568,6 +578,9 @@
 
     loadPOIs(); 
     initTrackingRealtime();
+</script> 
+</body>
+</html>
 </script> 
 </body>
 </html>

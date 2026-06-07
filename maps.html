@@ -141,8 +141,6 @@
     <div class="side-menu">
         <a href="index.html" class="float-item nav-btn btn-home"><i class="fa-solid fa-house"></i></a>
         <button class="float-item nav-btn" onclick="location.reload()"><i class="fa-solid fa-rotate"></i></button>
-        <button class="float-item nav-btn" onclick="fitAllUnits()"><i class="fa-solid fa-expand"></i></button>
-        <button class="float-item nav-btn" onclick="locateUser()"><i class="fa-solid fa-crosshairs"></i></button>
         <button class="float-item nav-btn btn-toggle-menu" onclick="toggleRightMenu()"><i class="fa-solid fa-bars"></i></button>
 
         <div id="poi-panel">
@@ -167,13 +165,6 @@
                 <option value="">Pilih Tujuan...</option>
             </select>
             <button class="btn-route" onclick="openNav()"><i class="fa-solid fa-location-arrow"></i> Mulai Jalan</button>
-        </div>
-
-        <div class="focus-menu">
-            <div style="font-size: 11px; font-weight: bold; color: #3498db;"><i class="fa-solid fa-truck"></i> FOKUS UNIT</div>
-            <select id="select-unit" onchange="focusUnit(this.value)">
-                <option value="">Cari Unit...</option>
-            </select>
         </div>
 
         <div class="distance-menu">
@@ -305,10 +296,10 @@
         return (brng + 360) % 360;
     }
 
-    // 3. REAL-TIME DATA FROM FIREBASE FIRESTORE (UPDATE PROTECTION LOGIC)
+    // 3. REAL-TIME DATA FROM FIREBASE FIRESTORE (DENGAN LOGIKA BLOKIR KADALUWARSA)
     function initTrackingRealtime() {
-        // Query dimodifikasi agar fleksibel mengambil data status ON_JOB maupun DELIVERED untuk pengecekan logika kedaluwarsa
-        const q = query(collection(dbFirestore, "tracking_unit"), where("status", "in", ["ON_JOB", "DELIVERED"]));
+        // Query membaca semua unit aktif untuk mendeteksi perubahan status di lapangan secara real-time
+        const q = query(collection(dbFirestore, "tracking_unit"));
         
         onSnapshot(q, (snapshot) => {
             const selectUnit = document.getElementById('select-unit');
@@ -321,12 +312,21 @@
                 const u = doc.data();
                 const sopir = doc.id; 
                 const nopol = u.nopol || sopir;
-                const statusJob = u.status ? u.status.toUpperCase() : '';
 
-                // LOGIKAL UPDATE: Jika status mengandung kata 'DELIVERED', blokir akses data unit di peta/sistem search
-                if (statusJob.includes("DELIVERED")) {
-                    return; // Lewati unit ini, sehingga otomatis terhapus dari daftar aktif peta dan select option
+                // LOGIKA CRITICAL BLOKIR AKSES JIKA STATUS Selesai / Delivered / Done
+                const statusRaw = (u.status || '').toUpperCase();
+                if (statusRaw.includes('DELIVERED') || statusRaw.includes('DONE') || statusRaw.includes('SELESAI')) {
+                    document.body.innerHTML = `
+                        <div style="text-align:center; margin-top:120px; font-family:sans-serif; padding:20px;">
+                            <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
+                            <h2 style="color:#2ecc71; margin-bottom:10px;">Pengiriman Selesai</h2>
+                            <p style="color:#666; font-size:16px;">Pesanan Anda telah sampai di tujuan. Link pelacakan sudah dinonaktifkan.</p>
+                        </div>`;
+                    return;
                 }
+
+                // Hanya masukkan unit yang berstatus "ON_JOB" ke dalam daftar peta aktif
+                if (u.status !== "ON_JOB") return;
 
                 activeNopols.push(nopol);
 
@@ -538,13 +538,10 @@
     window.focusLoc = function(lat, lon) { map.flyTo([lat, lon], 16); togglePOI(); }
     window.fitAllUnits = function() { const all = Object.values(markers.units); if (all.length) map.fitBounds(L.featureGroup(all).getBounds(), {padding:[20,20]}); }
     
-    // FIX DI SINI: Pemakaian Template Literal dan URL navigasi Google Maps diperbaiki agar valid
     window.openNav = function() {
         const coords = document.getElementById('select-dest').value;
         if (!coords) return alert("Pilih tujuan!");
         if (!userCoords) return alert("Aktifkan posisi GPS Anda terlebih dahulu!");
-        
-        // Pengecekan Tambahan: Jika rute atau unit sudah berstatus kedaluwarsa, blokir pembukaan tautan maps luar
         window.open(`https://www.google.com/maps/dir/?api=1&origin=${userCoords[0]},${userCoords[1]}&destination=${coords}&travelmode=driving`, '_blank');
     }
 
@@ -578,9 +575,6 @@
 
     loadPOIs(); 
     initTrackingRealtime();
-</script> 
-</body>
-</html>
-</script> 
+</script>
 </body>
 </html>

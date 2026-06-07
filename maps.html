@@ -256,6 +256,10 @@
     let searchMarker = null;
     let isAddMode = false;
     let userCoords = null;
+    
+    // Global penanda status order kunci total
+    let globalIsDelivered = false; 
+    let unsubscribeUnits = null;
 
     const poiIcons = {
         black: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png',
@@ -265,16 +269,19 @@
     };
 
     window.toggleRightMenu = function() {
+        if (globalIsDelivered) return;
         const menu = document.getElementById('right-menu');
         menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
     }
 
     window.togglePOI = function() {
+        if (globalIsDelivered) return;
         const p = document.getElementById('poi-panel');
         p.style.display = p.style.display === 'block' ? 'none' : 'block';
     }
 
     window.locateUser = function() {
+        if (globalIsDelivered) return;
         if (!navigator.geolocation) return alert("GPS tidak didukung");
         navigator.geolocation.getCurrentPosition((pos) => {
             const lat = pos.coords.latitude, lon = pos.coords.longitude;
@@ -297,12 +304,13 @@
         return (brng + 360) % 360;
     }
 
-    // REAL-TIME DATA FROM FIREBASE FIRESTORE (PERBAIKAN LOGIKA PENGUNCIAN TOTAL)
+    // REAL-TIME DATA FROM FIREBASE FIRESTORE
     function initTrackingRealtime() {
         const q = query(collection(dbFirestore, "tracking_unit"));
         
-        // Tampung fungsi unsubscribe agar listener bisa dimatikan sepenuhnya saat DELIVERED
-        const unsubscribeUnits = onSnapshot(q, (snapshot) => {
+        unsubscribeUnits = onSnapshot(q, (snapshot) => {
+            if (globalIsDelivered) return;
+
             const selectUnit = document.getElementById('select-unit');
             const currentVal = selectUnit ? selectUnit.value : '';
             
@@ -310,22 +318,20 @@
                 selectUnit.innerHTML = '<option value="">Cari Unit...</option>';
             }
             const activeNopols = [];
-            let isDelivered = false;
 
             snapshot.forEach((doc) => {
                 const u = doc.data();
                 const sopir = doc.id; 
                 const nopol = u.nopol || sopir;
 
-                // LOGIKA CRITICAL: Deteksi status selesai langsung dari database lapangan
+                // DETEKSI UTAMA STATUS DELIVERED/SELESAI
                 const statusRaw = (u.status || '').toUpperCase();
                 if (statusRaw.includes('DELIVERED') || statusRaw.includes('DONE') || statusRaw.includes('SELESAI')) {
-                    isDelivered = true;
+                    globalIsDelivered = true;
                 }
 
-                if (isDelivered) return; // Langsung keluar loop, jangan gambar marker apapun
+                if (globalIsDelivered) return;
 
-                // Jika statusnya bukan ON_JOB, lewati marker-nya
                 if (u.status !== "ON_JOB") return;
 
                 activeNopols.push(nopol);
@@ -396,13 +402,18 @@
                 }
             });
 
-            // JIKA STATUS DELIVERED TERDETEKSI: Kunci total layar & matikan proses background
-            if (isDelivered) {
+            // LOGIKA BLOKIR & PEMBERSIHAN TOTAL JALUR LATAR BELAKANG
+            if (globalIsDelivered) {
                 if (typeof unsubscribeUnits === 'function') {
-                    unsubscribeUnits(); // Matikan real-time stream Firebase
+                    unsubscribeUnits(); 
                 }
-                window.stop(); // Hentikan maps api yang sedang meload data luar
+                window.stop(); 
                 
+                // Menghapus objek peta dari Leaflet memory leakage
+                if (map) {
+                    map.remove();
+                }
+
                 document.body.innerHTML = `
                     <div style="text-align:center; margin-top:120px; font-family:sans-serif; padding:20px;">
                         <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
@@ -428,6 +439,7 @@
     }
 
     async function loadPOIs() {
+        if (globalIsDelivered) return;
         const { data, error } = await _supabase.from('poi_lokasi').select('*');
         if (error) return;
         const list = document.getElementById('poi-list');
@@ -478,6 +490,7 @@
     }
 
     window.deletePOI = async function(id, event) {
+        if (globalIsDelivered) return;
         event.stopPropagation();
         if (confirm("Apakah Anda yakin ingin menghapus lokasi ini?")) {
             const { error } = await _supabase.from('poi_lokasi').delete().eq('id', id);
@@ -486,6 +499,7 @@
     }
 
     window.searchLocation = async function() {
+        if (globalIsDelivered) return;
         const queryStr = document.getElementById('search-input').value;
         if (!queryStr) return alert("Masukkan kata kunci pencarian!");
         try {
@@ -520,6 +534,7 @@
     }
 
     window.calculateRoadDistance = async function(coords) {
+        if (globalIsDelivered) return;
         const resDiv = document.getElementById('dist-res');
         if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
         if (!coords) { resDiv.innerHTML = "Jarak: -<br>Waktu: -"; return; }
@@ -554,18 +569,26 @@
         }
     }
 
-    window.focusUnit = function(coords) { if (coords) { const c = coords.split(','); map.flyTo([c[0], c[1]], 16); toggleRightMenu(); } }
-    window.focusLoc = function(lat, lon) { map.flyTo([lat, lon], 16); togglePOI(); }
-    window.fitAllUnits = function() { const all = Object.values(markers.units); if (all.length) map.fitBounds(L.featureGroup(all).getBounds(), {padding:[20,20]}); }
+    window.focusUnit = function(coords) { if (!globalIsDelivered && coords) { const c = coords.split(','); map.flyTo([c[0], c[1]], 16); toggleRightMenu(); } }
+    window.focusLoc = function(lat, lon) { if (!globalIsDelivered) { map.flyTo([lat, lon], 16); togglePOI(); } }
+    window.fitAllUnits = function() { if (globalIsDelivered) return; const all = Object.values(markers.units); if (all.length) map.fitBounds(L.featureGroup(all).getBounds(), {padding:[20,20]}); }
     
+    // VALIDASI INTEGRAL PADA SISTEM NAVIGASI TOMBOL MULAI JALAN
     window.openNav = function() {
+        if (globalIsDelivered) {
+            alert("Akses dinonaktifkan. Pengiriman sudah selesai.");
+            return;
+        }
         const coords = document.getElementById('select-dest').value;
         if (!coords) return alert("Pilih tujuan!");
         if (!userCoords) return alert("Aktifkan posisi GPS Anda terlebih dahulu!");
+        
+        // Perbaikan penulisan string template literal literal maps
         window.open(`https://www.google.com/maps/dir/?api=1&origin=${userCoords[0]},${userCoords[1]}&destination=${coords}&travelmode=driving`, '_blank');
     }
 
     window.startAddPOIMode = function() {
+        if (globalIsDelivered) return;
         isAddMode = true;
         document.getElementById('poi-btn').classList.add('active-mode');
         togglePOI();
@@ -573,7 +596,7 @@
     }
 
     map.on('click', async (e) => {
-        if (!isAddMode) return;
+        if (!isAddMode || globalIsDelivered) return;
         const nama = prompt("Masukkan Nama Lokasi Baru:");
         if (nama && nama.trim() !== "") {
             const { error } = await _supabase.from('poi_lokasi').insert([{ nama: nama.trim(), lat: e.latlng.lat, lon: e.latlng.lng, simbol: 'black' }]);

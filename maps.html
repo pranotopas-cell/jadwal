@@ -325,14 +325,14 @@
                 const nopol = u.nopol || sopir;
 
                 // DETEKSI UTAMA STATUS DELIVERED/SELESAI
-                const statusRaw = (u.status || '').toUpperCase();
+                const statusRaw = (status || '').toUpperCase();
                 if (statusRaw.includes('DELIVERED') || statusRaw.includes('DONE') || statusRaw.includes('SELESAI')) {
                     globalIsDelivered = true;
                 }
 
                 if (globalIsDelivered) return;
 
-                if (u.status !== "ON_JOB") return;
+                if (status !== "ON_JOB") return;
 
                 activeNopols.push(nopol);
 

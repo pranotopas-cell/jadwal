@@ -139,9 +139,8 @@
 <body>
 
     <div class="side-menu">
-        <a href="index.html" class="float-item nav-btn btn-home"><i class="fa-solid fa-house"></i></a>
-        <button class="float-item nav-btn" onclick="location.reload()"><i class="fa-solid fa-rotate"></i></button>
         <button class="float-item nav-btn btn-toggle-menu" onclick="toggleRightMenu()"><i class="fa-solid fa-bars"></i></button>
+        <button class="float-item nav-btn" onclick="location.reload()"><i class="fa-solid fa-rotate"></i></button>
 
         <div id="poi-panel">
             <button id="poi-btn" style="width:100%; background:#2ecc71; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; margin-bottom:10px; cursor:pointer;" onclick="startAddPOIMode()"><i class="fa-solid fa-plus"></i> Tambah Lokasi</button>
@@ -174,13 +173,6 @@
             </select>
             <div id="dist-res">Jarak: -<br>Waktu: -</div>
         </div>
-
-        <div class="search-menu">
-            <div style="font-size: 11px; font-weight: bold; color: #9b59b6;"><i class="fa-solid fa-magnifying-glass"></i> CARI TEMPAT LAIN</div>
-            <input type="text" id="search-input" placeholder="Ketik nama tempat..." onkeyup="if(event.key === 'Enter') searchLocation()">
-            <button class="btn-search" onclick="searchLocation()"><i class="fa-solid fa-search"></i> Cari</button>
-        </div>
-    </div>
 
     <div id="map"></div>
 

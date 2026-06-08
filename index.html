@@ -475,16 +475,22 @@
             const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
             const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
 
+            const gpsOptions = {
+                enableHighAccuracy: true, 
+                timeout: 10000, 
+                maximumAge: 0 // Memaksa mengambil data baru dari GPS, bukan cache memori
+            };
+
             // MESIN 1: Berdasarkan Sensor Alami Pergerakan Device
             watchId = navigator.geolocation.watchPosition((pos) => {
                 const updateTime = new Date().toISOString();
                 
-                // 1. Supabase: Update Status Aktivitas Kerja Utama
+                // Supabase: Update Status Aktivitas Kerja Utama
                 _supabase.from('tracking_unit').update({
                     nopol: nopolValid, tujuan: tujuanValid, status: 'ON_JOB', last_update: updateTime
                 }).eq('sopir', currentDriver).catch(err => console.error(err));
 
-                // 2. Firebase: Mandi Data Koordinat Latitude & Longitude Realtime
+                // Firebase: Kirim Koordinat Nyata & Fresh
                 langsungSaveToFirebase(currentDriver, {
                     nopol: nopolValid,
                     lat: pos.coords.latitude,
@@ -496,18 +502,14 @@
 
             }, (err) => {
                 console.warn("WatchPosition tersendat, mengandalkan Engine Interval...", err.message);
-            }, { 
-                enableHighAccuracy: true, 
-                timeout: 10000, 
-                maximumAge: 0 
-            });
+            }, gpsOptions);
 
-            // MESIN 2: BAN SEREP ANTI MACET (Ditembak Paksa Tiap 15 Detik Tanpa Nunggu HP Bergerak)
+            // MESIN 2: BAN SEREP (Paksa Tarik Koordinat Baru Tiap 15 Detik)
             backupIntervalId = setInterval(() => {
                 navigator.geolocation.getCurrentPosition((pos) => {
                     const updateTime = new Date().toISOString();
                     
-                    console.log("🔥 [Ban Serep] Memaksa Tarik Koordinat Hardware HP...");
+                    console.log("🔥 [Ban Serep] Koordinat Baru Berhasil Ditarik!");
                     
                     langsungSaveToFirebase(currentDriver, {
                         nopol: nopolValid,
@@ -519,7 +521,11 @@
                     });
                 }, (err) => {
                     console.error("Gagal Tarik Paksa GPS Hardware:", err.message);
-                }, { enableHighAccuracy: true, timeout: 5000 });
+                }, { 
+                    enableHighAccuracy: true, 
+                    timeout: 12000, // Memberikan waktu lebih lama bagi hardware untuk mengunci sinyal satelit
+                    maximumAge: 0   // FIX UTAMA: Menghapus cache posisi lama
+                });
             }, 15000);
         }
 

@@ -504,6 +504,7 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
     const nopolValid = nopol || '-';
     const tujuanValid = tujuan || '-';
 
+    // Pemicu awal ke Service Worker
     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
             action: 'START_TRACKING',
@@ -513,18 +514,18 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
         });
     }
 
-    // Watch Position Utama dengan konfigurasi anti-cache
-    watchId = navigator.geolocation.watchPosition(async (pos) => {
-        console.log("GPS Tracker Bergerak:", pos.coords.latitude, pos.coords.longitude);
+    // Fungsi internal untuk mengirim & memproses koordinat terbaru
+    async function prosesKoordinatBaru(lat, lon) {
+        console.log(`⚡ GPS Super Sensitif [${new Date().toLocaleTimeString()}]:`, lat, lon);
         const updateTime = new Date().toISOString();
 
-        // 1. Kirim data ke Service Worker
+        // 1. Kirim ke Service Worker
         if (navigator.serviceWorker && navigator.serviceWorker.controller && currentDriver) {
             navigator.serviceWorker.controller.postMessage({
                 action: 'UPDATE_LATEST_COORDINATE',
                 sopir: currentDriver,
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude,
+                latitude: lat,
+                longitude: lon,
                 driverData: { nopol: nopolValid, tujuan: tujuanValid, status: 'ON_JOB' }
             });
         }
@@ -537,88 +538,45 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
             last_update: updateTime
         }).eq('sopir', currentDriver);
 
-        // 3. Kirim ke Firebase Firestore
+        // 3. Kirim ke Firebase
         if (window.saveToFirebase && currentDriver) {
             window.saveToFirebase(currentDriver, {
                 nopol: nopolValid,
-                lat: pos.coords.latitude,
-                lon: pos.coords.longitude,
+                lat: lat,
+                lon: lon,
                 tujuan: tujuanValid,
                 status: 'ON_JOB',
                 last_update: updateTime
             });
         }
+    }
+
+    // --- STRATEGI 1: Watch Position Utama ---
+    watchId = navigator.geolocation.watchPosition((pos) => {
+        prosesKoordinatBaru(pos.coords.latitude, pos.coords.longitude);
     }, (err) => {
-        console.error("Gagal mendapatkan GPS koordinat", err);
-    }, { 
-        enableHighAccuracy: true, // Wajib TRUE untuk memaksa hardware GPS aktif
-        timeout: 10000,           
-        maximumAge: 0             // Wajib 0 agar browser TIDAK mengambil data lama dari cache
-    });
-}
-        
-async function takeJob(nopol, rowId, sopir, tujuan) {
-    if (!verifikasiHakAksesSopir(sopir)) return;
-    if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
-    
-    if (!navigator.geolocation) {
-        alert("Waduh! HP/Browser Anda tidak mendukung fitur GPS Tracking.");
-        return;
-    }
-
-    alert("Mohon Tunggu Sebentar.......Mencari Koneksi");
-
-    // 🟢 [LOGIKA AUDIO] Putar audio hening saat tombol "AMBIL JOB" ditekan oleh sopir
-    const audioPancing = document.getElementById('background-wake');
-    if (audioPancing) {
-        audioPancing.play()
-            .then(() => console.log("Media pancingan AKTIF. Chrome dikunci di background."))
-            .catch(e => console.error("Gagal memutar audio:", e));
-    }
-
-    navigator.geolocation.getCurrentPosition(async (posAwal) => {
-        const latitude = posAwal.coords.latitude;
-        const longitude = posAwal.coords.longitude;
-        const currentDriver = localStorage.getItem('login_sopir_nama');
-        const updateTime = new Date().toISOString();
-
-        const { error: errStatus } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
-        if (errStatus) return alert("Gagal update status " + errStatus.message);
-        
-        const { error: errTrack } = await _supabase.from('tracking_unit').update({
-            nopol: nopol, 
-            tujuan: tujuan, 
-            status: 'ON_JOB', 
-            last_update: updateTime
-        }).eq('sopir', currentDriver);
-
-        if (errTrack) {
-            alert("GPS Gagal mencatat status di Supabase: " + errTrack.message);
-            return;
-        }
-
-        if (window.saveToFirebase) {
-            window.saveToFirebase(currentDriver, {
-                nopol: nopol,
-                lat: latitude,
-                lon: longitude,
-                tujuan: tujuan,
-                status: 'ON_JOB',
-                last_update: updateTime
-            });
-        }
-
-        alert("GPS Sukses");
-
-        eksekusiMulaiGpsWatch(nopol, tujuan);
-        loadDashboard();
-
-    }, (error) => {
-        alert("Gagal mengunci GPS! " + error.message);
+        console.error("WatchPosition Error:", err.message);
     }, { 
         enableHighAccuracy: true, 
-        timeout: 15000 
+        timeout: 5000,           
+        maximumAge: 0             
     });
+
+    // --- STRATEGI 2: Paksa Ambil Data Tiap 4 Detik (Anti-Delay & Sangat Sensitif) ---
+    // Cara ini memaksa hardware GPS untuk terus-menerus melakukan pemindaian aktif tanpa cache
+    pancinganGpsId = setInterval(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                prosesKoordinatBaru(pos.coords.latitude, pos.coords.longitude);
+            }, (err) => {
+                console.error("Force Polling Error:", err.message);
+            }, {
+                enableHighAccuracy: true,
+                timeout: 3500, // Timeout pendek agar jika macet langsung coba lagi di interval berikutnya
+                maximumAge: 0  // MUTLAK 0: Memaksa hardware mencari posisi riil saat ini, bukan data menit lalu
+            });
+        }
+    }, 4000); // Eksekusi paksa setiap 4 detik sekali
 }
 
 async function finishJob(nopol, rowId, sopir) {

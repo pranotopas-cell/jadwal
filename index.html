@@ -226,9 +226,9 @@
             "ALFIN": "082253835106", "WIYANTO": "082353008608",
             "IPUL": "089523413899", "KOMAR": "082253430545",
             "NOTO": "08114558778", "ANDI": "082252359023",
-            "IPHONE":"08158841410", "ELA": "08115273322", "TEST": "123" ,
-            "COBA":"021" , "WAHYUDI": "9900866754434", 
-            "M.ADHAR": "9988773455", "HENGKI": "886245645436" , "FARID HABIBI": "6677755443188"
+            "IPHONE":"08158841410", "ELA": "08115273322", "TEST": "123",
+            "COBA":"021", "WAHYUDI": "9900866754434", 
+            "M.ADHAR": "9988773455", "HENGKI": "886245645436", "FARID HABIBI": "6677755443188"
         };
 
         let watchId = null;
@@ -236,6 +236,7 @@
         let currentActiveJob = null; 
         let reconnectInterval = null; // Handler untuk Auto Reconnect GPS
 
+        // --- UTILITY FUNCTIONS ---
         function getWIB() {
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }
@@ -257,6 +258,7 @@
             statusEl.style.color = "#66bb6a";
         }
 
+        // --- AUTHENTICATION SYSTEM ---
         async function cekGerbangLogin() {
             let infoSopirNama = localStorage.getItem('login_sopir_nama');
             let infoSopirPhone = localStorage.getItem('login_sopir_phone');
@@ -346,6 +348,7 @@
             }
         }
 
+        // --- DASHBOARD & DATA CORE ---
         async function loadDashboard() {
             if (isFetching) return; 
             isFetching = true;
@@ -460,6 +463,7 @@
             tbody.appendChild(fragment);
         }
 
+        // --- GPS ENGINE & TRACKING ---
         function eksekusiMulaiGpsWatch(nopol, tujuan) {
             if (watchId) navigator.geolocation.clearWatch(watchId);
     
@@ -472,60 +476,58 @@
             aktifkanWakeLock();
 
             watchId = navigator.geolocation.watchPosition((pos) => {
-            console.log("GPS Tracker Active:", pos.coords.latitude, pos.coords.longitude);
-            const currentDriver = localStorage.getItem('login_sopir_nama');
-            const updateTime = new Date().toISOString();
+                console.log("GPS Tracker Active:", pos.coords.latitude, pos.coords.longitude);
+                const currentDriver = localStorage.getItem('login_sopir_nama');
+                const updateTime = new Date().toISOString();
 
-            const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
-            const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
+                const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
+                const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
 
-        if (!currentDriver) return;
+                if (!currentDriver) return;
 
-            // PERBAIKAN 1: Kirim ke Supabase TANPA await di baris utama agar tidak memblock Firebase
-            _supabase.from('tracking_unit').update({
-            nopol: nopolValid, 
-            tujuan: tujuanValid, 
-            status: 'ON_JOB', 
-            last_update: updateTime
-        }).eq('sopir', currentDriver).catch(err => console.error("Supabase Error:", err));
+                // PERBAIKAN 1: Kirim ke Supabase TANPA await di baris utama agar tidak memblock Firebase
+                _supabase.from('tracking_unit').update({
+                    nopol: nopolValid, 
+                    tujuan: tujuanValid, 
+                    status: 'ON_JOB', 
+                    last_update: updateTime
+                }).eq('sopir', currentDriver).catch(err => console.error("Supabase Error:", err));
 
-        // PERBAIKAN 2: Firebase langsung dieksekusi tanpa menunggu Supabase selesai
-        if (window.saveToFirebase) {
-            window.saveToFirebase(currentDriver, {
-                nopol: nopolValid,
-                lat: pos.coords.latitude,
-                lon: pos.coords.longitude,
-                tujuan: tujuanValid,
-                status: 'ON_JOB',
-                last_update: updateTime // Cek timestamp ini di Firebase, apakah detiknya berubah?
+                // PERBAIKAN 2: Firebase langsung dieksekusi tanpa menunggu Supabase selesai
+                if (window.saveToFirebase) {
+                    window.saveToFirebase(currentDriver, {
+                        nopol: nopolValid,
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        tujuan: tujuanValid,
+                        status: 'ON_JOB',
+                        last_update: updateTime
+                    });
+                }
+            }, (err) => {
+                console.error("GPS Terputus/Error:", err.message);
+                triggerAutoReconnect();
+            }, { 
+                enableHighAccuracy: true, 
+                timeout: 7000, 
+                maximumAge: 0 
             });
         }
-    }, (err) => {
-        console.error("GPS Terputus/Error:", err.message);
-        triggerAutoReconnect();
-    }, { 
-        enableHighAccuracy: true, 
-        timeout: 7000, // Dipercepat dari 10 detik ke 7 detik agar auto-reconnect lebih responsif
-        maximumAge: 0 
-    });
-}
 
-    // Fungsi tambahan untuk mengunci Layar HP Sopir agar tidak sleep
-    let wakeLock = null;
-    async function aktifkanWakeLock() {
-    try {
-        if ('wakeLock' in navigator) {
-            wakeLock = await navigator.wakeLock.request('screen');
-            console.log('Screen Wake Lock aktif. HP tidak akan tidur.');
-        }
+        let wakeLock = null;
+        async function aktifkanWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Screen Wake Lock aktif. HP tidak akan tidur.');
+                }
             } catch (err) {
-            console.warn('Gagal mengaktifkan Wake Lock:', err.message);
+                console.warn('Gagal mengaktifkan Wake Lock:', err.message);
+            }
         }
-    }
 
-        // Sistem Otomatis Mengunci Kembali GPS Jika Bermasalah
         function triggerAutoReconnect() {
-            if (reconnectInterval) return; // Mencegah duplikasi loop reconnect
+            if (reconnectInterval) return; 
             
             console.log("Sistem mendeteksi GPS mati/gagal. Memulai auto-reconnect...");
             reconnectInterval = setInterval(() => {
@@ -537,9 +539,10 @@
                 } else {
                     clearInterval(reconnectInterval);
                 }
-            }, 10000); // Mencoba koneksi ulang setiap 10 detik
+            }, 10000);
         }
 
+        // --- JOB ACTIONS ---
         async function takeJob(nopol, rowId, sopir, tujuan) {
             if (!verifikasiHakAksesSopir(sopir)) return;
             if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
@@ -628,6 +631,7 @@
             loadDashboard();
         }
 
+        // --- SCREEN STATE & EVENT LISTENERS ---
         function cekSesiGantungMatiLayar() {
             const backupJob = localStorage.getItem('active_tracking_job');
             if (backupJob) {
@@ -646,9 +650,11 @@
             }
         });
 
+        // Live Realtime Clock
         const clockEl = document.getElementById('clock');
         setInterval(() => { clockEl.innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
 
+        // --- REALTIME REALM CHANNEL (SUPABASE) ---
         _supabase.channel('db-changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
             .subscribe();
@@ -663,6 +669,7 @@
             )
             .subscribe();
 
+        // --- INITIAL RUN ---
         loadDashboard();
         setInterval(loadDashboard, 30000);
     </script>

@@ -184,9 +184,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ==========================================
-        // KONFIGURASI FIREBASE (SUDAH FIX DAN DISINKRONKAN)
-        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
             authDomain: "ikaen-tracking.firebaseapp.com",
@@ -200,15 +197,28 @@
         const app = initializeApp(firebaseConfig);
         const dbFirestore = getFirestore(app);
 
+        // Flag untuk mencegah tabrakan pengiriman data (Race Condition)
+        let isFirebaseSending = false;
+
         // Buat objek fungsi Firebase agar bisa diakses secara global oleh script lama
         window.saveToFirebase = async function(sopir, data) {
-            if (!sopir) return; // Mencegah error jika nama sopir kosong
+            if (!sopir) return; 
+            
+            // Antrean mekanis: Jika pengiriman sebelumnya belum selesai, lewati yang ini demi kestabilan
+            if (isFirebaseSending && data.status === 'ON_JOB') {
+                console.warn("Pengiriman Firebase sebelumnya masih berjalan, melewati koordinat ini...");
+                return;
+            }
+
+            isFirebaseSending = true;
             try {
                 // Menyimpan ke Firebase menggunakan NAMA SOPIR sebagai Document ID
                 await setDoc(doc(dbFirestore, "tracking_unit", sopir), data, { merge: true });
-                console.log("Berhasil sinkronisasi ke Firebase Firestore untuk Sopir: " + sopir);
+                console.log(`[Firebase] Berhasil sinkronisasi untuk Sopir: ${sopir} (Status: ${data.status})`);
             } catch (e) {
-                console.error("Gagal menyimpan ke Firebase: ", e);
+                console.error("[Firebase] Gagal menyimpan data: ", e);
+            } finally {
+                isFirebaseSending = false;
             }
         };
     </script>
@@ -248,7 +258,7 @@
             const statusEl = document.getElementById('systemStatus');
             
             if (loginNama) {
-                statusEl.innerHTML = `● ${loginNama}<span style="background:#ff5252; color:#fff; padding:2px 5px; border-radius:3px; font-size:9px; margin-left:4px; font-weight:800;">LOGOUT</span>`;
+                statusEl.innerHTML = `● ${loginNama}<span style="background:#ff5252; color:#fff; padding:2px 5px; border-radius:3px; font-size:9px; margin-left:4px; font-weight:800; cursor:pointer;" onclick="mintaLogout()">LOGOUT</span>`;
             } else {
                 statusEl.innerHTML = `● GPS SYSTEM ACTIVE`;
             }
@@ -458,143 +468,154 @@
         }
 
         function eksekusiMulaiGpsWatch(nopol, tujuan) {
-    if (watchId) navigator.geolocation.clearWatch(watchId);
-    
-    currentActiveJob = { nopol, tujuan };
-    localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            
+            currentActiveJob = { nopol, tujuan };
+            localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
 
-    watchId = navigator.geolocation.watchPosition(async (pos) => {
-        console.log("GPS Tracker: Koordinat baru dikirim HANYA ke Firebase ->", pos.coords.latitude, pos.coords.longitude);
-        const currentDriver = localStorage.getItem('login_sopir_nama');
-        const updateTime = new Date().toISOString();
+            watchId = navigator.geolocation.watchPosition(async (pos) => {
+                // Validasi data koordinat dasar mencegah loncatan GPS palsu (0,0)
+                if(!pos.coords.latitude || !pos.coords.longitude) return;
 
-        const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
-        const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
+                const currentDriver = localStorage.getItem('login_sopir_nama');
+                const updateTime = new Date().toISOString();
 
-        // 1. SUPABASE: Hanya perbarui status operasional (TANPA membawa data lat & lon)
-        await _supabase.from('tracking_unit').update({
-            nopol: nopolValid, 
-            tujuan: tujuanValid, 
-            status: 'ON_JOB', 
-            last_update: updateTime
-        }).eq('sopir', currentDriver);
+                const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
+                const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
 
-        // 2. FIREBASE FIRESTORE: Mandi data koordinat real-time di sini
-        if (window.saveToFirebase && currentDriver) {
-            window.saveToFirebase(currentDriver, {
-                nopol: nopolValid,
-                lat: pos.coords.latitude,
-                lon: pos.coords.longitude,
-                tujuan: tujuanValid,
-                status: 'ON_JOB',
-                last_update: updateTime
-            });
-        }
-    }, (err) => {
-        console.error("Gagal mendapatkan GPS koordinat", err);
-    }, { 
-        enableHighAccuracy: true, 
-        timeout: 12000, 
-        maximumAge: 0 
-    });
-}
+                console.log("[GPS] Mengirim data ke Firebase & Supabase ->", pos.coords.latitude, pos.coords.longitude);
 
-       async function takeJob(nopol, rowId, sopir, tujuan) {
-    if (!verifikasiHakAksesSopir(sopir)) return;
-    if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
-    
-    if (!navigator.geolocation) {
-        alert("Waduh! HP/Browser Anda tidak mendukung fitur GPS Tracking.");
-        return;
-    }
+                // 1. SUPABASE: Hanya perbarui status operasional & waktu terakhir
+                _supabase.from('tracking_unit').update({
+                    nopol: nopolValid, 
+                    tujuan: tujuanValid, 
+                    status: 'ON_JOB', 
+                    last_update: updateTime
+                }).eq('sopir', currentDriver).then(({error}) => {
+                    if(error) console.error("[Supabase] Gagal detak jantung status:", error.message);
+                });
 
-    alert("Koneksi GPS.......Mohon tunggu sebentar.");
-
-    navigator.geolocation.getCurrentPosition(async (posAwal) => {
-        const latitude = posAwal.coords.latitude;
-        const longitude = posAwal.coords.longitude;
-        const currentDriver = localStorage.getItem('login_sopir_nama');
-        const updateTime = new Date().toISOString();
-
-        // Update status di tabel utama data_pengiriman Supabase menjadi PROSES
-        const { error: errStatus } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
-        if (errStatus) return alert("Gagal update status " + errStatus.message);
-        
-        // --- PERBAIKAN DI SINI: Supabase HANYA update status akun, TANPA lat & lon ---
-        const { error: errTrack } = await _supabase.from('tracking_unit').update({
-            nopol: nopol, 
-            tujuan: tujuan, 
-            status: 'ON_JOB', 
-            last_update: updateTime
-        }).eq('sopir', currentDriver);
-
-        if (errTrack) {
-            alert("GPS Gagal mencatat status di Supabase: " + errTrack.message);
-            return;
-        }
-
-        // --- Firebase tetap menerima data koordinat awal mula perjalanan ---
-        if (window.saveToFirebase) {
-            window.saveToFirebase(currentDriver, {
-                nopol: nopol,
-                lat: latitude,
-                lon: longitude,
-                tujuan: tujuan,
-                status: 'ON_JOB',
-                last_update: updateTime
+                // 2. FIREBASE FIRESTORE: Kirim data koordinat real-time ke mari
+                if (window.saveToFirebase && currentDriver) {
+                    window.saveToFirebase(currentDriver, {
+                        nopol: nopolValid,
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        tujuan: tujuanValid,
+                        status: 'ON_JOB',
+                        last_update: updateTime
+                    });
+                }
+            }, (err) => {
+                console.error("Gagal mendapatkan GPS koordinat", err);
+            }, { 
+                enableHighAccuracy: true, 
+                timeout: 10000, // Dipersingkat ke 10 detik agar deteksi kegagalan sinyal lebih responsif
+                maximumAge: 0 
             });
         }
 
-        alert("GPS Sukses");
+        async function takeJob(nopol, rowId, sopir, tujuan) {
+            if (!verifikasiHakAksesSopir(sopir)) return;
+            if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
+            
+            if (!navigator.geolocation) {
+                alert("Waduh! HP/Browser Anda tidak mendukung fitur GPS Tracking.");
+                return;
+            }
 
-        eksekusiMulaiGpsWatch(nopol, tujuan);
-        loadDashboard();
+            alert("Koneksi GPS.......Mohon tunggu sebentar.");
 
-    }, (error) => {
-        alert("Gagal mengunci GPS! " + error.message);
-    }, { 
-        enableHighAccuracy: true, 
-        timeout: 15000 
-    });
-}
+            navigator.geolocation.getCurrentPosition(async (posAwal) => {
+                const latitude = posAwal.coords.latitude;
+                const longitude = posAwal.coords.longitude;
+                const currentDriver = localStorage.getItem('login_sopir_nama');
+                const updateTime = new Date().toISOString();
+
+                // Update status di tabel utama data_pengiriman Supabase menjadi PROSES
+                const { error: errStatus } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
+                if (errStatus) return alert("Gagal update status " + errStatus.message);
+                
+                // Supabase HANYA update status akun, TANPA lat & lon
+                const { error: errTrack } = await _supabase.from('tracking_unit').update({
+                    nopol: nopol, 
+                    tujuan: tujuan, 
+                    status: 'ON_JOB', 
+                    last_update: updateTime
+                }).eq('sopir', currentDriver);
+
+                if (errTrack) {
+                    alert("GPS Gagal mencatat status di Supabase: " + errTrack.message);
+                    return;
+                }
+
+                // Firebase menerima koordinat AWAL mula perjalanan secara langsung
+                if (window.saveToFirebase && currentDriver) {
+                    await window.saveToFirebase(currentDriver, {
+                        nopol: nopol,
+                        lat: latitude,
+                        lon: longitude,
+                        tujuan: tujuan,
+                        status: 'ON_JOB',
+                        last_update: updateTime
+                    });
+                }
+
+                alert("GPS Sukses Terkunci!");
+
+                eksekusiMulaiGpsWatch(nopol, tujuan);
+                loadDashboard();
+
+            }, (error) => {
+                alert("Gagal mengunci GPS! " + error.message + "\nPastikan Izin Lokasi di HP sudah di-ALLOW.");
+            }, { 
+                enableHighAccuracy: true, 
+                timeout: 15000 
+            });
+        }
 
         async function finishJob(nopol, rowId, sopir) {
-    if (!verifikasiHakAksesSopir(sopir)) return;
-    if (!confirm("Tugas Selesai?")) return;
-    
-    if (watchId) navigator.geolocation.clearWatch(watchId);
-    
-    currentActiveJob = null;
-    localStorage.removeItem('active_tracking_job');
-    const currentDriver = localStorage.getItem('login_sopir_nama');
+            if (!verifikasiHakAksesSopir(sopir)) return;
+            if (!confirm("Tugas Selesai?")) return;
+            
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+            
+            currentActiveJob = null;
+            localStorage.removeItem('active_tracking_job');
+            const currentDriver = localStorage.getItem('login_sopir_nama');
 
-    const skrg = getWIB();
-    const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
+            const skrg = getWIB();
+            const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
 
-    // 1. Update status pengiriman di Supabase jadi DELIVERED beserta jamnya
-    await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
-    
-    // 2. Kembalikan status sopir di Supabase menjadi LOGIN_ACTIVE (Sopir standby kembali)
-    await _supabase.from('tracking_unit').update({ 
-        status: 'LOGIN_ACTIVE', 
-        last_update: skrg.toISOString() 
-    }).eq('sopir', currentDriver);
+            // 1. Update status pengiriman di Supabase jadi DELIVERED beserta jamnya
+            await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
+            
+            // 2. Kembalikan status sopir di Supabase menjadi LOGIN_ACTIVE (Sopir standby kembali)
+            await _supabase.from('tracking_unit').update({ 
+                status: 'LOGIN_ACTIVE', 
+                last_update: skrg.toISOString() 
+            }).eq('sopir', currentDriver);
 
-    // 3. Update juga di Firebase bahwa status sopir sudah kembali LOGIN_ACTIVE
-    if (window.saveToFirebase) {
-        window.saveToFirebase(currentDriver, {
-            status: 'LOGIN_ACTIVE',
-            last_update: skrg.toISOString()
-        });
-    }
-    
-    alert("Tugas selesai!.");
-    loadDashboard();
-}
+            // 3. PEMBERSIHAN FIREBASE: Setel koordinat ke null agar peta monitoring bersih dari sisa trip sebelumnya
+            if (window.saveToFirebase && currentDriver) {
+                await window.saveToFirebase(currentDriver, {
+                    nopol: nopol,
+                    lat: null,
+                    lon: null,
+                    tujuan: '-',
+                    status: 'LOGIN_ACTIVE',
+                    last_update: skrg.toISOString()
+                });
+            }
+            
+            alert("Tugas selesai!.");
+            loadDashboard();
+        }
 
         function cekSesiGantungMatiLayar() {
             const backupJob = localStorage.getItem('active_tracking_job');
-            if (backupJob) {
+            if (backupJob && !watchId) { // Ditambah pengecekan (!watchId) agar tidak duplikasi watch
                 const dataJob = JSON.parse(backupJob);
                 console.log("Mendeteksi Sesi Terputus Akibat Layar Mati. Me-restart GPS secara otomatis untuk unit:", dataJob.nopol);
                 eksekusiMulaiGpsWatch(dataJob.nopol, dataJob.tujuan);
@@ -604,8 +625,6 @@
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 console.log("Layar dihidupkan/Tab dibuka kembali! Memeriksa ulang koneksi...");
-                _supabase.channel('db-changes').subscribe();
-                _supabase.channel('realtime-koordinat-unit').subscribe();
                 cekSesiGantungMatiLayar();
             }
         });
@@ -615,16 +634,6 @@
 
         _supabase.channel('db-changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
-            .subscribe();
-
-        _supabase.channel('realtime-koordinat-unit')
-            .on(
-                'postgres_changes', 
-                { event: 'UPDATE', schema: 'public', table: 'tracking_unit' }, 
-                (payload) => {
-                    console.log("Data koordinat terdeteksi berubah di server.");
-                }
-            )
             .subscribe();
 
         loadDashboard();

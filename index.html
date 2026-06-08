@@ -463,7 +463,7 @@
             tbody.appendChild(fragment);
         }
 
-        // --- GPS ENGINE & TRACKING ---
+        // --- GPS ENGINE & TRACKING (DIRECT TO FIREBASE) ---
         function eksekusiMulaiGpsWatch(nopol, tujuan) {
             if (watchId) navigator.geolocation.clearWatch(watchId);
     
@@ -475,30 +475,36 @@
             // Kunci layar agar tidak mati (Mencegah GPS Tidur)
             aktifkanWakeLock();
 
+            // watchPosition akan otomatis jalan SETIAP ADA PERUBAHAN POSISI HP
             watchId = navigator.geolocation.watchPosition((pos) => {
-                console.log("GPS Tracker Active:", pos.coords.latitude, pos.coords.longitude);
                 const currentDriver = localStorage.getItem('login_sopir_nama');
                 const updateTime = new Date().toISOString();
 
-                const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
-                const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
-
                 if (!currentDriver) return;
 
-                // PERBAIKAN 1: Kirim ke Supabase TANPA await di baris utama agar tidak memblock Firebase
+                const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
+                const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
+                
+                // Ambil lat lon langsung dari sensor GPS yang paling baru (live)
+                const latLive = pos.coords.latitude;
+                const lonLive = pos.coords.longitude;
+
+                console.log(`GPS Bergerak [${currentDriver}]:`, latLive, lonLive);
+
+                // 1. SUPABASE (Hanya update status kerja, TANPA lat lon)
                 _supabase.from('tracking_unit').update({
                     nopol: nopolValid, 
                     tujuan: tujuanValid, 
                     status: 'ON_JOB', 
                     last_update: updateTime
-                }).eq('sopir', currentDriver).catch(err => console.error("Supabase Error:", err));
+                }).eq('sopir', currentDriver).catch(err => console.error("Supabase Status Error:", err));
 
-                // PERBAIKAN 2: Firebase langsung dieksekusi tanpa menunggu Supabase selesai
+                // 2. FIREBASE (Langsung kirim Koordinat Live & Data lengkap ke Firestore)
                 if (window.saveToFirebase) {
                     window.saveToFirebase(currentDriver, {
                         nopol: nopolValid,
-                        lat: pos.coords.latitude,
-                        lon: pos.coords.longitude,
+                        lat: latLive,  // <-- Ini yang dikirim ke Firebase saat HP geser
+                        lon: lonLive,  // <-- Ini yang dikirim ke Firebase saat HP geser
                         tujuan: tujuanValid,
                         status: 'ON_JOB',
                         last_update: updateTime
@@ -508,9 +514,9 @@
                 console.error("GPS Terputus/Error:", err.message);
                 triggerAutoReconnect();
             }, { 
-                enableHighAccuracy: true, 
-                timeout: 7000, 
-                maximumAge: 0 
+                enableHighAccuracy: true, // Wajib true agar GPS HP pakai hardware GPS, bukan sinyal tower
+                timeout: 10000,           // Naikkan ke 10 detik toleransinya agar tidak gampang timeout di jalan
+                maximumAge: 3000          // Toleransi 3 detik cache data agar browser tidak macet saat sinyal naik turun
             });
         }
 

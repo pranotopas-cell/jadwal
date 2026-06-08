@@ -501,16 +501,9 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
     localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
     const currentDriver = localStorage.getItem('login_sopir_nama');
 
-    const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
-    const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
+    const nopolValid = nopol || '-';
+    const tujuanValid = tujuan || '-';
 
-    // Pastikan Audio juga ikut dipicu di sini buat jaga-jaga kalau kena restart layar mati
-    const audioPancing = document.getElementById('background-wake');
-    if (audioPancing && audioPancing.paused) {
-        audioPancing.play().then(() => console.log("Audio otomatis di-play ulang oleh sistem watchdog.")).catch(e => console.log(e));
-    }
-
-    // AKTIFKAN SERVICE WORKER BACKGROUND TRACKING
     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
             action: 'START_TRACKING',
@@ -520,44 +513,19 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
         });
     }
 
-    // Trik Pancingan Internal GPS Locker (Spam Request GPS tiap 5 detik)
-    pancinganGpsId = setInterval(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((pos) => {
-                if (navigator.serviceWorker && navigator.serviceWorker.controller && currentDriver) {
-                    navigator.serviceWorker.controller.postMessage({
-                        action: 'UPDATE_LATEST_COORDINATE',
-                        sopir: currentDriver,
-                        latitude: pos.coords.latitude,
-                        longitude: pos.coords.longitude,
-                        driverData: {
-                            nopol: nopolValid,
-                            tujuan: tujuanValid,
-                            status: 'ON_JOB'
-                        }
-                    });
-                }
-            }, null, { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 });
-        }
-    }, 5000);
-
-    // Watch Position Utama
+    // Watch Position Utama dengan konfigurasi anti-cache
     watchId = navigator.geolocation.watchPosition(async (pos) => {
-        console.log("GPS Tracker: Koordinat baru dideteksi ->", pos.coords.latitude, pos.coords.longitude);
+        console.log("GPS Tracker Bergerak:", pos.coords.latitude, pos.coords.longitude);
         const updateTime = new Date().toISOString();
 
-        // 1. Kirim data lengkap ke Service Worker
+        // 1. Kirim data ke Service Worker
         if (navigator.serviceWorker && navigator.serviceWorker.controller && currentDriver) {
             navigator.serviceWorker.controller.postMessage({
                 action: 'UPDATE_LATEST_COORDINATE',
                 sopir: currentDriver,
                 latitude: pos.coords.latitude,
                 longitude: pos.coords.longitude,
-                driverData: {
-                    nopol: nopolValid,
-                    tujuan: tujuanValid,
-                    status: 'ON_JOB'
-                }
+                driverData: { nopol: nopolValid, tujuan: tujuanValid, status: 'ON_JOB' }
             });
         }
 
@@ -569,7 +537,7 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
             last_update: updateTime
         }).eq('sopir', currentDriver);
 
-        // 3. Kirim ke Firebase Firestore via window
+        // 3. Kirim ke Firebase Firestore
         if (window.saveToFirebase && currentDriver) {
             window.saveToFirebase(currentDriver, {
                 nopol: nopolValid,
@@ -583,12 +551,12 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
     }, (err) => {
         console.error("Gagal mendapatkan GPS koordinat", err);
     }, { 
-        enableHighAccuracy: true, 
-        timeout: 12000, 
-        maximumAge: 0 
+        enableHighAccuracy: true, // Wajib TRUE untuk memaksa hardware GPS aktif
+        timeout: 10000,           
+        maximumAge: 0             // Wajib 0 agar browser TIDAK mengambil data lama dari cache
     });
 }
-
+        
 async function takeJob(nopol, rowId, sopir, tujuan) {
     if (!verifikasiHakAksesSopir(sopir)) return;
     if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;

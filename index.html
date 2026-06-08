@@ -176,6 +176,10 @@
         </div>
     </div>
 
+    <audio id="background-wake" loop>
+        <source src="silent.mp3" type="audio/mpeg">
+    </audio>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -210,7 +214,6 @@
                     .catch(err => console.error('Service Worker gagal didaftarkan:', err));
             });
 
-            // Mendengarkan permintaan lokasi dari Service Worker saat HP sleep/background
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data.action === 'REQUEST_LOCATION') {
                     navigator.geolocation.getCurrentPosition((pos) => {
@@ -251,6 +254,7 @@
         };
 
         let watchId = null;
+        let pancinganGpsId = null;
         let isFetching = false;
         let currentActiveJob = null; 
 
@@ -345,9 +349,9 @@
                 localStorage.removeItem('login_sopir_phone');
                 localStorage.removeItem('active_tracking_job'); 
                 if (watchId) navigator.geolocation.clearWatch(watchId);
+                if (pancinganGpsId) clearInterval(pancinganGpsId);
                 
-                // Matikan tracking Service Worker saat logout
-                if (navigator.serviceWorker.controller) {
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                     navigator.serviceWorker.controller.postMessage({ action: 'STOP_TRACKING' });
                 }
 
@@ -484,13 +488,14 @@
 
         function eksekusiMulaiGpsWatch(nopol, tujuan) {
             if (watchId) navigator.geolocation.clearWatch(watchId);
+            if (pancinganGpsId) clearInterval(pancinganGpsId);
             
             currentActiveJob = { nopol, tujuan };
             localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
             const currentDriver = localStorage.getItem('login_sopir_nama');
 
             // AKTIFKAN SERVICE WORKER BACKGROUND TRACKING
-            if (navigator.serviceWorker.controller) {
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.controller.postMessage({
                     action: 'START_TRACKING',
                     sopir: currentDriver,
@@ -499,54 +504,71 @@
                 });
             }
 
+            // Trik Pancingan Internal GPS Locker (Spam Request GPS tiap 5 detik)
+            pancinganGpsId = setInterval(() => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        if (navigator.serviceWorker && navigator.serviceWorker.controller && currentDriver) {
+                            navigator.serviceWorker.controller.postMessage({
+                                action: 'UPDATE_LATEST_COORDINATE',
+                                latitude: pos.coords.latitude,
+                                longitude: pos.coords.longitude
+                            });
+                        }
+                    }, null, { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 });
+                }
+            }, 5000);
+
+            // Watch Position Utama
             watchId = navigator.geolocation.watchPosition(async (pos) => {
-    console.log("GPS Tracker: Koordinat baru dideteksi ->", pos.coords.latitude, pos.coords.longitude);
-    const updateTime = new Date().toISOString();
+                console.log("GPS Tracker: Koordinat baru dideteksi ->", pos.coords.latitude, pos.coords.longitude);
+                const updateTime = new Date().toISOString();
 
-    const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
-    const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
+                const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
+                const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
 
-    // 1. KIRIM LOGIKA KE SERVICE WORKER AGAR TETAP JALAN SAAT MINIMIZE (Tambahan Baru)
-    if (navigator.serviceWorker && navigator.serviceWorker.controller && currentDriver) {
-        navigator.serviceWorker.controller.postMessage({
-            action: 'UPDATE_LATEST_COORDINATE',
-            sopir: currentDriver,
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            driverData: {
-                nopol: nopolValid,
-                tujuan: tujuanValid,
-                status: 'ON_JOB'
-            }
-        });
-    }
+                // 1. Kirim data ke Service Worker
+                if (navigator.serviceWorker && navigator.serviceWorker.controller && currentDriver) {
+                    navigator.serviceWorker.controller.postMessage({
+                        action: 'UPDATE_LATEST_COORDINATE',
+                        sopir: currentDriver,
+                        latitude: pos.coords.latitude,
+                        longitude: pos.coords.longitude,
+                        driverData: {
+                            nopol: nopolValid,
+                            tujuan: tujuanValid,
+                            status: 'ON_JOB'
+                        }
+                    });
+                }
 
-    // 2. Kode Supabase Bawaan Abang (Tetap berjalan normal saat aplikasi dibuka)
-    await _supabase.from('tracking_unit').update({
-        nopol: nopolValid, 
-        tujuan: tujuanValid, 
-        status: 'ON_JOB', 
-        last_update: updateTime
-    }).eq('sopir', currentDriver);
+                // 2. Kirim ke Supabase
+                await _supabase.from('tracking_unit').update({
+                    nopol: nopolValid, 
+                    tujuan: tujuanValid, 
+                    status: 'ON_JOB', 
+                    last_update: updateTime
+                }).eq('sopir', currentDriver);
 
-    // 3. Kode Firebase Bawaan Abang (Tetap berjalan normal saat aplikasi dibuka)
-    if (window.saveToFirebase && currentDriver) {
-        window.saveToFirebase(currentDriver, {
-            nopol: nopolValid,
-            lat: pos.coords.latitude,
-            lon: pos.coords.longitude,
-            tujuan: tujuanValid,
-            status: 'ON_JOB',
-            last_update: updateTime
-        });
-    }
-}, (err) => {
-    console.error("Gagal mendapatkan GPS koordinat", err);
-}, { 
-    enableHighAccuracy: true, 
-    timeout: 12000, 
-    maximumAge: 0 
-});
+                // 3. Kirim ke Firebase Firestore via window
+                if (window.saveToFirebase && currentDriver) {
+                    window.saveToFirebase(currentDriver, {
+                        nopol: nopolValid,
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        tujuan: tujuanValid,
+                        status: 'ON_JOB',
+                        last_update: updateTime
+                    });
+                }
+            }, (err) => {
+                console.error("Gagal mendapatkan GPS koordinat", err);
+            }, { 
+                enableHighAccuracy: true, 
+                timeout: 12000, 
+                maximumAge: 0 
+            });
+        } // <--- SEKARANG SINTAKS DI SINI SUDAH DIKUNCI MATANG, BANG!
 
         async function takeJob(nopol, rowId, sopir, tujuan) {
             if (!verifikasiHakAksesSopir(sopir)) return;
@@ -558,6 +580,12 @@
             }
 
             alert("Koneksi GPS.......Mohon tunggu sebentar.");
+
+            // Putar audio hening saat tombol ditekan untuk memancing Android Media Lock
+            const audioPancing = document.getElementById('background-wake');
+            if (audioPancing) {
+                audioPancing.play().then(() => console.log("Media pancingan aktif")).catch(e => console.log(e));
+            }
 
             navigator.geolocation.getCurrentPosition(async (posAwal) => {
                 const latitude = posAwal.coords.latitude;
@@ -609,9 +637,13 @@
             if (!confirm("Tugas Selesai?")) return;
             
             if (watchId) navigator.geolocation.clearWatch(watchId);
+            if (pancinganGpsId) clearInterval(pancinganGpsId);
             
-            // NONAKTIFKAN SERVICE WORKER TRACKING
-            if (navigator.serviceWorker.controller) {
+            // Hentikan audio pancingan
+            const audioPancing = document.getElementById('background-wake');
+            if (audioPancing) audioPancing.pause();
+            
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.controller.postMessage({ action: 'STOP_TRACKING' });
             }
 

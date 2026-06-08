@@ -463,61 +463,72 @@
             tbody.appendChild(fragment);
         }
 
-        // --- GPS ENGINE & TRACKING (DIRECT TO FIREBASE) ---
+        // --- GPS ENGINE & TRACKING (ANTI MACET - DIRECT TO FIREBASE) ---
+        let backupIntervalId = null; // Ban serep jika watchPosition pingsan
+
         function eksekusiMulaiGpsWatch(nopol, tujuan) {
             if (watchId) navigator.geolocation.clearWatch(watchId);
+            if (backupIntervalId) clearInterval(backupIntervalId); // Reset interval lama
     
             currentActiveJob = { nopol, tujuan };
             localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
 
             if (reconnectInterval) clearInterval(reconnectInterval);
 
-            // Kunci layar agar tidak mati (Mencegah GPS Tidur)
+            // Kunci layar agar tidak mati
             aktifkanWakeLock();
 
-            // watchPosition akan otomatis jalan SETIAP ADA PERUBAHAN POSISI HP
-            watchId = navigator.geolocation.watchPosition((pos) => {
-                const currentDriver = localStorage.getItem('login_sopir_nama');
+            const currentDriver = localStorage.getItem('login_sopir_nama');
+            const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
+            const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
+
+            if (!currentDriver) return;
+
+            // FUNGSI INTI: Kirim data terbaru ke Firebase
+            function kirimKoordinatKeFirebase(latitude, longitude) {
                 const updateTime = new Date().toISOString();
-
-                if (!currentDriver) return;
-
-                const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
-                const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
+                console.log(`[FIREBASE SEND] Driver: ${currentDriver} -> Lat: ${latitude}, Lon: ${longitude}`);
                 
-                // Ambil lat lon langsung dari sensor GPS yang paling baru (live)
-                const latLive = pos.coords.latitude;
-                const lonLive = pos.coords.longitude;
-
-                console.log(`GPS Bergerak [${currentDriver}]:`, latLive, lonLive);
-
-                // 1. SUPABASE (Hanya update status kerja, TANPA lat lon)
-                _supabase.from('tracking_unit').update({
-                    nopol: nopolValid, 
-                    tujuan: tujuanValid, 
-                    status: 'ON_JOB', 
-                    last_update: updateTime
-                }).eq('sopir', currentDriver).catch(err => console.error("Supabase Status Error:", err));
-
-                // 2. FIREBASE (Langsung kirim Koordinat Live & Data lengkap ke Firestore)
                 if (window.saveToFirebase) {
                     window.saveToFirebase(currentDriver, {
                         nopol: nopolValid,
-                        lat: latLive,  // <-- Ini yang dikirim ke Firebase saat HP geser
-                        lon: lonLive,  // <-- Ini yang dikirim ke Firebase saat HP geser
+                        lat: latitude,  // Koordinat live murni dari sensor HP
+                        lon: longitude, // Koordinat live murni dari sensor HP
                         tujuan: tujuanValid,
                         status: 'ON_JOB',
                         last_update: updateTime
                     });
                 }
+            }
+
+            // --- JALUR 1: Pemicu Otomatis (Watch Position) ---
+            watchId = navigator.geolocation.watchPosition((pos) => {
+                // Update ke Supabase untuk status kerja saja
+                _supabase.from('tracking_unit').update({
+                    nopol: nopolValid, tujuan: tujuanValid, status: 'ON_JOB', last_update: new Date().toISOString()
+                }).eq('sopir', currentDriver).catch(err => console.error("Supabase Error:", err));
+
+                // Tembak langsung koordinat baru ke Firebase
+                kirimKoordinatKeFirebase(pos.coords.latitude, pos.coords.longitude);
+
             }, (err) => {
-                console.error("GPS Terputus/Error:", err.message);
-                triggerAutoReconnect();
+                console.warn("WatchPosition sempat tersendat, mengaktifkan ban serep...", err.message);
             }, { 
-                enableHighAccuracy: true, // Wajib true agar GPS HP pakai hardware GPS, bukan sinyal tower
-                timeout: 10000,           // Naikkan ke 10 detik toleransinya agar tidak gampang timeout di jalan
-                maximumAge: 3000          // Toleransi 3 detik cache data agar browser tidak macet saat sinyal naik turun
+                enableHighAccuracy: true, // WAJIB TRUE: Paksa HP pakai Hardware GPS satelit, bukan BTS Tower
+                timeout: 10000,           // Toleransi tunggu sinyal 10 detik
+                maximumAge: 0             // Paksa minta koordinat paling baru, anti cache
             });
+
+            // --- JALUR 2: Ban Serep (Pemicu Paksa per 15 Detik) ---
+            // Ini obat manjur kalau watchPosition bawaan browser mendadak beku di jalan
+            backupIntervalId = setInterval(() => {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    console.log("🔥 Ban Serep GPS Mengirim Data...");
+                    kirimKoordinatKeFirebase(pos.coords.latitude, pos.coords.longitude);
+                }, (err) => {
+                    console.error("Ban serep gagal ambil GPS:", err.message);
+                }, { enableHighAccuracy: true, timeout: 5000 });
+            }, 15000); // Tembak paksa setiap 15 detik sekali
         }
 
         let wakeLock = null;
@@ -610,6 +621,7 @@
             if (!confirm("Tugas Selesai?")) return;
             
             if (watchId) navigator.geolocation.clearWatch(watchId);
+            if (backupIntervalId) clearInterval(backupIntervalId);
             if (reconnectInterval) clearInterval(reconnectInterval);
             
             currentActiveJob = null;

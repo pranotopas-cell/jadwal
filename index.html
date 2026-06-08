@@ -178,10 +178,13 @@
         </div>
     </div>
 
+    <!-- SEPAKAT SATU ATAP: SEMUA MASUK KE TYPE="MODULE" -->
     <script type="module">
+        // 1. IMPORT FIREBASE SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // 2. CONFIG & INITIALIZE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
             authDomain: "ikaen-tracking.firebaseapp.com",
@@ -194,31 +197,26 @@
         const app = initializeApp(firebaseConfig);
         const dbFirestore = getFirestore(app);
 
-        window.saveToFirebase = async function(sopir, data) {
+        // FUNGSI UTAMA FIREBASE (Langsung connect ke Firestore internal)
+        async function langsungSaveToFirebase(sopir, dataPayload) {
             if (!sopir) return;
             try {
-                await setDoc(doc(dbFirestore, "tracking_unit", sopir), data, { merge: true });
-                console.log("Berhasil sinkronisasi ke Firebase Firestore untuk Sopir: " + sopir);
+                // Tembak langsung koordinat dan status terbaru ke dokumen Firestore
+                await setDoc(doc(dbFirestore, "tracking_unit", sopir), dataPayload, { merge: true });
+                console.log("🔥 [FIREBASE BERHASIL] Koordinat masuk untuk Sopir: " + sopir, dataPayload.lat, dataPayload.lon);
             } catch (e) {
-                console.error("Gagal menyimpan ke Firebase: ", e);
+                console.error("❌ [FIREBASE GAGAL]: ", e);
             }
-        };
-
-        // Registrasi Service Worker untuk Tracking Live Background PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker terdaftar dengan sukses:', reg.scope))
-                    .catch(err => console.error('Gagal mendaftarkan Service Worker:', err));
-            });
         }
-    </script>
 
-    <script>
+        // 3. CONFIG SUPABASE
         const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
+        
+        // Pastikan library supabase js eksternal sudah di-load di atas head/body
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // 4. DATA & VARIABEL GLOBAL
         const sopirPhoneMap = {
             "AGUS EFENDI": "082264220069", "WAHID KHUMAINI": "08115232946",
             "AGUS WANTO": "081228008887", "NUR KHOLIS": "082151512123",
@@ -232,9 +230,10 @@
         };
 
         let watchId = null;
+        let backupIntervalId = null;
         let isFetching = false;
         let currentActiveJob = null; 
-        let reconnectInterval = null; // Handler untuk Auto Reconnect GPS
+        let reconnectInterval = null;
 
         // --- UTILITY FUNCTIONS ---
         function getWIB() {
@@ -249,9 +248,9 @@
         function updateHeaderStatus() {
             const loginNama = localStorage.getItem('login_sopir_nama');
             const statusEl = document.getElementById('systemStatus');
-            
             if (loginNama) {
-                statusEl.innerHTML = `● ${loginNama}<span style="background:#ff5252; color:#fff; padding:2px 5px; border-radius:3px; font-size:9px; margin-left:4px; font-weight:800;">LOGOUT</span>`;
+                statusEl.innerHTML = `● ${loginNama}<span id="btn-logout-click" style="background:#ff5252; color:#fff; padding:2px 5px; border-radius:3px; font-size:9px; margin-left:4px; font-weight:800; cursor:pointer;">LOGOUT</span>`;
+                document.getElementById('btn-logout-click').addEventListener('click', mintaLogout);
             } else {
                 statusEl.innerHTML = `● GPS SYSTEM ACTIVE`;
             }
@@ -325,6 +324,7 @@
 
             if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\n`)) {
                 if (reconnectInterval) clearInterval(reconnectInterval);
+                if (backupIntervalId) clearInterval(backupIntervalId);
                 await _supabase.from('tracking_unit').delete().eq('sopir', loginNama);
                 localStorage.removeItem('login_sopir_nama');
                 localStorage.removeItem('login_sopir_phone');
@@ -413,23 +413,25 @@
                 const statusRaw = statusFull.split('\n')[0];
                 
                 let statusClass = "st-terjadwal";
-                let actionBtn = "";
+                let actionBtn = document.createElement('div');
                 const isDataLengkap = row.nopol && row.sopir && row.delivery_to;
 
                 if (statusRaw.includes("PROSES")) {
                     statusClass = "st-proses";
-                    actionBtn = `<button class="btn-job btn-finish" onclick="finishJob('${row.nopol}', '${row.id}', '${row.sopir}')">DONE</button>`;
+                    actionBtn.innerHTML = `<button class="btn-job btn-finish">DONE</button>`;
+                    actionBtn.querySelector('button').addEventListener('click', () => finishJob(row.nopol, row.id, row.sopir));
                 } else if (statusRaw.includes("DELIVERED") || statusRaw.includes("SUCCES")) {
                     statusClass = "st-delivered";
-                    actionBtn = `<span style="font-size:10px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> SELESAI</span>`;
+                    actionBtn.innerHTML = `<span style="font-size:10px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> SELESAI</span>`;
                 } else if (isDataLengkap && (statusRaw.includes("LANGSIRAN") || statusRaw.includes("NGISI") || statusRaw.includes("OPER") || statusRaw.includes("TERJADWAL"))) {
                     if (statusRaw.includes("LANGSIRAN")) statusClass = "st-langsir";
                     else if (statusRaw.includes("NGISI")) statusClass = "st-ngisi";
                     else if (statusRaw.includes("OPER")) statusClass = "st-oper";
-                    actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}', '${row.sopir}', '${row.delivery_to}')">AMBIL JOB</button>`;
+                    actionBtn.innerHTML = `<button class="btn-job btn-ambil">AMBIL JOB</button>`;
+                    actionBtn.querySelector('button').addEventListener('click', () => takeJob(row.nopol, row.id, row.sopir, row.delivery_to));
                 } else {
                     statusClass = "st-tunggu";
-                    actionBtn = `<span style="font-size:9px; color:var(--color-tunggu);">WAIT INFO</span>`;
+                    actionBtn.innerHTML = `<span style="font-size:9px; color:var(--color-tunggu);">WAIT INFO</span>`;
                 }
 
                 const tr = document.createElement('tr');
@@ -453,9 +455,10 @@
                     </td>
                     <td class="action-cell">
                         <span class="${statusClass}">${row.status || 'TUNGGU'}</span>
-                        ${actionBtn}
+                        <div class="btn-container-target"></div>
                     </td>
                 `;
+                tr.querySelector('.btn-container-target').appendChild(actionBtn);
                 fragment.appendChild(tr);
             });
 
@@ -463,72 +466,76 @@
             tbody.appendChild(fragment);
         }
 
-        // --- GPS ENGINE & TRACKING (ANTI MACET - DIRECT TO FIREBASE) ---
-        let backupIntervalId = null; // Ban serep jika watchPosition pingsan
-
+        // --- GPS ENGINE & TRACKING DEEP INTEGRATION ---
         function eksekusiMulaiGpsWatch(nopol, tujuan) {
             if (watchId) navigator.geolocation.clearWatch(watchId);
-            if (backupIntervalId) clearInterval(backupIntervalId); // Reset interval lama
+            if (backupIntervalId) clearInterval(backupIntervalId);
     
             currentActiveJob = { nopol, tujuan };
             localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
 
             if (reconnectInterval) clearInterval(reconnectInterval);
 
-            // Kunci layar agar tidak mati
             aktifkanWakeLock();
 
             const currentDriver = localStorage.getItem('login_sopir_nama');
+            if (!currentDriver) return;
+
             const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
             const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
 
-            if (!currentDriver) return;
-
-            // FUNGSI INTI: Kirim data terbaru ke Firebase
-            function kirimKoordinatKeFirebase(latitude, longitude) {
+            // JALUR 1: Mengandalkan Sensor Gerak Alami Browser
+            watchId = navigator.geolocation.watchPosition((pos) => {
+                const latLive = pos.coords.latitude;
+                const lonLive = pos.coords.longitude;
                 const updateTime = new Date().toISOString();
-                console.log(`[FIREBASE SEND] Driver: ${currentDriver} -> Lat: ${latitude}, Lon: ${longitude}`);
-                
-                if (window.saveToFirebase) {
-                    window.saveToFirebase(currentDriver, {
+
+                console.log("📍 [WatchPosition] Mendeteksi Gerakan HP:", latLive, lonLive);
+
+                // Update Status Saja ke Supabase
+                _supabase.from('tracking_unit').update({
+                    nopol: nopolValid, tujuan: tujuanValid, status: 'ON_JOB', last_update: updateTime
+                }).eq('sopir', currentDriver).catch(err => console.error(err));
+
+                // UPDATE KOORDINAT LANGSUNG KE FIREBASE SENSOR LIVE
+                langsungSaveToFirebase(currentDriver, {
+                    nopol: nopolValid,
+                    lat: latLive,
+                    lon: lonLive,
+                    tujuan: tujuanValid,
+                    status: 'ON_JOB',
+                    last_update: updateTime
+                });
+
+            }, (err) => {
+                console.warn("GPS Tersendat, mengandalkan Backup Interval...", err.message);
+            }, { 
+                enableHighAccuracy: true, 
+                timeout: 8000, 
+                maximumAge: 0 
+            });
+
+            // JALUR 2: BAN SEREP ANTI MANDREG (Ditembak Paksa Tiap 15 Detik)
+            backupIntervalId = setInterval(() => {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const latBackup = pos.coords.latitude;
+                    const lonBackup = pos.coords.longitude;
+                    const updateTime = new Date().toISOString();
+
+                    console.log("🔥 [Ban Serep] Memaksa Tarik GPS Hardware HP:", latBackup, lonBackup);
+
+                    langsungSaveToFirebase(currentDriver, {
                         nopol: nopolValid,
-                        lat: latitude,  // Koordinat live murni dari sensor HP
-                        lon: longitude, // Koordinat live murni dari sensor HP
+                        lat: latBackup,
+                        lon: lonBackup,
                         tujuan: tujuanValid,
                         status: 'ON_JOB',
                         last_update: updateTime
                     });
-                }
-            }
-
-            // --- JALUR 1: Pemicu Otomatis (Watch Position) ---
-            watchId = navigator.geolocation.watchPosition((pos) => {
-                // Update ke Supabase untuk status kerja saja
-                _supabase.from('tracking_unit').update({
-                    nopol: nopolValid, tujuan: tujuanValid, status: 'ON_JOB', last_update: new Date().toISOString()
-                }).eq('sopir', currentDriver).catch(err => console.error("Supabase Error:", err));
-
-                // Tembak langsung koordinat baru ke Firebase
-                kirimKoordinatKeFirebase(pos.coords.latitude, pos.coords.longitude);
-
-            }, (err) => {
-                console.warn("WatchPosition sempat tersendat, mengaktifkan ban serep...", err.message);
-            }, { 
-                enableHighAccuracy: true, // WAJIB TRUE: Paksa HP pakai Hardware GPS satelit, bukan BTS Tower
-                timeout: 10000,           // Toleransi tunggu sinyal 10 detik
-                maximumAge: 0             // Paksa minta koordinat paling baru, anti cache
-            });
-
-            // --- JALUR 2: Ban Serep (Pemicu Paksa per 15 Detik) ---
-            // Ini obat manjur kalau watchPosition bawaan browser mendadak beku di jalan
-            backupIntervalId = setInterval(() => {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    console.log("🔥 Ban Serep GPS Mengirim Data...");
-                    kirimKoordinatKeFirebase(pos.coords.latitude, pos.coords.longitude);
                 }, (err) => {
-                    console.error("Ban serep gagal ambil GPS:", err.message);
+                    console.error("Ban serep GPS gagal:", err.message);
                 }, { enableHighAccuracy: true, timeout: 5000 });
-            }, 15000); // Tembak paksa setiap 15 detik sekali
+            }, 15000);
         }
 
         let wakeLock = null;
@@ -536,22 +543,20 @@
             try {
                 if ('wakeLock' in navigator) {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('Screen Wake Lock aktif. HP tidak akan tidur.');
+                    console.log('Screen Wake Lock Aktif.');
                 }
             } catch (err) {
-                console.warn('Gagal mengaktifkan Wake Lock:', err.message);
+                console.warn('Wake Lock Gagal:', err.message);
             }
         }
 
         function triggerAutoReconnect() {
             if (reconnectInterval) return; 
             
-            console.log("Sistem mendeteksi GPS mati/gagal. Memulai auto-reconnect...");
             reconnectInterval = setInterval(() => {
                 const backupJob = localStorage.getItem('active_tracking_job');
                 if (backupJob) {
                     const dataJob = JSON.parse(backupJob);
-                    console.log("Mencoba mengunci ulang GPS untuk unit:", dataJob.nopol);
                     eksekusiMulaiGpsWatch(dataJob.nopol, dataJob.tujuan);
                 } else {
                     clearInterval(reconnectInterval);
@@ -565,55 +570,38 @@
             if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
             
             if (!navigator.geolocation) {
-                alert("Waduh! HP/Browser Anda tidak mendukung fitur GPS Tracking.");
+                alert("HP Tidak mendukung GPS!");
                 return;
             }
 
-            alert("Koneksi GPS.......Mohon tunggu sebentar.");
+            alert("Koneksi GPS... Mohon tunggu sebentar.");
 
             navigator.geolocation.getCurrentPosition(async (posAwal) => {
-                const latitude = posAwal.coords.latitude;
-                const longitude = posAwal.coords.longitude;
                 const currentDriver = localStorage.getItem('login_sopir_nama');
                 const updateTime = new Date().toISOString();
 
-                const { error: errStatus } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
-                if (errStatus) return alert("Gagal update status " + errStatus.message);
-                
-                const { error: errTrack } = await _supabase.from('tracking_unit').update({
-                    nopol: nopol, 
-                    tujuan: tujuan, 
-                    status: 'ON_JOB', 
-                    last_update: updateTime
+                await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
+                await _supabase.from('tracking_unit').update({
+                    nopol: nopol, tujuan: tujuan, status: 'ON_JOB', last_update: updateTime
                 }).eq('sopir', currentDriver);
 
-                if (errTrack) {
-                    alert("GPS Gagal mencatat status di Supabase: " + errTrack.message);
-                    return;
-                }
+                // Kirim koordinat awal pas klik Ambil Job
+                langsungSaveToFirebase(currentDriver, {
+                    nopol: nopol,
+                    lat: posAwal.coords.latitude,
+                    lon: posAwal.coords.longitude,
+                    tujuan: tujuan,
+                    status: 'ON_JOB',
+                    last_update: updateTime
+                });
 
-                if (window.saveToFirebase) {
-                    window.saveToFirebase(currentDriver, {
-                        nopol: nopol,
-                        lat: latitude,
-                        lon: longitude,
-                        tujuan: tujuan,
-                        status: 'ON_JOB',
-                        last_update: updateTime
-                    });
-                }
-
-                alert("GPS Sukses");
-
+                alert("GPS Berhasil Dikunci! Mulai Pelacakan.");
                 eksekusiMulaiGpsWatch(nopol, tujuan);
                 loadDashboard();
 
             }, (error) => {
-                alert("Gagal mengunci GPS! " + error.message);
-            }, { 
-                enableHighAccuracy: true, 
-                timeout: 15000 
-            });
+                alert("Gagal mengunci GPS awal! " + error.message);
+            }, { enableHighAccuracy: true, timeout: 15000 });
         }
 
         async function finishJob(nopol, rowId, sopir) {
@@ -621,7 +609,7 @@
             if (!confirm("Tugas Selesai?")) return;
             
             if (watchId) navigator.geolocation.clearWatch(watchId);
-            if (backupIntervalId) clearInterval(backupIntervalId);
+            if (backupIntervalId) clearInterval(backupIntervalId); // Stop ban serep
             if (reconnectInterval) clearInterval(reconnectInterval);
             
             currentActiveJob = null;
@@ -632,64 +620,54 @@
             const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
 
             await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
-            
-            await _supabase.from('tracking_unit').update({ 
-                status: 'LOGIN_ACTIVE', 
-                last_update: skrg.toISOString() 
-            }).eq('sopir', currentDriver);
+            await _supabase.from('tracking_unit').update({ status: 'LOGIN_ACTIVE', last_update: skrg.toISOString() }).eq('sopir', currentDriver);
 
-            if (window.saveToFirebase) {
-                window.saveToFirebase(currentDriver, {
-                    status: 'LOGIN_ACTIVE',
-                    last_update: skrg.toISOString()
-                });
-            }
+            langsungSaveToFirebase(currentDriver, {
+                status: 'LOGIN_ACTIVE',
+                last_update: skrg.toISOString()
+            });
             
-            alert("Tugas selesai!.");
+            alert("Tugas selesai!");
             loadDashboard();
         }
 
-        // --- SCREEN STATE & EVENT LISTENERS ---
         function cekSesiGantungMatiLayar() {
             const backupJob = localStorage.getItem('active_tracking_job');
             if (backupJob) {
                 const dataJob = JSON.parse(backupJob);
-                console.log("Mendeteksi Sesi Terputus Akibat Layar Mati. Me-restart GPS secara otomatis untuk unit:", dataJob.nopol);
                 eksekusiMulaiGpsWatch(dataJob.nopol, dataJob.tujuan);
             }
         }
 
+        // --- SCREEN STATE & EVENT LISTENERS ---
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
-                console.log("Layar dihidupkan/Tab dibuka kembali! Memeriksa ulang koneksi...");
                 _supabase.channel('db-changes').subscribe();
-                _supabase.channel('realtime-koordinat-unit').subscribe();
                 cekSesiGantungMatiLayar();
             }
         });
 
         // Live Realtime Clock
         const clockEl = document.getElementById('clock');
-        setInterval(() => { clockEl.innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
+        setInterval(() => { if(clockEl) clockEl.innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
 
-        // --- REALTIME REALM CHANNEL (SUPABASE) ---
+        // --- REALTIME CHANNELS ---
         _supabase.channel('db-changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, () => loadDashboard())
             .subscribe();
 
-        _supabase.channel('realtime-koordinat-unit')
-            .on(
-                'postgres_changes', 
-                { event: 'UPDATE', schema: 'public', table: 'tracking_unit' }, 
-                (payload) => {
-                    console.log("Data koordinat terdeteksi berubah di server.");
-                }
-            )
-            .subscribe();
+        // RUN INITIAL
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+            setInterval(loadDashboard, 30000);
+        });
 
-        // --- INITIAL RUN ---
-        loadDashboard();
-        setInterval(loadDashboard, 30000);
+        // Registrasi Service Worker PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.error(err));
+            });
+        }
     </script>
 </body>
 </html>

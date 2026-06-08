@@ -452,30 +452,28 @@
             tbody.appendChild(fragment);
         }
 
-        function eksekusiMulaiGpsWatch(nopol, tujuan) {
+        // --- JALUR BERSIH: HANYA FIREBASE YANG DI-WATCH (HP JADI RINGAN!) ---
+function eksekusiMulaiGpsWatch(nopol, tujuan) {
     if (watchId) navigator.geolocation.clearWatch(watchId);
     
     currentActiveJob = { nopol, tujuan };
     localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
 
-    watchId = navigator.geolocation.watchPosition(async (pos) => {
-        console.log("GPS Tracker: Koordinat baru dikirim HANYA ke Firebase ->", pos.coords.latitude, pos.coords.longitude);
-        const currentDriver = localStorage.getItem('login_sopir_nama');
+    const currentDriver = localStorage.getItem('login_sopir_nama');
+    if (!currentDriver) return;
+
+    const nopolValid = nopol || '-';
+    const tujuanValid = tujuan || '-';
+
+    // Setelan sensor GPS tingkat akurat
+    const gpsOptions = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+
+    watchId = navigator.geolocation.watchPosition((pos) => {
         const updateTime = new Date().toISOString();
-
-        const nopolValid = nopol || (currentActiveJob ? currentActiveJob.nopol : '-');
-        const tujuanValid = tujuan || (currentActiveJob ? currentActiveJob.tujuan : '-');
-
-        // 1. SUPABASE: Hanya perbarui status operasional (TANPA membawa data lat & lon)
-        await _supabase.from('tracking_unit').update({
-            nopol: nopolValid, 
-            tujuan: tujuanValid, 
-            status: 'ON_JOB', 
-            last_update: updateTime
-        }).eq('sopir', currentDriver);
-
-        // 2. FIREBASE FIRESTORE: Mandi data koordinat real-time di sini
-        if (window.saveToFirebase && currentDriver) {
+        
+        // HAPUS TOTAL CODE _supabase.update() DARI SINI!
+        // Biarkan mesin hanya menembak Firebase secara instan tanpa antrean berat
+        if (window.saveToFirebase) {
             window.saveToFirebase(currentDriver, {
                 nopol: nopolValid,
                 lat: pos.coords.latitude,
@@ -486,12 +484,8 @@
             });
         }
     }, (err) => {
-        console.error("Gagal mendapatkan GPS koordinat", err);
-    }, { 
-        enableHighAccuracy: true, 
-        timeout: 12000, 
-        maximumAge: 0 
-    });
+        console.error("Gagal tracking:", err.message);
+    }, gpsOptions);
 }
 
        async function takeJob(nopol, rowId, sopir, tujuan) {

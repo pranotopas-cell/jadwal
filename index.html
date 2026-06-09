@@ -453,9 +453,13 @@
             tbody.appendChild(fragment);
         }
 
-        // --- JALUR BERSIH: HANYA FIREBASE YANG DI-WATCH (HP JADI RINGAN!) ---
+        // --- JALUR BERSIH: OPTIMALISASI GPS ANTI-MACET ---
+        let gpsBackupInterval = null; // Tambahkan variabel global untuk cadangan GPS
+
         function eksekusiMulaiGpsWatch(nopol, tujuan) {
+            // Bersihkan watchId dan interval lama jika ada
             if (watchId) navigator.geolocation.clearWatch(watchId);
+            if (gpsBackupInterval) clearInterval(gpsBackupInterval);
             
             currentActiveJob = { nopol, tujuan };
             localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
@@ -466,27 +470,46 @@
             const nopolValid = nopol || '-';
             const tujuanValid = tujuan || '-';
 
-            // Setelan sensor GPS tingkat akurat
-            const gpsOptions = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+            // Setelan sensor GPS tingkat akurat tinggi & responsif
+            const gpsOptions = { 
+                enableHighAccuracy: true, 
+                timeout: 5000,       // Diperkecil ke 5 detik agar jika macet langsung memicu error/retry
+                maximumAge: 0        // Wajib 0 agar selalu mengambil lokasi GPS asli yang paling baru, bukan cache
+            };
 
-            watchId = navigator.geolocation.watchPosition((pos) => {
+            // Fungsi inti pengiriman data ke Firebase
+            function kirimKeFirebase(coords) {
                 const updateTime = new Date().toISOString();
-                
-                // HAPUS TOTAL CODE _supabase.update() DARI SINI!
-                // Biarkan mesin hanya menembak Firebase secara instan tanpa antrean berat
                 if (window.saveToFirebase) {
                     window.saveToFirebase(currentDriver, {
                         nopol: nopolValid,
-                        lat: pos.coords.latitude,
-                        lon: pos.coords.longitude,
+                        lat: coords.latitude,
+                        lon: coords.longitude,
                         tujuan: tujuanValid,
                         status: 'ON_JOB',
                         last_update: updateTime
                     });
+                    console.log("Firebase Diperbarui via Watch:", coords.latitude, coords.longitude);
                 }
+            }
+
+            // 1. Jalur Utama: Menggunakan watchPosition
+            watchId = navigator.geolocation.watchPosition((pos) => {
+                kirimKeFirebase(pos.coords);
             }, (err) => {
-                console.error("Gagal tracking:", err.message);
+                console.warn("Watch GPS Timeout/Error, sistem otomatis beralih ke mode cadangan. Pesan:", err.message);
             }, gpsOptions);
+
+            // 2. Jalur Cadangan (PENTING): Paksa ambil GPS tiap 20 detik jika watchPosition tertidur/minimize
+            gpsBackupInterval = setInterval(() => {
+                if (navigator.geolocation && currentActiveJob) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        kirimKeFirebase(pos.coords);
+                    }, (err) => {
+                        console.error("Gagal mengambil GPS Cadangan:", err.message);
+                    }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
+                }
+            }, 20000); // Eksekusi setiap 20 detik sekali
         }
                 
         async function takeJob(nopol, rowId, sopirDiJadwal, tujuan) {
@@ -558,11 +581,12 @@
         }
 
         async function finishJob(nopol, rowId, sopir) {
-            // Catatan: Pastikan verifikasi ini tidak mengunci jika supirnya sudah dioper di takeJob
             if (!verifikasiHakAksesSopir(sopir)) return;
             if (!confirm("Tugas Selesai?")) return;
             
+            // BERSIHKAN SEMUA TRACKING (Utama & Cadangan)
             if (watchId) navigator.geolocation.clearWatch(watchId);
+            if (gpsBackupInterval) clearInterval(gpsBackupInterval); // Tambahkan baris ini!
             
             currentActiveJob = null;
             localStorage.removeItem('active_tracking_job');

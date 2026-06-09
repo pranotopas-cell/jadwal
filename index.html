@@ -253,7 +253,7 @@
 
             if (infoSopirNama && infoSopirPhone) return true;
 
-            const inputPhone = prompt("Sistem Terkunci!\nSilakan masukkan Nomor HP Anda untuk masuk ke sistem jadwal:");
+            const inputPhone = prompt("🔏 Sistem Terkunci!\nSilakan masukkan Nomor HP Anda untuk masuk ke sistem jadwal:");
             if (!inputPhone || inputPhone.trim() === "") {
                 alert("Akses ditolak!");
                 window.location.reload();
@@ -493,7 +493,7 @@
             // [PAGAR PENGAMAN KETAT] Cek apakah nama di jadwal sama dengan nama yang login
             // Jika tidak sama, langsung blokir total menggunakan Notifikasi Kilat Merah!
             if (!sopirDiJadwal || sopirDiJadwal.toUpperCase().trim() !== currentDriver.toUpperCase().trim()) {
-                tampilkanNotifikasiKilat(`❌ STOP! Jadwal ini milik ${sopirDiJadwal.toUpperCase()}.\nAnda (${currentDriver.toUpperCase()}) Hubungi Admin Bolo....`, "#ff5252");
+                tampilkanNotifikasiKilat(` 🛇 STOP! Jadwal ini milik ${sopirDiJadwal.toUpperCase()}.\nAnda (${currentDriver.toUpperCase()}) Hubungi Admin Bolo....`, "#ff5252");
                 return;
             }
 

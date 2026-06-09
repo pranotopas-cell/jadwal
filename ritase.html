@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hitung Ritase Sopir</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-zinc-50 font-sans min-h-screen p-4 flex items-center justify-center">
+
+    <div class="w-full max-w-7xl bg-white rounded-lg shadow-sm border border-zinc-200 p-4">
+        
+        <div class="flex justify-between items-center border-b border-zinc-100 pb-3 mb-3">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🚚</span>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">
+                    MONITORING RITASE AMT IKAEN GROUP
+                </h1>
+            </div>
+            <div class="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded">
+                Periode: <span id="periode-bulan">-</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-4 items-start">
+            
+            <div class="col-span-12 md:col-span-3 bg-zinc-50 p-3 rounded border border-zinc-200">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Daftar Sopir</h2>
+                <div id="loading-sopir" class="text-xs text-zinc-400 italic">Memuat daftar sopir...</div>
+                <ul id="daftar-sopir" class="space-y-1 max-h-[420px] overflow-y-auto hidden pr-1"></ul>
+            </div>
+
+            <div class="col-span-12 md:col-span-9 bg-zinc-50 p-3 rounded border border-zinc-200 min-h-[465px] flex flex-col">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">
+                    Detail Ritase: <span id="nama-sopir-terpilih" class="text-slate-800 normal-case font-bold">-</span>
+                </h2>
+                
+                <div id="placeholder-detail" class="text-zinc-400 italic text-xs text-center my-auto py-20">
+                    Pilih nama sopir di sebelah kiri untuk melihat detail ritase bulan ini.
+                </div>
+
+                <div id="konten-detail" class="hidden flex-1 flex flex-col">
+                    <div class="bg-slate-800 text-white px-3 py-2 rounded mb-3 text-xs font-medium flex justify-between items-center shadow-xs">
+                        <span>Total Ritase :</span>
+                        <span class="bg-white text-slate-900 px-2 py-0.5 rounded font-bold"><span id="total-ritase">0</span> Ritase</span>
+                    </div>
+
+                    <div class="overflow-x-auto flex-1 max-h-[350px] overflow-y-auto border border-zinc-200 rounded bg-white">
+                        <table class="min-w-full divide-y divide-zinc-200">
+                            <thead class="bg-slate-100 sticky top-0">
+                                <tr class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                                    <th class="py-2 px-3 text-left w-12">No</th>
+                                    <th class="py-2 px-3 text-left w-24">Tanggal</th>
+                                    <th class="py-2 px-3 text-left w-28">No. Polisi</th>
+                                    <th class="py-2 px-3 text-left">Delivery To (Tujuan)</th>
+                                    <th class="py-2 px-3 text-left">Lokasi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabel-ritase" class="divide-y divide-zinc-100 text-xs text-zinc-600 font-normal"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // KREDENSIAL SUPABASE
+        const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let databaseRitaseDiproses = [];
+
+        // Daftar sopir internal (Unit Sendiri) sesuai instruksi Anda
+        const DAFTAR_UNIT_SENDIRI = [
+            "agus wanto", 
+            "agus mulyanto", 
+            "nur kholis", 
+            "alfin", 
+            "supriyadi", 
+            "agus efendi", 
+            "wahid khumaini", 
+            "wiyanto"
+        ];
+
+        // Fungsi inisiasi awal
+        async function init() {
+            try {
+                const sekarang = new Date();
+                const tahun = sekarang.getFullYear();
+                const bulan = Thermal = sekarang.getMonth(); 
+
+                const tanggalMulai = new Date(tahun, bulan, 1).toISOString().split('T')[0] + 'T00:00:00';
+                const tanggalSelesai = new Date(tahun, bulan + 1, 0).toISOString().split('T')[0] + 'T23:59:59';
+
+                const opsiBulan = { month: 'long', year: 'numeric' };
+                document.getElementById('periode-bulan').innerText = sekarang.toLocaleDateString('id-ID', opsiBulan);
+
+                // UPDATE: Menambahkan kolom 'nopol' dan 'lokasi' ke dalam select data
+                const { data, error } = await _supabase
+                    .from('data_pengiriman')
+                    .select('tanggal, sopir, delivery_to, nopol, lokasi')
+                    .gte('tanggal', tanggalMulai)
+                    .lte('tanggal', tanggalSelesai);
+
+                if (error) throw error;
+
+                prosesDataPengiriman(data || []);
+
+            } catch (err) {
+                console.error("Gagal mengambil data:", err.message);
+                document.getElementById('loading-sopir').innerText = "Gagal memuat data. Cek koneksi.";
+            }
+        }
+
+        // Fungsi memisahkan nama ganda serta menyortir Unit Sendiri vs Unit Luar
+        function prosesDataPengiriman(dataRaw) {
+            databaseRitaseDiproses = [];
+            let daftarSopirUnik = new Set();
+            let adaUnitLuar = false;
+
+            dataRaw.forEach(item => {
+                if (!item.sopir) return;
+
+                const kumpulanNama = item.sopir.split(',').map(nama => nama.trim()).filter(Boolean);
+
+                kumpulanNama.forEach(namaSopir => {
+                    // Validasi cek huruf kecil agar pencocokan nama akurat tanpa terkendala typo kapital huruf
+                    const namaCek = namaSopir.toLowerCase();
+                    
+                    if (DAFTAR_UNIT_SENDIRI.includes(namaCek)) {
+                        // Jika masuk daftar, simpan sesuai nama aslinya (Unit Sendiri)
+                        daftarSopirUnik.add(namaSopir);
+                        databaseRitaseDiproses.push({
+                            sopir: namaSopir,
+                            tanggal: item.tanggal,
+                            nopol: item.nopol,
+                            delivery_to: item.delivery_to,
+                            lokasi: item.lokasi
+                        });
+                    } else {
+                        // Jika tidak ada di daftar, kelompokkan ke dalam grup "🚚 UNIT LUAR"
+                        adaUnitLuar = true;
+                        databaseRitaseDiproses.push({
+                            sopir: "🚚 UNIT LUAR",
+                            tanggal: item.tanggal,
+                            nopol: item.nopol,
+                            delivery_to: item.delivery_to,
+                            lokasi: item.lokasi
+                        });
+                    }
+                });
+            });
+
+            // Urutkan nama sopir unit sendiri secara alfabetis (A-Z)
+            let hasilDaftarSopir = [...daftarSopirUnik].sort();
+            
+            // Tempatkan kelompok "Unit Luar" di posisi paling bawah jika datanya tersedia
+            if (adaUnitLuar) {
+                hasilDaftarSopir.push("🚚 UNIT LUAR");
+            }
+
+            tampilkanDaftarSopir(hasilDaftarSopir);
+        }
+
+        // Tampilkan nama-nama sopir di list sebelah kiri
+        function tampilkanDaftarSopir(paraSopir) {
+            const container = document.getElementById('daftar-sopir');
+            const loading = document.getElementById('loading-sopir');
+            container.innerHTML = '';
+
+            if (paraSopir.length === 0) {
+                container.innerHTML = '<li class="text-xs text-zinc-400 italic p-1">Tidak ada data.</li>';
+            } else {
+                paraSopir.forEach(nama => {
+                    // Berikan icon pembeda khusus untuk Unit Luar di bagian daftar tombol kiri
+                    const isUnitLuar = nama === "🚚 UNIT LUAR";
+                    const iconSopir = isUnitLuar ? "" : "👤 ";
+                    const kelasWarnaTombol = isUnitLuar 
+                        ? "bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-800" 
+                        : "bg-white hover:bg-slate-50 border-zinc-200 text-zinc-700";
+
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <button onclick="pilihSopir(this, '${nama}')" class="btn-sopir w-full text-left px-3 py-1.5 border rounded text-xs font-medium transition focus:outline-none flex justify-between items-center cursor-pointer shadow-2xs ${kelasWarnaTombol}">
+                            <span>${iconSopir}${nama}</span>
+                            <span class="text-[10px] opacity-60 font-normal">Pilih ➔</span>
+                        </button>
+                    `;
+                    container.appendChild(li);
+                });
+            }
+
+            loading.classList.add('hidden');
+            container.classList.remove('hidden');
+        }
+
+        // Aksi ketika nama sopir/grup di klik
+        function pilihSopir(elemenTombol, namaSopir) {
+            // Reset status aktif seluruh tombol
+            document.querySelectorAll('.btn-sopir').forEach(btn => {
+                btn.classList.remove('border-slate-800', 'bg-slate-50', 'text-slate-900', 'ring-1', 'ring-slate-800');
+            });
+            // Aktifkan border penanda pada tombol yang diklik
+            elemenTombol.classList.add('border-slate-800', 'bg-slate-50', 'text-slate-900', 'ring-1', 'ring-slate-800');
+
+            document.getElementById('nama-sopir-terpilih').innerText = namaSopir;
+            
+            const ritaseSopir = databaseRitaseDiproses.filter(item => item.sopir === namaSopir);
+            document.getElementById('total-ritase').innerText = ritaseSopir.length;
+
+            const tbody = document.getElementById('tabel-ritase');
+            tbody.innerHTML = '';
+
+            ritaseSopir.forEach((rit, index) => {
+                const tglFormat = new Date(rit.tanggal).toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+
+                // Tampilkan data baris yang ditarik (Tanggal, Nopol, Delivery To, Lokasi)
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-zinc-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="py-1.5 px-3 font-medium text-zinc-400">${index + 1}</td>
+                    <td class="py-1.5 px-3 whitespace-nowrap">${tglFormat}</td>
+                    <td class="py-1.5 px-3 font-semibold text-slate-700 uppercase whitespace-nowrap">${rit.nopol || '-'}</td>
+                    <td class="py-1.5 px-3 font-medium text-slate-800 truncate max-w-xs">${rit.delivery_to || '-'}</td>
+                    <td class="py-1.5 px-3 text-zinc-500">${rit.lokasi || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('placeholder-detail').classList.add('hidden');
+            document.getElementById('konten-detail').classList.remove('hidden');
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

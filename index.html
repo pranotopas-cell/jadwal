@@ -488,11 +488,18 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
     }, gpsOptions);
 }
         
-async function takeJob(nopol, rowId, sopirDiJadwal, tujuan) {
+    async function takeJob(nopol, rowId, sopirDiJadwal, tujuan) {
     const currentDriver = localStorage.getItem('login_sopir_nama'); 
     if (!currentDriver) return alert("Sesi login habis, silakan login ulang.");
 
-    // Konfirmasi awal tetap ada (Supir klik OK untuk mulai)
+    // [PAGAR PENGAMAN KETAT] Cek apakah nama di jadwal sama dengan nama yang login
+    // Jika tidak sama, langsung blokir total sebelum nembak database!
+    if (!sopirDiJadwal || sopirDiJadwal.toUpperCase().trim() !== currentDriver.toUpperCase().trim()) {
+        alert(`❌ STOP! Jadwal ini milik ${sopirDiJadwal.toUpperCase()}.\nAnda (${currentDriver.toUpperCase()})`);
+        return;
+    }
+
+    // Jika nama sudah sama persis, konfirmasi awal singkat silakan jalan
     if (!confirm(`Mulai perjalanan ${nopol}?`)) return;
     
     if (!navigator.geolocation) {
@@ -505,7 +512,7 @@ async function takeJob(nopol, rowId, sopirDiJadwal, tujuan) {
         const longitude = posAwal.coords.longitude;
         const updateTime = new Date().toISOString();
 
-        // 1. UPDATE DATA PENGIRIMAN
+        // 1. UPDATE DATA PENGIRIMAN (Status berubah jadi PROSES)
         const { error: errStatus } = await _supabase.from('data_pengiriman').update({ 
             status: 'PROSES',
             sopir: currentDriver 
@@ -538,7 +545,7 @@ async function takeJob(nopol, rowId, sopirDiJadwal, tujuan) {
             last_update: updateTime
         });
 
-        // Notifikasi melayang yang hilang sendiri (Tanpa klik OK)
+        // Notifikasi melayang sukses
         tampilkanNotifikasiKilat("Sukses...Hati-Hati di Jalan"); 
         
         eksekusiMulaiGpsWatch(nopol, tujuan);

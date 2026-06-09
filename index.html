@@ -489,14 +489,14 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
 }
 
        async function takeJob(nopol, rowId, sopirDiJadwal, tujuan) {
-            const currentDriver = localStorage.getItem('login_sopir_nama');
+            const currentDriver = localStorage.getItem('login_sopir_nama'); // Mengambil nama supir yang memegang HP saat ini
             if (!currentDriver) return alert("Sesi login habis, silakan login ulang.");
 
-            // [PERBAIKAN] Konfirmasi langsung sebut Nopol dan Tujuan secara singkat
-            if (!confirm(`Mulai perjalanan Nopol ${nopol}?`)) return;
+            // Konfirmasi singkat langsung nopol
+            if (!confirm(`Mulai perjalanan ${nopol}?`)) return;
             
             if (!navigator.geolocation) {
-                alert("HP Anda tidak mendukung GPS Tracking.");
+                alert("HP Anda tidak mendukung.");
                 return;
             }
 
@@ -505,39 +505,32 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
                 const longitude = posAwal.coords.longitude;
                 const updateTime = new Date().toISOString();
 
-                // 1. UPDATE SUPABASE (data_pengiriman)
+                // 1. UPDATE DATA PENGIRIMAN (Mengubah status di daftar jadwal utama)
                 const { error: errStatus } = await _supabase.from('data_pengiriman').update({ 
                     status: 'PROSES',
-                    sopir: currentDriver 
+                    sopir: currentDriver // Siapa yang ngeklik, dia yang tertulis bawa di jadwal admin
                 }).eq('id', rowId);
 
-                if (errStatus) return alert("Gagal update status: " + errStatus.message);
+                if (errStatus) return alert("Gagal update : " + errStatus.message);
                 
-                // 2. SINKRONISASI SUPABASE (tracking_unit) - Anti-bentrok
-                const { error: errTrack } = await _supabase.from('tracking_unit').upsert({
-                    nopol: nopol, 
-                    sopir: currentDriver, 
+                // 2. UPDATE TRACKING UNIT SUPABASE (Aman karena Primary Key sudah di kolom 'sopir')
+                // Sistem akan mencari baris berdasarkan nama supir yang login, 
+                // lalu mengubah data LOGIN_ONLY tadi menjadi Nopol asli, koordinat asli, dan status ON_JOB.
+                const { error: errTrack } = await _supabase.from('tracking_unit').update({
+                    nopol: nopol, // Dari "LOGIN_COBA" otomatis tertimpa menjadi nopol asli truk (Misal: KH 8141 GH)
+                    lat: latitude,
+                    lon: longitude,
                     tujuan: tujuan, 
                     status: 'ON_JOB', 
                     last_update: updateTime
-                }, { onConflict: 'sopir' }); 
+                }).eq('sopir', currentDriver); // Mengunci target update berdasarkan nama supir yang sedang aktif
 
                 if (errTrack) {
-                    const { error: errTrackFallback } = await _supabase.from('tracking_unit').upsert({
-                        nopol: nopol, 
-                        sopir: currentDriver,
-                        tujuan: tujuan, 
-                        status: 'ON_JOB', 
-                        last_update: updateTime
-                    }, { onConflict: 'nopol' });
-
-                    if (errTrackFallback) {
-                        alert("Gagal mencatat tracking: " + errTrackFallback.message);
-                        return;
-                    }
+                    alert("Gagal mencatat tracking Supabase: " + errTrack.message);
+                    return;
                 }
 
-                // 3. SINKRONISASI FIREBASE
+                // 3. SINKRONISASI REAL-TIME KE FIREBASE
                 await saveToFirebase(currentDriver, {
                     nopol: nopol,
                     lat: latitude,
@@ -547,9 +540,7 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
                     last_update: updateTime
                 });
 
-                // [PERBAIKAN] Notifikasi sukses sesuai request Abang
-                alert("Mulai perjalanan sukses!"); 
-                
+                alert("Sukses...Hati-Hati di Jalan"); 
                 eksekusiMulaiGpsWatch(nopol, tujuan);
                 loadDashboard(); 
 

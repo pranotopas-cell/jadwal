@@ -488,64 +488,75 @@ function eksekusiMulaiGpsWatch(nopol, tujuan) {
     }, gpsOptions);
 }
 
-       async function takeJob(nopol, rowId, sopir, tujuan) {
-    if (!verifikasiHakAksesSopir(sopir)) return;
-    if (!confirm(`Mulai perjalanan unit ${nopol} ke ${tujuan}?`)) return;
-    
-    if (!navigator.geolocation) {
-        alert("Waduh! HP/Browser Anda tidak mendukung fitur GPS Tracking.");
-        return;
-    }
+       async function takeJob(nopol, rowId, sopirDiJadwal, tujuan) {
+            const currentDriver = localStorage.getItem('login_sopir_nama');
+            if (!currentDriver) return alert("Sesi login habis, silakan login ulang.");
 
-    alert("Koneksi GPS.......Mohon tunggu sebentar.");
+            // [PERBAIKAN] Konfirmasi langsung sebut Nopol dan Tujuan secara singkat
+            if (!confirm(`Mulai perjalanan Nopol ${nopol}?`)) return;
+            
+            if (!navigator.geolocation) {
+                alert("HP Anda tidak mendukung GPS Tracking.");
+                return;
+            }
 
-    navigator.geolocation.getCurrentPosition(async (posAwal) => {
-        const latitude = posAwal.coords.latitude;
-        const longitude = posAwal.coords.longitude;
-        const currentDriver = localStorage.getItem('login_sopir_nama');
-        const updateTime = new Date().toISOString();
+            navigator.geolocation.getCurrentPosition(async (posAwal) => {
+                const latitude = posAwal.coords.latitude;
+                const longitude = posAwal.coords.longitude;
+                const updateTime = new Date().toISOString();
 
-        // Update status di tabel utama data_pengiriman Supabase menjadi PROSES
-        const { error: errStatus } = await _supabase.from('data_pengiriman').update({ status: 'PROSES' }).eq('id', rowId);
-        if (errStatus) return alert("Gagal update status " + errStatus.message);
-        
-        // --- PERBAIKAN DI SINI: Supabase HANYA update status akun, TANPA lat & lon ---
-        const { error: errTrack } = await _supabase.from('tracking_unit').update({
-            nopol: nopol, 
-            tujuan: tujuan, 
-            status: 'ON_JOB', 
-            last_update: updateTime
-        }).eq('sopir', currentDriver);
+                // 1. UPDATE SUPABASE (data_pengiriman)
+                const { error: errStatus } = await _supabase.from('data_pengiriman').update({ 
+                    status: 'PROSES',
+                    sopir: currentDriver 
+                }).eq('id', rowId);
 
-        if (errTrack) {
-            alert("GPS Gagal mencatat status di Supabase: " + errTrack.message);
-            return;
+                if (errStatus) return alert("Gagal update status: " + errStatus.message);
+                
+                // 2. SINKRONISASI SUPABASE (tracking_unit) - Anti-bentrok
+                const { error: errTrack } = await _supabase.from('tracking_unit').upsert({
+                    nopol: nopol, 
+                    sopir: currentDriver, 
+                    tujuan: tujuan, 
+                    status: 'ON_JOB', 
+                    last_update: updateTime
+                }, { onConflict: 'sopir' }); 
+
+                if (errTrack) {
+                    const { error: errTrackFallback } = await _supabase.from('tracking_unit').upsert({
+                        nopol: nopol, 
+                        sopir: currentDriver,
+                        tujuan: tujuan, 
+                        status: 'ON_JOB', 
+                        last_update: updateTime
+                    }, { onConflict: 'nopol' });
+
+                    if (errTrackFallback) {
+                        alert("Gagal mencatat tracking: " + errTrackFallback.message);
+                        return;
+                    }
+                }
+
+                // 3. SINKRONISASI FIREBASE
+                await saveToFirebase(currentDriver, {
+                    nopol: nopol,
+                    lat: latitude,
+                    lon: longitude,
+                    tujuan: tujuan,
+                    status: 'ON_JOB',
+                    last_update: updateTime
+                });
+
+                // [PERBAIKAN] Notifikasi sukses sesuai request Abang
+                alert("Mulai perjalanan sukses!"); 
+                
+                eksekusiMulaiGpsWatch(nopol, tujuan);
+                loadDashboard(); 
+
+            }, (error) => {
+                alert("Gagal mengunci GPS! Periksa izin lokasi HP: " + error.message);
+            }, { enableHighAccuracy: true, timeout: 15000 });
         }
-
-        // --- Firebase tetap menerima data koordinat awal mula perjalanan ---
-        if (window.saveToFirebase) {
-            window.saveToFirebase(currentDriver, {
-                nopol: nopol,
-                lat: latitude,
-                lon: longitude,
-                tujuan: tujuan,
-                status: 'ON_JOB',
-                last_update: updateTime
-            });
-        }
-
-        alert("GPS Sukses");
-
-        eksekusiMulaiGpsWatch(nopol, tujuan);
-        loadDashboard();
-
-    }, (error) => {
-        alert("Gagal mengunci GPS! " + error.message);
-    }, { 
-        enableHighAccuracy: true, 
-        timeout: 15000 
-    });
-}
 
         async function finishJob(nopol, rowId, sopir) {
     if (!verifikasiHakAksesSopir(sopir)) return;

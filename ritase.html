@@ -121,7 +121,7 @@
             try {
                 const sekarang = new Date();
                 const tahun = sekarang.getFullYear();
-                const bulan = Clinical = sekarang.getMonth(); 
+                const bulan = sekarang.getMonth(); 
 
                 const tanggalMulai = new Date(tahun, bulan, 1).toISOString().split('T')[0] + 'T00:00:00';
                 const tanggalSelesai = new Date(tahun, bulan + 1, 0).toISOString().split('T')[0] + 'T23:59:59';
@@ -228,10 +228,13 @@
             });
             elemenTombol.classList.add('border-slate-800', 'bg-slate-100', 'text-slate-900', 'ring-2', 'ring-slate-800/20');
             
-            // BUG FIXED: Baris 'nama-sopir-terpilled' yang salah panggil telah dihapus agar script berjalan lancar
             document.getElementById('nama-sopir-terpilih').innerText = namaSopir;
             
-            const ritaseSopir = databaseRitaseDiproses.filter(item => item.sopir === namaSopir);
+            // FILTER DAN URUTKAN TANGGAL DARI YANG TERKECIL (KRONOLOGIS)
+            const ritaseSopir = databaseRitaseDiproses
+                .filter(item => item.sopir === namaSopir)
+                .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+
             document.getElementById('total-ritase').innerText = ritaseSopir.length;
 
             const tbody = document.getElementById('tabel-ritase');

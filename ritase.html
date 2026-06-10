@@ -6,6 +6,7 @@
     <title>Ritase Sopir</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         /* Mencegah overscroll rebound yang mengganggu di browser HP */
         html, body {
@@ -58,9 +59,15 @@
             </div>
 
             <div class="col-span-12 md:col-span-9 bg-zinc-50 p-3 rounded-xl border border-zinc-200 min-h-[320px] md:min-h-[500px] flex flex-col">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2.5">
-                    Detail Ritase: <span id="nama-sopir-terpilih" class="text-slate-900 normal-case font-extrabold text-sm border-b border-dashed border-slate-400 pb-0.5">-</span>
-                </h2>
+                <div class="flex justify-between items-center mb-2.5 gap-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                        Detail Ritase: <span id="nama-sopir-terpilih" class="text-slate-900 normal-case font-extrabold text-sm border-b border-dashed border-slate-400 pb-0.5">-</span>
+                    </h2>
+                    
+                    <button id="btn-download-excel" onclick="downloadExcelPerSopir()" class="hidden flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-md transition active:scale-95 cursor-pointer shadow-2xs">
+                        📊 DOWNLOAD XLSX
+                    </button>
+                </div>
                 
                 <div id="placeholder-detail" class="text-zinc-400 italic text-xs text-center my-auto py-12 px-4">
                     <span class="text-2xl block mb-2">👆</span>
@@ -84,6 +91,7 @@
                                     <th class="py-2.5 px-2 text-left w-24 bg-slate-100">Nopol</th>
                                     <th class="py-2.5 px-3 text-left w-40 sm:w-auto bg-slate-100">Tujuan</th>
                                     <th class="py-2.5 px-2 text-left w-32 sm:w-auto bg-slate-100">Lokasi</th>
+                                    <th class="py-2.5 px-2 text-left w-28 bg-slate-100">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="tabel-ritase" class="divide-y divide-zinc-100 text-xs text-zinc-600 font-normal"></tbody>
@@ -103,6 +111,8 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let databaseRitaseDiproses = [];
+        let ritaseSopirAktif = []; 
+        let namaSopirAktif = "";     
 
         // Daftar sopir internal
         const DAFTAR_UNIT_SENDIRI = [
@@ -154,11 +164,15 @@
             dataRaw.forEach(item => {
                 if (!item.sopir) return;
 
+                // Memisahkan list nama sopir
                 const kumpulanNama = item.sopir.split(',').map(nama => nama.trim()).filter(Boolean);
 
-                kumpulanNama.forEach(namaSopir => {
+                kumpulanNama.forEach((namaSopir, indeksPosisi) => {
                     const namaCek = namaSopir.toLowerCase();
                     
+                    // Menentukan apakah nama saat ini diposisi depan (Driver) atau belakang/setelah koma (Helper)
+                    const tipeSopir = indeksPosisi === 0 ? "Driver" : "Helper";
+
                     if (DAFTAR_UNIT_SENDIRI.includes(namaCek)) {
                         daftarSopirUnik.add(namaSopir);
                         databaseRitaseDiproses.push({
@@ -166,7 +180,8 @@
                             tanggal: item.tanggal,
                             nopol: item.nopol,
                             delivery_to: item.delivery_to,
-                            lokasi: item.lokasi
+                            lokasi: item.lokasi,
+                            peran: tipeSopir // Simpan status peran: Driver / Helper
                         });
                     } else {
                         adaUnitLuar = true;
@@ -175,7 +190,8 @@
                             tanggal: item.tanggal,
                             nopol: item.nopol,
                             delivery_to: item.delivery_to,
-                            lokasi: item.lokasi
+                            lokasi: item.lokasi,
+                            peran: tipeSopir
                         });
                     }
                 });
@@ -229,22 +245,42 @@
             elemenTombol.classList.add('border-slate-800', 'bg-slate-100', 'text-slate-900', 'ring-2', 'ring-slate-800/20');
             
             document.getElementById('nama-sopir-terpilih').innerText = namaSopir;
+            namaSopirAktif = namaSopir; 
             
             // FILTER DAN URUTKAN TANGGAL DARI YANG TERKECIL (KRONOLOGIS)
-            const ritaseSopir = databaseRitaseDiproses
+            ritaseSopirAktif = databaseRitaseDiproses
                 .filter(item => item.sopir === namaSopir)
                 .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
 
-            document.getElementById('total-ritase').innerText = ritaseSopir.length;
+            document.getElementById('total-ritase').innerText = ritaseSopirAktif.length;
 
             const tbody = document.getElementById('tabel-ritase');
             tbody.innerHTML = '';
 
-            ritaseSopir.forEach((rit, index) => {
-                const tglFormat = new Date(rit.tanggal).toLocaleDateString('id-ID', {
+            ritaseSopirAktif.forEach((rit, index) => {
+                const tglObj = new Date(rit.tanggal);
+                const tglFormat = tglObj.toLocaleDateString('id-ID', {
                     day: '2-digit',
                     month: 'short'
                 });
+
+                // LOGIKA BARU: Driver / Helper & Lembur Hari Minggu
+                let statusArr = [];
+                statusArr.push(rit.peran || "Driver"); // Masukkan "Driver" atau "Helper"
+                
+                if (tglObj.getDay() === 0) { 
+                    statusArr.push("Lembur"); // 0 melambangkan Hari Minggu
+                }
+                
+                const statusTeks = statusArr.join(", ");
+                
+                // Styling tampilan status agar menarik dan kontras
+                let kelasWarnaStatus = "text-zinc-500 font-medium";
+                if (statusArr.includes("Lembur")) {
+                    kelasWarnaStatus = "text-red-700 font-semibold bg-red-50 px-1.5 py-0.5 rounded-sm border border-red-200/60";
+                } else if (statusArr.includes("Helper")) {
+                    kelasWarnaStatus = "text-blue-700 font-semibold bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-200/60";
+                }
 
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-zinc-50/80 transition-colors odd:bg-white even:bg-zinc-50/30";
@@ -254,6 +290,7 @@
                     <td class="py-2.5 px-2 font-bold text-slate-700 uppercase whitespace-nowrap">${rit.nopol || '-'}</td>
                     <td class="py-2.5 px-3 font-semibold text-slate-800 break-words max-w-[160px] sm:max-w-none">${rit.delivery_to || '-'}</td>
                     <td class="py-2.5 px-2 text-zinc-500 truncate max-w-[120px] sm:max-w-none" title="${rit.lokasi || '-'}">${rit.lokasi || '-'}</td>
+                    <td class="py-2.5 px-2 whitespace-nowrap"><span class="${kelasWarnaStatus}">${statusTeks}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -261,9 +298,62 @@
             document.getElementById('placeholder-detail').classList.add('hidden');
             document.getElementById('konten-detail').classList.remove('hidden');
             
+            document.getElementById('btn-download-excel').classList.remove('hidden');
+            
             if (window.innerWidth < 768) {
                 document.getElementById('nama-sopir-terpilih').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+        }
+
+        // Fungsi Logika Download Excel .xlsx dengan pembaruan status Driver/Helper & Lembur
+        function downloadExcelPerSopir() {
+            if (ritaseSopirAktif.length === 0) {
+                alert("Tidak ada data ritase untuk didownload.");
+                return;
+            }
+
+            const dataExcel = ritaseSopirAktif.map((item, index) => {
+                const tglMentah = new Date(item.tanggal);
+                const tglFormat = tglMentah.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                
+                // LOGIKA EXCEL
+                let statusArr = [];
+                statusArr.push(item.peran || "Driver");
+                if (tglMentah.getDay() === 0) statusArr.push("Lembur");
+                const statusTeks = statusArr.join(", ");
+
+                return {
+                    "No": index + 1,
+                    "Nama Sopir": item.sopir,
+                    "Tanggal": tglFormat,
+                    "Nopol": item.nopol || '-',
+                    "Tujuan (Delivery To)": item.delivery_to || '-',
+                    "Lokasi": item.lokasi || '-',
+                    "Status": statusTeks
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(dataExcel);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Ritase");
+
+            // Mengatur lebar kolom otomatis agar rapi di excel
+            const maxColsWidth = [
+                { wch: 6 },  // No
+                { wch: 25 }, // Nama Sopir
+                { wch: 15 }, // Tanggal
+                { wch: 15 }, // Nopol
+                { wch: 35 }, // Tujuan
+                { wch: 25 }, // Lokasi
+                { wch: 20 }  // Status
+            ];
+            worksheet['!cols'] = maxColsWidth;
+
+            const teksPeriode = document.getElementById('periode-bulan').innerText.replace(/ /g, "_");
+            const namaClean = namaSopirAktif.replace(/[^\w\s]/gi, '').trim().replace(/ /g, "_");
+            const namaFile = `Ritase_${namaClean}_${teksPeriode}.xlsx`;
+
+            XLSX.writeFile(workbook, namaFile);
         }
 
         window.onload = init;

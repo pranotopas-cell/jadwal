@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ritase Sopir</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        html, body {
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 2px;
+        }
+        
+        /* styling khusus cetak corporate */
+        .pdf-print-area {
+            font-family: 'Arial', sans-serif;
+            color: #1e293b;
+            background: #ffffff;
+            padding: 20px;
+        }
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .pdf-table th {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+        }
+        .pdf-table td {
+            font-size: 11px;
+            padding: 8px 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .pdf-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        /* PERBAIKAN: Menyembunyikan wadah cetak di layar biasa tanpa merusak koordinat dimensi canvas */
+        #printable-pdf-area {
+            display: none;
+        }
+        @media print {
+            #printable-pdf-area {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-zinc-50 font-sans min-h-screen p-2 sm:p-4 flex items-start justify-center antialiased">
+
+    <div class="w-full max-w-7xl bg-white rounded-xl shadow-xs border border-zinc-200 p-3 sm:p-5 my-1 sm:my-4">
+        
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-100 pb-3 mb-4 gap-2.5">
+            <div class="flex items-center gap-2">
+                <span class="text-xl sm:text-2xl">📄</span>
+                <h1 class="text-base sm:text-lg font-bold text-slate-800 tracking-tight uppercase">
+                    Resume Ritase
+                </h1>
+            </div>
+            
+            <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+                <a href="index.html" class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-zinc-300 min-h-[36px] px-3 py-1.5 rounded-lg transition active:scale-95 cursor-pointer shadow-xs">
+                    <span>🏠</span> HOME
+                </a>
+                <div class="text-xs sm:text-sm font-semibold text-slate-600 bg-slate-100 px-3 py-2 rounded-lg border border-slate-200">
+                    Periode: <span id="periode-bulan" class="font-bold">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-4 items-start">
+            
+            <div class="col-span-12 md:col-span-3 bg-zinc-50 p-3 rounded-xl border border-zinc-200">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Daftar Sopir</h2>
+                    <span class="text-[10px] bg-zinc-200 text-zinc-600 px-1.5 py-0.5 rounded-sm sm:hidden font-medium">Scroll bawah ➔</span>
+                </div>
+                <div id="loading-sopir" class="text-xs text-zinc-400 italic py-2">Memuat daftar sopir...</div>
+                <ul id="daftar-sopir" class="space-y-1.5 max-h-[180px] md:max-h-[450px] overflow-y-auto custom-scroll hidden pr-1"></ul>
+            </div>
+
+            <div class="col-span-12 md:col-span-9 bg-zinc-50 p-3 rounded-xl border border-zinc-200 min-h-[320px] md:min-h-[500px] flex flex-col">
+                <div class="flex justify-between items-center mb-2.5 gap-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                        Detail Ritase: <span id="nama-sopir-terpilih" class="text-slate-900 normal-case font-extrabold text-sm border-b border-dashed border-slate-400 pb-0.5">-</span>
+                    </h2>
+                    
+                    <button id="btn-download-pdf" onclick="downloadPDFPerSopir()" class="hidden flex items-center gap-1 text-[11px] font-bold text-white bg-slate-900 hover:bg-slate-800 px-3 py-1.5 rounded-md transition active:scale-95 cursor-pointer shadow-xs">
+                        📊 EXPORT PDF CORPORATE
+                    </button>
+                </div>
+                
+                <div id="placeholder-detail" class="text-zinc-400 italic text-xs text-center my-auto py-12 px-4">
+                    <span class="text-2xl block mb-2">👆</span>
+                    Pilih nama sopir di atas terlebih dahulu untuk melihat rincian ritase bulan ini.
+                </div>
+
+                <div id="konten-detail" class="hidden flex-1 flex flex-col p-1">
+                    <div class="bg-slate-800 text-white px-3 py-2.5 rounded-lg mb-3 text-xs font-medium flex justify-between items-center shadow-md">
+                        <span class="tracking-wide">TOTAL PERJALANAN BULAN INI :</span>
+                        <span class="bg-white text-slate-900 px-2.5 py-1 rounded-md font-bold text-sm shadow-xs whitespace-nowrap">
+                            <span id="total-ritase">0</span> Ritase
+                        </span>
+                    </div>
+
+                    <div id="area-tabel-scroll" class="overflow-x-auto flex-1 max-h-[320px] md:max-h-[380px] overflow-y-auto border border-zinc-200 rounded-lg bg-white custom-scroll shadow-2xs">
+                        <table class="min-w-full divide-y divide-zinc-200 table-fixed sm:table-auto">
+                            <thead class="bg-slate-100 sticky top-0 z-10 shadow-xs">
+                                <tr class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                                    <th class="py-2.5 px-2.5 text-left w-10 bg-slate-100">No</th>
+                                    <th class="py-2.5 px-2 text-left w-24 bg-slate-100">Tanggal</th>
+                                    <th class="py-2.5 px-2 text-left w-24 bg-slate-100">Nopol</th>
+                                    <th class="py-2.5 px-3 text-left w-40 sm:w-auto bg-slate-100">Tujuan</th>
+                                    <th class="py-2.5 px-2 text-left w-32 sm:w-auto bg-slate-100">Lokasi</th>
+                                    <th class="py-2.5 px-2 text-left w-28 bg-slate-100">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabel-ritase" class="divide-y divide-zinc-100 text-xs text-zinc-600 font-normal"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="printable-pdf-area"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let databaseRitaseDiproses = [];
+        let ritaseSopirAktif = []; 
+        let namaSopirAktif = "";     
+
+        const DAFTAR_UNIT_SENDIRI = [
+            "agus wanto", "agus mulyanto", "nur kholis", "alfin", 
+            "supriyadi", "agus efendi", "wahid khumaini", "wiyanto"
+        ];
+
+        async function init() {
+            try {
+                const sekarang = new Date();
+                const tahun = sekarang.getFullYear();
+                const bulan = sekarang.getMonth();
+
+                const tanggalMulai = new Date(tahun, bulan, 1).toISOString().split('T')[0] + 'T00:00:00';
+                const tanggalSelesai = new Date(tahun, bulan + 1, 0).toISOString().split('T')[0] + 'T23:59:59';
+
+                const opsiBulan = { month: 'long', year: 'numeric' };
+                document.getElementById('periode-bulan').innerText = sekarang.toLocaleDateString('id-ID', opsiBulan);
+
+                const { data, error } = await _supabase
+                    .from('data_pengiriman')
+                    .select('tanggal, sopir, delivery_to, nopol, lokasi')
+                    .gte('tanggal', tanggalMulai)
+                    .lte('tanggal', tanggalSelesai);
+
+                if (error) throw error;
+                prosesDataPengiriman(data || []);
+
+            } catch (err) {
+                console.error("Gagal mengambil data:", err.message);
+                document.getElementById('loading-sopir').innerText = "Gagal memuat data. Cek koneksi.";
+            }
+        }
+
+        function prosesDataPengiriman(dataRaw) {
+            databaseRitaseDiproses = [];
+            let daftarSopirUnik = new Set();
+            let adaUnitLuar = false;
+
+            dataRaw.forEach(item => {
+                if (!item.sopir) return;
+                const kumpulanNama = item.sopir.split(',').map(nama => nama.trim()).filter(Boolean);
+
+                kumpulanNama.forEach((namaSopir, indeksPosisi) => {
+                    const namaCek = namaSopir.toLowerCase();
+                    const tipeSopir = indeksPosisi === 0 ? "Driver" : "Helper";
+
+                    if (DAFTAR_UNIT_SENDIRI.includes(namaCek)) {
+                        daftarSopirUnik.add(namaSopir);
+                        databaseRitaseDiproses.push({
+                            sopir: namaSopir,
+                            tanggal: item.tanggal,
+                            nopol: item.nopol,
+                            delivery_to: item.delivery_to,
+                            lokasi: item.lokasi,
+                            peran: tipeSopir
+                        });
+                    } else {
+                        adaUnitLuar = true;
+                        databaseRitaseDiproses.push({
+                            sopir: "🚚 UNIT LUAR",
+                            tanggal: item.tanggal,
+                            nopol: item.nopol,
+                            delivery_to: item.delivery_to,
+                            lokasi: item.lokasi,
+                            peran: tipeSopir
+                        });
+                    }
+                });
+            });
+
+            let hasilDaftarSopir = [...daftarSopirUnik].sort();
+            if (adaUnitLuar) hasilDaftarSopir.push("🚚 UNIT LUAR");
+            tampilkanDaftarSopir(hasilDaftarSopir);
+        }
+
+        function tampilkanDaftarSopir(paraSopir) {
+            const container = document.getElementById('daftar-sopir');
+            const loading = document.getElementById('loading-sopir');
+            container.innerHTML = '';
+
+            if (paraSopir.length === 0) {
+                container.innerHTML = '<li class="text-xs text-zinc-400 italic p-2 text-center">Tidak ada data sopir bulan ini.</li>';
+            } else {
+                paraSopir.forEach(nama => {
+                    const isUnitLuar = nama === "🚚 UNIT LUAR";
+                    const iconSopir = isUnitLuar ? "" : "👤 ";
+                    const kelasWarnaTombol = isUnitLuar 
+                        ? "bg-amber-50 hover:bg-amber-100/80 border-amber-300 text-amber-900" 
+                        : "bg-white hover:bg-slate-100 border-zinc-200 text-zinc-700";
+
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <button onclick="pilihSopir(this, '${nama}')" class="btn-sopir w-full text-left px-3 py-2.5 border rounded-lg text-xs font-semibold transition active:scale-[0.99] focus:outline-none flex justify-between items-center cursor-pointer min-h-[42px] ${kelasWarnaTombol}">
+                            <span class="truncate pr-2">${iconSopir}${nama}</span>
+                            <span class="text-[10px] opacity-70 font-normal shrink-0">Pilih ➔</span>
+                        </button>
+                    `;
+                    container.appendChild(li);
+                });
+            }
+            loading.classList.add('hidden');
+            container.classList.remove('hidden');
+        }
+
+        function pilihSopir(elemenTombol, namaSopir) {
+            document.querySelectorAll('.btn-sopir').forEach(btn => {
+                btn.classList.remove('border-slate-800', 'bg-slate-100', 'text-slate-900', 'ring-2', 'ring-slate-800/20');
+            });
+            elemenTombol.classList.add('border-slate-800', 'bg-slate-100', 'text-slate-900', 'ring-2', 'ring-slate-800/20');
+            
+            document.getElementById('nama-sopir-terpilih').innerText = namaSopir;
+            namaSopirAktif = namaSopir; 
+            
+            ritaseSopirAktif = databaseRitaseDiproses
+                .filter(item => item.sopir === namaSopir)
+                .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+
+            document.getElementById('total-ritase').innerText = ritaseSopirAktif.length;
+
+            const tbody = document.getElementById('tabel-ritase');
+            tbody.innerHTML = '';
+
+            ritaseSopirAktif.forEach((rit, index) => {
+                const tglObj = new Date(rit.tanggal);
+                const tglFormat = tglObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+
+                let statusArr = [rit.peran || "Driver"]; 
+                if (tglObj.getDay() === 0) statusArr.push("Lembur"); 
+                const statusTeks = statusArr.join(", ");
+                
+                let kelasWarnaStatus = "text-zinc-500 font-medium";
+                if (statusArr.includes("Lembur")) {
+                    kelasWarnaStatus = "text-red-700 font-semibold bg-red-50 px-1.5 py-0.5 rounded-sm border border-red-200/60";
+                } else if (statusArr.includes("Helper")) {
+                    kelasWarnaStatus = "text-blue-700 font-semibold bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-200/60";
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-zinc-50/80 transition-colors odd:bg-white even:bg-zinc-50/30";
+                tr.innerHTML = `
+                    <td class="py-2.5 px-2.5 font-medium text-zinc-400 text-center">${index + 1}</td>
+                    <td class="py-2.5 px-2 whitespace-nowrap font-medium text-zinc-700">${tglFormat}</td>
+                    <td class="py-2.5 px-2 font-bold text-slate-700 uppercase whitespace-nowrap">${rit.nopol || '-'}</td>
+                    <td class="py-2.5 px-3 font-semibold text-slate-800 break-words max-w-[160px] sm:max-w-none">${rit.delivery_to || '-'}</td>
+                    <td class="py-2.5 px-2 text-zinc-500 truncate max-w-[120px] sm:max-w-none" title="${rit.lokasi || '-'}">${rit.lokasi || '-'}</td>
+                    <td class="py-2.5 px-2 whitespace-nowrap"><span class="${kelasWarnaStatus}">${statusTeks}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('placeholder-detail').classList.add('hidden');
+            document.getElementById('konten-detail').classList.remove('hidden');
+            document.getElementById('btn-download-pdf').classList.remove('hidden');
+            
+            if (window.innerWidth < 768) {
+                document.getElementById('nama-sopir-terpilih').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // RE-ENGINEERING & CORPORATE DESIGN GENERATOR
+        function downloadPDFPerSopir() {
+            if (ritaseSopirAktif.length === 0) {
+                alert("Tidak ada data ritase untuk didownload.");
+                return;
+            }
+
+            const teksPeriode = document.getElementById('periode-bulan').innerText;
+            const wadahCetak = document.getElementById('printable-pdf-area');
+            
+            // Generate Struktur Dokumen
+            let barisTabelHtml = "";
+            ritaseSopirAktif.forEach((rit, index) => {
+                const tglObj = new Date(rit.tanggal);
+                const tglFormat = tglObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+                let statusArr = [rit.peran || "Driver"];
+                if (tglObj.getDay() === 0) statusArr.push("Lembur");
+
+                barisTabelHtml += `
+                    <tr>
+                        <td style="text-align: center; width: 5%;">${index + 1}</td>
+                        <td style="width: 15%;">${tglFormat}</td>
+                        <td style="font-weight: bold; width: 15%; text-transform: uppercase;">${rit.nopol || '-'}</td>
+                        <td style="font-weight: bold; width: 35%;">${rit.delivery_to || '-'}</td>
+                        <td style="width: 15%;">${rit.lokasi || '-'}</td>
+                        <td style="width: 15%; font-weight: bold;">${statusArr.join(", ")}</td>
+                    </tr>
+                `;
+            });
+
+            // PERBAIKAN: Suntikkan data HTML dan buat element terlihat secara sementara di memory renderer
+            wadahCetak.style.display = "block";
+
+            wadahCetak.innerHTML = `
+                <div class="pdf-print-area">
+                    <table style="width: 100%; border-bottom: 3px double #0f172a; padding-bottom: 10px; margin-bottom: 20px;">
+                        <tr>
+                            <td style="border: none; padding: 0; width: 70%;">
+                                <h1 style="font-size: 18px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: #0f172a;">LOGISTIK & DISTRIBUSI INTERNAL</h1>
+                                <p style="font-size: 10px; color: #64748b; margin: 2px 0 0 0;">Laporan Resume Perjalanan Kendaraan (Ritase)</p>
+                            </td>
+                            <td style="border: none; padding: 0; width: 30%; text-align: right; vertical-align: bottom;">
+                                <span style="font-size: 9px; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-weight: bold; border: 1px solid #cbd5e1;">CONFIDENTIAL REPORT</span>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table style="width: 100%; margin-bottom: 15px; font-size: 11px;">
+                        <tr>
+                            <td style="border: none; padding: 2px 0; width: 12%; color: #64748b;">Nama Personel</td>
+                            <td style="border: none; padding: 2px 0; width: 2%; font-weight: bold;">:</td>
+                            <td style="border: none; padding: 2px 0; width: 46%; font-weight: bold; text-transform: uppercase; color: #0f172a;">${namaSopirAktif}</td>
+                            
+                            <td style="border: none; padding: 2px 0; width: 12%; color: #64748b;">Periode Buku</td>
+                            <td style="border: none; padding: 2px 0; width: 2%; font-weight: bold;">:</td>
+                            <td style="border: none; padding: 2px 0; width: 26%; font-weight: bold;">${teksPeriode}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: none; padding: 2px 0; color: #64748b;">Total Kontribusi</td>
+                            <td style="border: none; padding: 2px 0; font-weight: bold;">:</td>
+                            <td style="border: none; padding: 2px 0; font-weight: bold; color: #0284c7;">${ritaseSopirAktif.length} Ritase</td>
+                            
+                            <td style="border: none; padding: 2px 0; color: #64748b;">Tanggal Cetak</td>
+                            <td style="border: none; padding: 2px 0; font-weight: bold;">:</td>
+                            <td style="border: none; padding: 2px 0;">${new Date().toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})} WIB</td>
+                        </tr>
+                    </table>
+
+                    <table class="pdf-table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Tanggal Perjalanan</th>
+                                <th>No. Polisi</th>
+                                <th>Tujuan Pengiriman (Delivery To)</th>
+                                <th>Wilayah/Lokasi</th>
+                                <th>Keterangan / Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${barisTabelHtml}
+                        </tbody>
+                    </table>
+
+                    <div style="margin-top: 15px; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 12px; font-size: 11px; font-weight: bold; text-align: right;">
+                        TOTAL KESELURUHAN RITASE: <span style="color: #0f172a; font-size: 13px; margin-left: 5px;">${ritaseSopirAktif.length} KALI JALAN</span>
+                    </div>
+
+                    <table style="width: 100%; margin-top: 40px; font-size: 11px; page-break-inside: avoid;">
+                        <tr>
+                            <td style="border: none; text-align: center; width: 33.3%;">
+                                <p style="margin-bottom: 50px; color: #64748b;">Dibuat Oleh,</p>
+                                <div style="width: 120px; border-bottom: 1px solid #94a3b8; margin: 0 auto;"></div>
+                                <p style="margin-top: 4px; font-weight: bold;">Logistics Administrator</p>
+                            </td>
+                            <td style="border: none; text-align: center; width: 33.3%;">
+                                <p style="margin-bottom: 50px; color: #64748b;">Diperiksa Oleh,</p>
+                                <div style="width: 120px; border-bottom: 1px solid #94a3b8; margin: 0 auto;"></div>
+                                <p style="margin-top: 4px; font-weight: bold;">Supervisor / Checker</p>
+                            </td>
+                            <td style="border: none; text-align: center; width: 33.3%;">
+                                <p style="margin-bottom: 50px; color: #64748b;">Diketahui Oleh,</p>
+                                <div style="width: 120px; border-bottom: 1px solid #94a3b8; margin: 0 auto;"></div>
+                                <p style="margin-top: 4px; font-weight: bold;">Operational Manager</p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+
+            // Eksekusi Konfigurasi Dokumen
+            const namaClean = namaSopirAktif.replace(/[^\w\s]/gi, '').trim().replace(/ /g, "_");
+            const filePeriode = teksPeriode.replace(/ /g, "_");
+            
+            const opsiKonfigurasi = {
+                margin:       [8, 8, 8, 8],
+                filename:     `RITASE_${namaClean}_${filePeriode}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false, letterRendering: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            // PERBAIKAN: Memberikan sedikit jeda waktu (delay) 100ms agar Engine HTML selesai memetakan ukuran kontainer baru sebelum difoto oleh Canvas.
+            setTimeout(() => {
+                html2pdf().set(opsiKonfigurasi).from(wadahCetak).save().then(() => {
+                    wadahCetak.innerHTML = ""; 
+                    wadahCetak.style.display = "none"; // Sembunyikan kembali setelah dicetak
+                }).catch((err) => {
+                    console.error("PDF Render Error:", err);
+                    alert("Gagal melakukan render PDF corporate. Silakan coba kembali.");
+                    wadahCetak.style.display = "none";
+                });
+            }, 100);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

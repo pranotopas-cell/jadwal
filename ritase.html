@@ -38,7 +38,7 @@
             
             <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                 <a href="index.html" class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-zinc-300 min-h-[36px] px-3 py-1.5 rounded-lg transition active:scale-95 cursor-pointer shadow-sm">
-                    <span>🏠</span> HOME
+                    <span></span> HOME
                 </a>
                 <div class="text-xs sm:text-sm font-semibold text-slate-600 bg-slate-100 px-3 py-2 rounded-lg border border-slate-200">
                     Periode: <span id="periode-bulan" class="font-bold">-</span>
@@ -65,7 +65,7 @@
                     </h2>
                     
                     <button id="btn-download-jpg" onclick="downloadJpgPerSopir()" class="hidden flex items-center gap-1 text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-300 px-2.5 py-1 rounded-md transition active:scale-95 cursor-pointer shadow-sm" data-html2canvas-ignore="true">
-                        🖼️ DOWNLOAD JPG
+                        DOWNLOAD
                     </button>
                 </div>
                 
@@ -322,6 +322,15 @@
             clone.style.width = targetElement.offsetWidth + 'px';
             document.body.appendChild(clone);
 
+            // UPDATE JUDUL TABEL DI ATAS SEBELUM DI-DOWNLOAD (Khusus pada Element Kloning)
+            const klonJudulSopir = clone.querySelector('#nama-sopir-terpilih');
+            if (klonJudulSopir) {
+                const teksPeriode = document.getElementById('periode-bulan').innerText;
+                // Mengubah judul menjadi UPPERCASE dan menggabungkan dengan periode bulan saat ini
+                klonJudulSopir.innerText = `${namaSopirAktif.toUpperCase()} - ${teksPeriode.toUpperCase()}`;
+                klonJudulSopir.className = "text-slate-900 uppercase font-extrabold text-sm border-b border-dashed border-slate-400 pb-0.5";
+            }
+
             // Buka batas tinggi scroll area tabel agar semua record terlihat utuh di JPG
             const klonTabelKontainer = clone.querySelector('.overflow-y-auto');
             if (klonTabelKontainer) {
@@ -354,7 +363,7 @@
 
                 document.body.removeChild(clone);
 
-                btnJpg.innerText = "DOWNLOAD JPG";
+                btnJpg.innerText = "DOWNLOAD";
                 btnJpg.disabled = false;
             }).catch(err => {
                 console.error("Gagal membuat gambar:", err);
@@ -364,7 +373,7 @@
                     document.body.removeChild(clone);
                 }
                 
-                btnJpg.innerText = "DOWNLOAD JPG";
+                btnJpg.innerText = "DOWNLOAD";
                 btnJpg.disabled = false;
             });
         }

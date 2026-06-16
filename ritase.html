@@ -65,7 +65,7 @@
                     </h2>
                     
                     <button id="btn-download-jpg" onclick="downloadJpgPerSopir()" class="hidden flex items-center gap-1 text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-300 px-2.5 py-1 rounded-md transition active:scale-95 cursor-pointer shadow-sm" data-html2canvas-ignore="true">
-                        DOWNLOAD
+                        🖼️ DOWNLOAD JPG
                     </button>
                 </div>
                 
@@ -76,7 +76,7 @@
 
                 <div id="konten-detail" class="hidden flex-1 flex flex-col">
                     <div class="bg-slate-800 text-white px-3 py-2.5 rounded-lg mb-3 text-xs font-medium flex justify-between items-center shadow-md">
-                        <span class="tracking-wide">TOTAL RITASE BULAN INI :</span>
+                        <span class="tracking-wide">TOTAL PERJALANAN BULAN INI :</span>
                         <span class="bg-white text-slate-900 px-2.5 py-1 rounded-md font-bold text-sm shadow-sm whitespace-nowrap">
                             <span id="total-ritase">0</span> Ritase
                         </span>
@@ -406,7 +406,7 @@
 
                 document.body.removeChild(clone);
 
-                btnJpg.innerText = "DOWNLOAD";
+                btnJpg.innerText = "🖼️ DOWNLOAD JPG";
                 btnJpg.disabled = false;
             }).catch(err => {
                 console.error("Gagal membuat gambar:", err);
@@ -416,7 +416,7 @@
                     document.body.removeChild(clone);
                 }
                 
-                btnJpg.innerText = " DOWNLOAD";
+                btnJpg.innerText = "🖼️ DOWNLOAD JPG";
                 btnJpg.disabled = false;
             });
         }

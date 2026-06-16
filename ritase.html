@@ -38,7 +38,7 @@
             
             <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                 <a href="index.html" class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-zinc-300 min-h-[36px] px-3 py-1.5 rounded-lg transition active:scale-95 cursor-pointer shadow-sm">
-                    <span></span> HOME
+                    <span>🏠</span> HOME
                 </a>
                 <div class="text-xs sm:text-sm font-semibold text-slate-600 bg-slate-100 px-3 py-2 rounded-lg border border-slate-200">
                     Periode: <span id="periode-bulan" class="font-bold">-</span>
@@ -65,7 +65,7 @@
                     </h2>
                     
                     <button id="btn-download-jpg" onclick="downloadJpgPerSopir()" class="hidden flex items-center gap-1 text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-300 px-2.5 py-1 rounded-md transition active:scale-95 cursor-pointer shadow-sm" data-html2canvas-ignore="true">
-                        DOWNLOAD
+                        🖼️ DOWNLOAD JPG
                     </button>
                 </div>
                 
@@ -301,7 +301,7 @@
             }
         }
 
-        // Fungsi Cetak Gambar Bayangan Latar Belakang (Aman dari oklch & file:// origin lokal)
+        // Fungsi Cetak Gambar Bayangan Latar Belakang (Fix Header Terbalik & Data Terpotong)
         function downloadJpgPerSopir() {
             if (ritaseSopirAktif.length === 0) {
                 alert("Tidak ada data ritase untuk didownload.");
@@ -320,22 +320,30 @@
             clone.style.top = '-9999px';
             clone.style.left = '-9999px';
             clone.style.width = targetElement.offsetWidth + 'px';
+            clone.style.height = 'auto'; // Memaksa klon mengikuti tinggi alami konten
             document.body.appendChild(clone);
 
-            // UPDATE JUDUL TABEL DI ATAS SEBELUM DI-DOWNLOAD (Khusus pada Element Kloning)
+            // UPDATE JUDUL TABEL DI ATAS SEBELUM DI-DOWNLOAD
             const klonJudulSopir = clone.querySelector('#nama-sopir-terpilih');
             if (klonJudulSopir) {
                 const teksPeriode = document.getElementById('periode-bulan').innerText;
-                // Mengubah judul menjadi UPPERCASE dan menggabungkan dengan periode bulan saat ini
                 klonJudulSopir.innerText = `${namaSopirAktif.toUpperCase()} - ${teksPeriode.toUpperCase()}`;
                 klonJudulSopir.className = "text-slate-900 uppercase font-extrabold text-sm border-b border-dashed border-slate-400 pb-0.5";
             }
 
-            // Buka batas tinggi scroll area tabel agar semua record terlihat utuh di JPG
-            const klonTabelKontainer = clone.querySelector('.overflow-y-auto');
+            // FIX UTAMA 1: Bongkar paksa pembatas scroll agar semua baris keluar utuh di gambar
+            const klonTabelKontainer = clone.querySelector('.overflow-x-auto');
             if (klonTabelKontainer) {
                 klonTabelKontainer.style.maxHeight = 'none';
                 klonTabelKontainer.style.overflow = 'visible';
+                klonTabelKontainer.style.height = 'auto';
+            }
+
+            // FIX UTAMA 2: Matikan posisi 'sticky' pada header tabel di gambar klon agar tidak turun ke bawah
+            const klonHeaderTabel = clone.querySelector('thead');
+            if (klonHeaderTabel) {
+                klonHeaderTabel.style.position = 'relative';
+                klonHeaderTabel.classList.remove('sticky', 'top-0');
             }
 
             // Eksekusi html2canvas ramah warna v3
@@ -363,7 +371,7 @@
 
                 document.body.removeChild(clone);
 
-                btnJpg.innerText = "DOWNLOAD";
+                btnJpg.innerText = "🖼️ DOWNLOAD JPG";
                 btnJpg.disabled = false;
             }).catch(err => {
                 console.error("Gagal membuat gambar:", err);
@@ -373,7 +381,7 @@
                     document.body.removeChild(clone);
                 }
                 
-                btnJpg.innerText = "DOWNLOAD";
+                btnJpg.innerText = "🖼️ DOWNLOAD JPG";
                 btnJpg.disabled = false;
             });
         }

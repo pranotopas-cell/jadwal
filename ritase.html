@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ritase Sopir</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
@@ -26,7 +26,7 @@
 </head>
 <body class="bg-zinc-50 font-sans min-h-screen p-2 sm:p-4 flex items-start justify-center antialiased">
 
-    <div class="w-full max-w-7xl bg-white rounded-xl shadow-xs border border-zinc-200 p-3 sm:p-5 my-1 sm:my-4">
+    <div class="w-full max-w-7xl bg-white rounded-xl shadow-sm border border-zinc-200 p-3 sm:p-5 my-1 sm:my-4">
         
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-100 pb-3 mb-4 gap-2.5">
             <div class="flex items-center gap-2">
@@ -37,7 +37,7 @@
             </div>
             
             <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-                <a href="index.html" class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-zinc-300 min-h-[36px] px-3 py-1.5 rounded-lg transition active:scale-95 cursor-pointer shadow-xs">
+                <a href="index.html" class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-zinc-300 min-h-[36px] px-3 py-1.5 rounded-lg transition active:scale-95 cursor-pointer shadow-sm">
                     <span>🏠</span> HOME
                 </a>
                 <div class="text-xs sm:text-sm font-semibold text-slate-600 bg-slate-100 px-3 py-2 rounded-lg border border-slate-200">
@@ -64,12 +64,12 @@
                         Detail Ritase: <span id="nama-sopir-terpilih" class="text-slate-900 normal-case font-extrabold text-sm border-b border-dashed border-slate-400 pb-0.5">-</span>
                     </h2>
                     
-                    <button id="btn-download-jpg" onclick="downloadJpgPerSopir()" class="hidden flex items-center gap-1 text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-300 px-2.5 py-1 rounded-md transition active:scale-95 cursor-pointer shadow-2xs" data-html2canvas-ignore="true">
+                    <button id="btn-download-jpg" onclick="downloadJpgPerSopir()" class="hidden flex items-center gap-1 text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-300 px-2.5 py-1 rounded-md transition active:scale-95 cursor-pointer shadow-sm" data-html2canvas-ignore="true">
                         🖼️ DOWNLOAD JPG
                     </button>
                 </div>
                 
-                <div id="placeholder-detail" class="text-zinc-400 italic text-xs text-center my-auto py-12 px-4">
+                <div id="placeholder-detail" class="text-zinc-400 italic text-xs text-center my-auto py-12 px-4" data-html2canvas-ignore="true">
                     <span class="text-2xl block mb-2">👆</span>
                     Pilih nama sopir di atas terlebih dahulu untuk melihat rincian ritase bulan ini.
                 </div>
@@ -77,14 +77,14 @@
                 <div id="konten-detail" class="hidden flex-1 flex flex-col">
                     <div class="bg-slate-800 text-white px-3 py-2.5 rounded-lg mb-3 text-xs font-medium flex justify-between items-center shadow-md">
                         <span class="tracking-wide">TOTAL PERJALANAN BULAN INI :</span>
-                        <span class="bg-white text-slate-900 px-2.5 py-1 rounded-md font-bold text-sm shadow-xs whitespace-nowrap">
+                        <span class="bg-white text-slate-900 px-2.5 py-1 rounded-md font-bold text-sm shadow-sm whitespace-nowrap">
                             <span id="total-ritase">0</span> Ritase
                         </span>
                     </div>
 
-                    <div class="overflow-x-auto flex-1 max-h-[320px] md:max-h-[380px] overflow-y-auto border border-zinc-200 rounded-lg bg-white custom-scroll shadow-2xs">
+                    <div class="overflow-x-auto flex-1 max-h-[320px] md:max-h-[380px] overflow-y-auto border border-zinc-200 rounded-lg bg-white custom-scroll shadow-sm">
                         <table class="min-w-full divide-y divide-zinc-200 table-fixed sm:table-auto">
-                            <thead class="bg-slate-100 sticky top-0 z-10 shadow-xs">
+                            <thead class="bg-slate-100 sticky top-0 z-10 shadow-sm">
                                 <tr class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                                     <th class="py-2.5 px-2.5 text-left w-10 bg-slate-100">No</th>
                                     <th class="py-2.5 px-2 text-left w-24 bg-slate-100">Tanggal</th>
@@ -130,8 +130,8 @@
         async function init() {
             try {
                 const sekarang = new Date();
-                const tahun = machinedTahun = sekarang.getFullYear();
-                const bulan = sekarang.getMonth(); 
+                const tahun = sekarang.getFullYear();
+                const bulan = machinedBulan = sekarang.getMonth(); 
 
                 const tanggalMulai = new Date(tahun, bulan, 1).toISOString().split('T')[0] + 'T00:00:00';
                 const tanggalSelesai = new Date(tahun, bulan + 1, 0).toISOString().split('T')[0] + 'T23:59:59';
@@ -216,7 +216,7 @@
                     const isUnitLuar = nama === "🚚 UNIT LUAR";
                     const iconSopir = isUnitLuar ? "" : "👤 ";
                     const kelasWarnaTombol = isUnitLuar 
-                        ? "bg-amber-50 hover:bg-amber-100/80 border-amber-300 text-amber-900" 
+                        ? "bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900" 
                         : "bg-white hover:bg-slate-100 border-zinc-200 text-zinc-700";
 
                     const li = document.createElement('li');
@@ -276,8 +276,10 @@
                     kelasWarnaStatus = "text-blue-700 font-semibold bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-200/60";
                 }
 
+                const kelasZebra = (index % 2 === 0) ? "bg-white" : "bg-zinc-50/50";
+
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-zinc-50/80 transition-colors odd:bg-white even:bg-zinc-50/30";
+                tr.className = `hover:bg-zinc-50 transition-colors ${kelasZebra}`;
                 tr.innerHTML = `
                     <td class="py-2.5 px-2.5 font-medium text-zinc-400 text-center">${index + 1}</td>
                     <td class="py-2.5 px-2 whitespace-nowrap font-medium text-zinc-700">${tglFormat}</td>
@@ -299,7 +301,7 @@
             }
         }
 
-        // Fungsi Logika Cetak JPG Menggunakan Metode Kloning Latar Belakang (Anti Gagal & Potong)
+        // Fungsi Cetak Gambar Bayangan Latar Belakang (Aman dari oklch & file:// origin lokal)
         function downloadJpgPerSopir() {
             if (ritaseSopirAktif.length === 0) {
                 alert("Tidak ada data ritase untuk didownload.");
@@ -312,25 +314,26 @@
             btnJpg.innerText = "⏳ PROSES...";
             btnJpg.disabled = true;
 
-            // Membuat salinan bayangan kontainer tabel agar data terpotong penuh
+            // Kloning elemen rahasia
             const clone = targetElement.cloneNode(true);
-            
             clone.style.position = 'absolute';
             clone.style.top = '-9999px';
             clone.style.left = '-9999px';
             clone.style.width = targetElement.offsetWidth + 'px';
             document.body.appendChild(clone);
 
-            // Buka batasan tinggi scroll maks pada element bayangan
+            // Buka batas tinggi scroll area tabel agar semua record terlihat utuh di JPG
             const klonTabelKontainer = clone.querySelector('.overflow-y-auto');
             if (klonTabelKontainer) {
                 klonTabelKontainer.style.maxHeight = 'none';
                 klonTabelKontainer.style.overflow = 'visible';
             }
 
+            // Eksekusi html2canvas ramah warna v3
             html2canvas(clone, {
                 scale: 2, 
                 useCORS: true,
+                allowTaint: true,       // Bypass origin lokal agar aman dibuka tanpa server (file:///)
                 logging: false,
                 backgroundColor: "#f4f4f5",
                 windowWidth: targetElement.scrollWidth,
@@ -351,17 +354,17 @@
 
                 document.body.removeChild(clone);
 
-                btnJpg.innerText = "🖼️ DOWNLOAD JPG";
+                btnJpg.innerText = "DOWNLOAD JPG";
                 btnJpg.disabled = false;
             }).catch(err => {
                 console.error("Gagal membuat gambar:", err);
-                alert("Terjadi kesalahan teknis saat memproses gambar.");
+                alert("Gagal memproses gambar.");
                 
                 if (document.body.contains(clone)) {
                     document.body.removeChild(clone);
                 }
                 
-                btnJpg.innerText = "🖼️ DOWNLOAD JPG";
+                btnJpg.innerText = "DOWNLOAD JPG";
                 btnJpg.disabled = false;
             });
         }

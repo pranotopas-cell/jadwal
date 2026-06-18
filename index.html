@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -194,7 +194,7 @@
         window.saveToFirebase = async function(sopir, data) {
             if (!sopir) return;
             try {
-                await setDoc(doc(dbFirestore, "tracking_unit", sopir.trim()), data, { merge: true });
+                await setDoc(doc(dbFirestore, "tracking_unit", sopir), data, { merge: true });
                 console.log("Berhasil sinkronisasi ke Firebase Firestore untuk Sopir: " + sopir);
             } catch (e) {
                 console.error("Gagal menyimpan ke Firebase: ", e);
@@ -203,6 +203,7 @@
     </script>
 
     <script>
+        // Inisialisasi Supabase Client via Global Variable Window scope agar terbaca di fungsi manapun
         const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
         const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -223,7 +224,6 @@
         let isFetching = false;
         let currentActiveJob = null; 
         let gpsBackupInterval = null;
-        let realtimeChannel = null;
 
         function getWIB() {
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
@@ -298,7 +298,6 @@
                 
                 alert(`Login Berhasil!\nSelamat Datang, ${namaTerverifikasi}`);
                 updateHeaderStatus();
-                initRealtimeSubscription(); // Jalankan realtime setelah sukses login
                 return true;
             } else {
                 alert("Nomor HP tidak terdaftar!");
@@ -312,14 +311,12 @@
             if (!loginNama) return; 
 
             if (confirm(`Apakah Anda yakin ingin Keluar (Log Out) dari akun ${loginNama}?\n`)) {
-                try {
-                    await _supabase.from('tracking_unit').delete().eq('sopir', loginNama);
-                } catch(e) { console.error(e); }
-
-                localStorage.clear(); // Bersihkan seluruh session token lokal aman
+                await _supabase.from('tracking_unit').delete().eq('sopir', loginNama);
+                localStorage.removeItem('login_sopir_nama');
+                localStorage.removeItem('login_sopir_phone');
+                localStorage.removeItem('active_tracking_job'); 
                 if (watchId) navigator.geolocation.clearWatch(watchId);
                 if (gpsBackupInterval) clearInterval(gpsBackupInterval);
-                if (realtimeChannel) _supabase.removeChannel(realtimeChannel);
                 
                 alert("Anda berhasil Log Out!");
                 window.location.reload();
@@ -482,6 +479,7 @@
                         status: 'ON_JOB', 
                         last_update: updateTime
                     });
+                    console.log("Firebase Diperbarui via Watch:", coords.latitude, coords.longitude);
                 }
             }
 
@@ -530,16 +528,14 @@
 
                 if (errStatus) return alert("Gagal update : " + errStatus.message);
                 
-                if (window.saveToFirebase) {
-                    await window.saveToFirebase(currentDriver, {
-                        nopol: nopol || '-',
-                        lat: latitude,
-                        lon: longitude,
-                        tujuan: tujuan || '-',
-                        status: 'ON_JOB',
-                        last_update: updateTime
-                    });
-                }
+                await window.saveToFirebase(currentDriver, {
+                    nopol: nopol,
+                    lat: latitude,
+                    lon: longitude,
+                    tujuan: tujuan,
+                    status: 'ON_JOB',
+                    last_update: updateTime
+                });
 
                 tampilkanNotifikasiKilat("✅ Sukses... Hati-Hati di Jalan Bolo..."); 
                 eksekusiMulaiGpsWatch(nopol, tujuan);
@@ -562,40 +558,19 @@
             const currentDriver = localStorage.getItem('login_sopir_nama');
 
             const skrg = getWIB();
-            
-            const jam = String(skrg.getHours()).padStart(2, '0');
-            const menit = String(skrg.getMinutes()).padStart(2, '0');
-            const tgl = String(skrg.getDate()).padStart(2, '0');
-            const bln = String(skrg.getMonth() + 1).padStart(2, '0');
-            
-            const statusTerbaru = `DELIVERED (${tgl}/${bln} ${jam}:${menit})`;
+            const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
 
-            try {
-                const { error } = await _supabase
-                    .from('data_pengiriman')
-                    .update({ status: statusTerbaru })
-                    .eq('id', rowId);
+            await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
 
-                if (error) {
-                    alert("Gagal memperbarui status ke database: " + error.message);
-                    return;
-                }
-
-                if (window.saveToFirebase) {
-                    await window.saveToFirebase(currentDriver, {
-                        status: 'LOGIN_ACTIVE',
-                        last_update: skrg.toISOString()
-                    });
-                }
-                
-                tampilkanNotifikasiKilat("✅ Tugas Selesai Bolo, Terima Kasih!");
-                loadDashboard();
-
-            } catch (err) {
-                console.error("Error sistem:", err);
-                alert("Terjadi kesalahan sistem saat klik DONE.");
+            if (window.saveToFirebase) {
+                await window.saveToFirebase(currentDriver, {
+                    status: 'LOGIN_ACTIVE',
+                    last_update: skrg.toISOString()
+                });
             }
-        } 
+            
+            loadDashboard();
+        }
 
         function tampilkanNotifikasiKilat(pesan, bgColor = '#28a745') {
             const toast = document.createElement('div');
@@ -619,7 +594,9 @@
 
             document.body.appendChild(toast);
 
-            setTimeout(() => { toast.remove(); }, 3000);
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
         }
 
         function cekSesiGantungMatiLayar() {
@@ -630,48 +607,10 @@
             }
         }
 
-        // Fungsi Pembersihan & Inisialisasi Realtime Supabase Baru (Mencegah Kebocoran Memori)
-        function initRealtimeSubscription() {
-            if (realtimeChannel) _supabase.removeChannel(realtimeChannel);
-
-            realtimeChannel = _supabase.channel('db-changes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, (payload) => {
-                    const loginNama = localStorage.getItem('login_sopir_nama');
-                    
-                    if (payload.eventType === 'UPDATE' && loginNama) {
-                        const dataBaru = payload.new;
-                        if (dataBaru.sopir && 
-                            dataBaru.sopir.toUpperCase().trim().includes(loginNama.toUpperCase().trim()) && 
-                            dataBaru.status.toUpperCase().includes("DELIVERED")) {
-                            
-                            const backupJob = localStorage.getItem('active_tracking_job');
-                            if (backupJob) {
-                                if (watchId) navigator.geolocation.clearWatch(watchId);
-                                if (gpsBackupInterval) clearInterval(gpsBackupInterval);
-                                
-                                currentActiveJob = null;
-                                localStorage.removeItem('active_tracking_job');
-
-                                if (window.saveToFirebase) {
-                                    window.saveToFirebase(loginNama, {
-                                        status: 'LOGIN_ACTIVE',
-                                        last_update: new Date().toISOString()
-                                    });
-                                }
-                                tampilkanNotifikasiKilat("🔔 Tugas Anda telah diselesaikan oleh Admin.", "#17a2b8");
-                            }
-                        }
-                    }
-                    loadDashboard();
-                })
-                .subscribe();
-        }
-
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
-                initRealtimeSubscription();
+                _supabase.channel('db-changes').subscribe();
                 cekSesiGantungMatiLayar();
-                loadDashboard();
             }
         });
 
@@ -680,11 +619,43 @@
             setInterval(() => { clockEl.innerText = getWIB().toLocaleTimeString('id-ID', { hour12: false }); }, 1000);
         }
 
+        _supabase.channel('db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, (payload) => {
+                const loginNama = localStorage.getItem('login_sopir_nama');
+                
+                if (payload.eventType === 'UPDATE' && loginNama) {
+                    const dataBaru = payload.new;
+                    if (dataBaru.sopir && 
+                        dataBaru.sopir.toUpperCase().trim().includes(loginNama.toUpperCase().trim()) && 
+                        dataBaru.status.toUpperCase().includes("DELIVERED")) {
+                        
+                        const backupJob = localStorage.getItem('active_tracking_job');
+                        if (backupJob) {
+                            if (watchId) navigator.geolocation.clearWatch(watchId);
+                            if (gpsBackupInterval) clearInterval(gpsBackupInterval);
+                            
+                            currentActiveJob = null;
+                            localStorage.removeItem('active_tracking_job');
+
+                            if (window.saveToFirebase) {
+                                window.saveToFirebase(loginNama, {
+                                    status: 'LOGIN_ACTIVE',
+                                    last_update: new Date().toISOString()
+                                });
+                            }
+                            tampilkanNotifikasiKilat("🔔 Tugas Anda telah diselesaikan oleh Admin.", "#17a2b8");
+                        }
+                    }
+                }
+                loadDashboard();
+            })
+            .subscribe();
+
+        // Jalankan dashboard utama setelah window selesai memuat komponen internal
         window.addEventListener('load', () => {
             loadDashboard();
-            initRealtimeSubscription();
-            setInterval(loadDashboard, 45000); // Diubah ke 45 detik agar menghemat limit kuota pembacaan API Supabase
+            setInterval(loadDashboard, 30000);
         });
     </script>
 </body>
-</html>
+</html>      

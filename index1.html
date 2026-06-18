@@ -191,6 +191,7 @@
         const app = initializeApp(firebaseConfig);
         const dbFirestore = getFirestore(app);
 
+        // Pasang ke window object agar skrip reguler di bawah bisa memanggil fungsi ini
         window.saveToFirebase = async function(sopir, data) {
             if (!sopir) return;
             try {
@@ -203,7 +204,6 @@
     </script>
 
     <script>
-        // Inisialisasi Supabase Client via Global Variable Window scope agar terbaca di fungsi manapun
         const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
         const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -521,6 +521,7 @@
                 const longitude = posAwal.coords.longitude;
                 const updateTime = new Date().toISOString();
 
+                // 1. UPDATE STATUS DI SUPABASE MENJADI 'PROSES'
                 const { error: errStatus } = await _supabase.from('data_pengiriman').update({ 
                     status: 'PROSES',
                     sopir: sopirDiJadwal 
@@ -528,14 +529,17 @@
 
                 if (errStatus) return alert("Gagal update : " + errStatus.message);
                 
-                await window.saveToFirebase(currentDriver, {
-                    nopol: nopol,
-                    lat: latitude,
-                    lon: longitude,
-                    tujuan: tujuan,
-                    status: 'ON_JOB',
-                    last_update: updateTime
-                });
+                // 2. SINKRONISASI KE FIREBASE MENJADI STATUS 'ON_JOB' LENGKAP LAT & LON
+                if (window.saveToFirebase) {
+                    await window.saveToFirebase(currentDriver, {
+                        nopol: nopol || '-',
+                        lat: latitude,
+                        lon: longitude,
+                        tujuan: tujuan || '-',
+                        status: 'ON_JOB',
+                        last_update: updateTime
+                    });
+                }
 
                 tampilkanNotifikasiKilat("✅ Sukses... Hati-Hati di Jalan Bolo..."); 
                 eksekusiMulaiGpsWatch(nopol, tujuan);
@@ -550,6 +554,7 @@
             if (!verifikasiHakAksesSopir(sopir)) return;
             if (!confirm("Tugas Selesai?")) return;
             
+            // 1. MATIKAN PELACAKAN GPS / TRACKING YANG SEDANG BERJALAN
             if (watchId) navigator.geolocation.clearWatch(watchId);
             if (gpsBackupInterval) clearInterval(gpsBackupInterval); 
             
@@ -560,8 +565,10 @@
             const skrg = getWIB();
             const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
 
+            // 2. UPDATE STATUS DI SUPABASE MENJADI DELIVERED + WAKTU
             await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
 
+            // 3. SINKRONISASI KE FIREBASE MENJADI 'LOGIN_ACTIVE' (BERHENTI ON_JOB)
             if (window.saveToFirebase) {
                 await window.saveToFirebase(currentDriver, {
                     status: 'LOGIN_ACTIVE',
@@ -569,6 +576,7 @@
                 });
             }
             
+            tampilkanNotifikasiKilat("✅ Tugas Selesai Bolo, Terima Kasih!");
             loadDashboard();
         }
 
@@ -651,7 +659,6 @@
             })
             .subscribe();
 
-        // Jalankan dashboard utama setelah window selesai memuat komponen internal
         window.addEventListener('load', () => {
             loadDashboard();
             setInterval(loadDashboard, 30000);

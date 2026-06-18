@@ -512,14 +512,13 @@
             tampilkanNotifikasiKilat(` 🛇 STOP! Jadwal ini milik ${sopirDiJadwal.toUpperCase()}.\nAnda (${currentDriver.toUpperCase()}) Hubungi Admin Bolo....`, "#ff5252");
             return;
         }
-
-        if (!confirm(`Mulai perjalanan ${nopol}?`)) return;
         
         if (!navigator.geolocation) {
             alert("HP Anda tidak mendukung GPS.");
             return;
         }
 
+        // POP-UP CONFIRM SUDAH DIHILANGKAN, LANGSUNG EKSEKUSI DI BAWAH INI:
         navigator.geolocation.getCurrentPosition(async (posAwal) => {
             const latitude = posAwal.coords.latitude;
             const longitude = posAwal.coords.longitude;
@@ -541,7 +540,7 @@
                 last_update: updateTime
             });
 
-            tampilkanNotifikasiKilat("✅ Sukses... Hati-Hati di Jalan Bolo..."); 
+            tampilkanNotifikasiKilat("✅ SUKSES..HATI HATI DI JALAN BANG"); 
             eksekusiMulaiGpsWatch(nopol, tujuan);
             loadDashboard(); 
 
@@ -576,7 +575,7 @@
         }
         
         // Notifikasi langsung tanpa pop-up konfirmasi
-        tampilkanNotifikasiKilat("🚀 Pengiriman sampai lokasi", "#28a745");
+        tampilkanNotifikasiKilat("SUKSES SAMPAI TUJUAN", "#28a745");
         loadDashboard();
     }
 

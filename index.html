@@ -328,13 +328,13 @@
         }
     }
 
-    // --- DIUBAH: LOGIKA PEMISAH KOMA UNTUK HAK AKSES ---
+    // --- PERBAIKAN: LOGIKA VERIFIKASI YANG LEBIH AMAN ---
     function verifikasiHakAksesSopir(sopirDariDb) {
         const loginNama = localStorage.getItem('login_sopir_nama');
         if (!loginNama || !sopirDariDb) return false;
 
         const namaLoginBersih = loginNama.toUpperCase().trim();
-        // Memecah string nama di DB berdasarkan koma, lalu membersihkan space kiri-kanan tiap nama
+        // Memecah string nama di DB berdasarkan koma, lalu di-trim dan di-uppercase
         const daftarSopir = sopirDariDb.toUpperCase().split(',').map(nama => nama.trim());
 
         if (daftarSopir.includes(namaLoginBersih)) {
@@ -343,6 +343,45 @@
             tampilkanNotifikasiKilat("🚫 STOP !! Jadwal Ini Tidak Sesuai Nama Anda", "#ff5252");
             return false;
         }
+    }
+
+    async function finishJob(nopol, rowId, sopir) {
+        // Pengecekan hak akses sopir
+        if (!verifikasiHakAksesSopir(sopir)) return;
+        
+        if (!confirm("Tugas Selesai?")) return;
+        
+        // BERSIHKAN TRACKING INTERNAL HP
+        if (watchId) navigator.geolocation.clearWatch(watchId);
+        if (gpsBackupInterval) clearInterval(gpsBackupInterval); 
+        
+        currentActiveJob = null;
+        localStorage.removeItem('active_tracking_job');
+        const currentDriver = localStorage.getItem('login_sopir_nama');
+
+        const skrg = getWIB();
+        const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
+
+        // 1. Update status pengiriman di Supabase jadi DELIVERED beserta jamnya
+        const { error: errFinish } = await _supabase.from('data_pengiriman').update({ 
+            status: `DELIVERED\n(${fmtWaktu})` 
+        }).eq('id', rowId);
+        
+        if (errFinish) {
+            alert("Gagal menyelesaikan job di Supabase: " + errFinish.message);
+            return;
+        }
+        
+        // 2. Kembalikan status di Firebase menjadi LOGIN_ACTIVE kembali
+        if (window.saveToFirebase) {
+            window.saveToFirebase(currentDriver, {
+                status: 'LOGIN_ACTIVE',
+                last_update: skrg.toISOString()
+            });
+        }
+        
+        tampilkanNotifikasiKilat("✅ Tugas Selesai! Terima Kasih Bolo...");
+        loadDashboard();
     }
 
     async function loadDashboard() {

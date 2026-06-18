@@ -550,35 +550,58 @@
             }, { enableHighAccuracy: true, timeout: 15000 });
         }
 
-        async function finishJob(nopol, rowId, sopir) {
-            if (!verifikasiHakAksesSopir(sopir)) return;
-            if (!confirm("Tugas Selesai?")) return;
-            
-            // 1. MATIKAN PELACAKAN GPS / TRACKING YANG SEDANG BERJALAN
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-            if (gpsBackupInterval) clearInterval(gpsBackupInterval); 
-            
-            currentActiveJob = null;
-            localStorage.removeItem('active_tracking_job');
-            const currentDriver = localStorage.getItem('login_sopir_nama');
+       async function finishJob(nopol, rowId, sopir) {
+    if (!verifikasiHakAksesSopir(sopir)) return;
+    if (!confirm("Tugas Selesai?")) return;
+    
+    // 1. MATIKAN PELACAKAN GPS / TRACKING YANG SEDANG BERJALAN
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    if (gpsBackupInterval) clearInterval(gpsBackupInterval); 
+    
+    currentActiveJob = null;
+    localStorage.removeItem('active_tracking_job');
+    const currentDriver = localStorage.getItem('login_sopir_nama');
 
-            const skrg = getWIB();
-            const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
+    const skrg = getWIB();
+    
+    // FORMAT BARU: Membuat jam menit aman tanpa karakter aneh (Contoh hasil: 17:15)
+    const jam = String(skrg.getHours()).padStart(2, '0');
+    const menit = String(skrg.getMinutes()).padStart(2, '0');
+    const tgl = String(skrg.getDate()).padStart(2, '0');
+    const bln = String(skrg.getMonth() + 1).padStart(2, '0');
+    
+    // Gabungkan menjadi satu baris teks lurus tanpa \n (pindah baris)
+    const statusTerbaru = `DELIVERED (${tgl}/${bln} ${jam}:${menit})`;
 
-            // 2. UPDATE STATUS DI SUPABASE MENJADI DELIVERED + WAKTU
-            await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
+    try {
+        // 2. UPDATE STATUS DI SUPABASE
+        const { error } = await _supabase
+            .from('data_pengiriman')
+            .update({ status: statusTerbaru })
+            .eq('id', rowId);
 
-            // 3. SINKRONISASI KE FIREBASE MENJADI 'LOGIN_ACTIVE' (BERHENTI ON_JOB)
-            if (window.saveToFirebase) {
-                await window.saveToFirebase(currentDriver, {
-                    status: 'LOGIN_ACTIVE',
-                    last_update: skrg.toISOString()
-                });
-            }
-            
-            tampilkanNotifikasiKilat("✅ Tugas Selesai Bolo, Terima Kasih!");
-            loadDashboard();
+        if (error) {
+            console.error("Gagal update Supabase:", error.message);
+            alert("Gagal memperbarui status ke database: " + error.message);
+            return;
         }
+
+        // 3. SINKRONISASI KE FIREBASE MENJADI 'LOGIN_ACTIVE' (BERHENTI ON_JOB)
+        if (window.saveToFirebase) {
+            await window.saveToFirebase(currentDriver, {
+                status: 'LOGIN_ACTIVE',
+                last_update: skrg.toISOString()
+            });
+        }
+        
+        tampilkanNotifikasiKilat("✅ Tugas Selesai Bolo, Terima Kasih!");
+        loadDashboard();
+
+    } catch (err) {
+        console.error("Error sistem:", err);
+        alert("Terjadi kesalahan sistem saat klik DONE.");
+    }
+} 
 
         function tampilkanNotifikasiKilat(pesan, bgColor = '#28a745') {
             const toast = document.createElement('div');

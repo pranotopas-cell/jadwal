@@ -328,11 +328,16 @@
         }
     }
 
+    // --- DIUBAH: LOGIKA PEMISAH KOMA UNTUK HAK AKSES ---
     function verifikasiHakAksesSopir(sopirDariDb) {
         const loginNama = localStorage.getItem('login_sopir_nama');
-        if (!loginNama) return false;
+        if (!loginNama || !sopirDariDb) return false;
 
-        if (sopirDariDb.toUpperCase().trim().includes(loginNama.toUpperCase().trim())) {
+        const namaLoginBersih = loginNama.toUpperCase().trim();
+        // Memecah string nama di DB berdasarkan koma, lalu membersihkan space kiri-kanan tiap nama
+        const daftarSopir = sopirDariDb.toUpperCase().split(',').map(nama => nama.trim());
+
+        if (daftarSopir.includes(namaLoginBersih)) {
             return true;
         } else {
             tampilkanNotifikasiKilat("🚫 STOP !! Jadwal Ini Tidak Sesuai Nama Anda", "#ff5252");
@@ -414,8 +419,8 @@
                 statusClass = "st-delivered";
                 actionBtn = `<span style="font-size:10px; color:#fff; font-weight:bold;"><i class="fas fa-check-circle"></i> SELESAI</span>`;
             } else if (isDataLengkap && (statusRaw.includes("LANGSIRAN") || statusRaw.includes("NGISI") || statusRaw.includes("OPER") || statusRaw.includes("TERJADWAL"))) {
-                if (statusRaw.includes("LANGSIRAN")) statusClass = "st-langsir";
-                else if (statusRaw.includes("NGISI")) statusClass = "st-ngisi";
+                statusClass = "st-langsir";
+                if (statusRaw.includes("NGISI")) statusClass = "st-ngisi";
                 else if (statusRaw.includes("OPER")) statusClass = "st-oper";
                 actionBtn = `<button class="btn-job btn-ambil" onclick="takeJob('${row.nopol}', '${row.id}', '${row.sopir}', '${row.delivery_to}')">AMBIL JOB</button>`;
             } else {
@@ -508,12 +513,17 @@
         }, 20000); 
     }
         
+    // --- DIUBAH: LOGIKA PEMISAH KOMA SAAT TAKE JOB ---
     async function takeJob(nopol, rowId, sopirDiJadwal, tujuan) {
         const currentDriver = localStorage.getItem('login_sopir_nama'); 
         if (!currentDriver) return alert("Sesi login habis, silakan login ulang.");
 
-        if (!sopirDiJadwal || sopirDiJadwal.toUpperCase().trim() !== currentDriver.toUpperCase().trim()) {
-            tampilkanNotifikasiKilat(` 🛇 STOP! Jadwal ini milik ${sopirDiJadwal.toUpperCase()}.\nAnda (${currentDriver.toUpperCase()}) Hubungi Admin Bolo....`, "#ff5252");
+        const namaLoginBersih = currentDriver.toUpperCase().trim();
+        // Memecah string nama di jadwal berdasarkan koma untuk mendeteksi Sopir Utama / Helper
+        const daftarSopir = (sopirDiJadwal || "").toUpperCase().split(',').map(nama => nama.trim());
+
+        if (!sopirDiJadwal || !daftarSopir.includes(namaLoginBersih)) {
+            tampilkanNotifikasiKilat(` 🛇 STOP! Jadwal ini milik ${sopirDiJadwal.toUpperCase()}.\nAnda (${namaLoginBersih}) Hubungi Admin Bolo....`, "#ff5252");
             return;
         }
 
@@ -530,6 +540,7 @@
             const updateTime = new Date().toISOString();
 
             // 1. UPDATE DATA PENGIRIMAN DI SUPABASE (Status berubah jadi PROSES)
+            // Mengubah nama kolom sopir di database menjadi orang spesifik yang memegang HP saat klik AMBIL JOB
             const { error: errStatus } = await _supabase.from('data_pengiriman').update({ 
                 status: 'PROSES',
                 sopir: currentDriver 
@@ -537,8 +548,6 @@
 
             if (errStatus) return alert("Gagal update : " + errStatus.message);
             
-            // Catatan: Sesuai request, tabel tracking_unit di Supabase TIDAK diubah ke ON_JOB (tetap LOGIN_ACTIVE)
-
             // 2. KILAT SINKRONISASI KE FIREBASE (Koordinat & ON_JOB masuk sini)
             await saveToFirebase(currentDriver, {
                 nopol: nopol,
@@ -577,8 +586,6 @@
         // 1. Update status pengiriman di Supabase jadi DELIVERED beserta jamnya
         await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
         
-        // Catatan: Status Supabase tracking_unit diabaikan karena bawaannya sudah LOGIN_ACTIVE dari awal
-
         // 2. Kembalikan status di Firebase menjadi LOGIN_ACTIVE kembali
         if (window.saveToFirebase) {
             window.saveToFirebase(currentDriver, {
@@ -640,19 +647,23 @@
     }
 
     // --- INTERSEPTOR REAL-TIME (PENGAMAN JIKA SOPIR LUPA CLICK DONE) ---
+    // --- DIUBAH: MENERAPKAN LOGIKA PEMISAH KOMA PADA LISTENER SUPABASE ---
     _supabase.channel('db-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, (payload) => {
             const loginNama = localStorage.getItem('login_sopir_nama');
             
-            // Logika Deteksi Perubahan Status Menjadi DELIVERED oleh Admin
             if (payload.eventType === 'UPDATE' && loginNama) {
                 const dataBaru = payload.new;
+                
+                // Pecah data sopir dari payload Supabase berdasarkan koma
+                const daftarSopirPayload = (dataBaru.sopir || "").toUpperCase().split(',').map(nama => nama.trim());
+                const namaLoginBersih = loginNama.toUpperCase().trim();
+
                 if (dataBaru.sopir && 
-                    dataBaru.sopir.toUpperCase().trim() === loginNama.toUpperCase().trim() && 
+                    daftarSopirPayload.includes(namaLoginBersih) && 
                     dataBaru.status.toUpperCase().includes("DELIVERED")) {
                     
                     const backupJob = localStorage.getItem('active_tracking_job');
-                    // Jika di HP sopir tracking-nya masih running (Sopir lupa klik DONE)
                     if (backupJob) {
                         console.log("⚠️ Admin menembak status DELIVERED. Mematikan pelacak GPS secara otomatis...");
                         
@@ -662,7 +673,6 @@
                         currentActiveJob = null;
                         localStorage.removeItem('active_tracking_job');
 
-                        // Paksa status Firebase kembali menjadi standby (LOGIN_ACTIVE)
                         if (window.saveToFirebase) {
                             window.saveToFirebase(loginNama, {
                                 status: 'LOGIN_ACTIVE',

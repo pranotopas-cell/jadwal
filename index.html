@@ -568,11 +568,13 @@
 
         // Update status di Firebase
         if (window.saveToFirebase) {
-            await window.saveToFirebase(currentDriver, {
-                status: 'LOGIN_ACTIVE',
-                last_update: skrg.toISOString()
-            });
-        }
+           await window.saveToFirebase(currentDriver, {
+           nopol: "-",            // Reset nopol agar tidak menggantung
+           tujuan: "-",           // Reset tujuan agar tidak menggantung
+           status: 'LOGIN_ACTIVE',
+           last_update: skrg.toISOString()
+       });
+   }
         
         // Notifikasi langsung tanpa pop-up konfirmasi
         tampilkanNotifikasiKilat("SUKSES SAMPAI LOKASI TUJUAN", "#28a745");
@@ -606,13 +608,43 @@
         }, 3000);
     }
 
-    function cekSesiGantungMatiLayar() {
-        const backupJob = localStorage.getItem('active_tracking_job');
+    async function cekSesiGantungMatiLayar() {
+      const backupJob = localStorage.getItem('active_tracking_job');
         if (backupJob) {
-            const dataJob = JSON.parse(backupJob);
-            eksekusiMulaiGpsWatch(dataJob.nopol, dataJob.tujuan);
+        const dataJob = JSON.parse(backupJob);
+        const loginNama = localStorage.getItem('login_sopir_nama');
+
+        // Validasi langsung ke Supabase: Apakah sopir ini benar-benar masih punya job PROSES?
+        const { data: cekJobAktif } = await _supabase
+            .from('data_pengiriman')
+            .select('status')
+            .eq('sopir', loginNama)
+            .eq('status', 'PROSES')
+            .maybeSingle();
+
+        // Jika di Supabase ternyata statusnya SUDAH BUKAN PROSES (sudah Delivered/ditakeover)
+        if (!cekJobAktif) {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            if (gpsBackupInterval) clearInterval(gpsBackupInterval);
+            
+            currentActiveJob = null;
+            localStorage.removeItem('active_tracking_job');
+
+            if (window.saveToFirebase) {
+                window.saveToFirebase(loginNama, {
+                    nopol: "-",
+                    tujuan: "-",
+                    status: 'LOGIN_ACTIVE',
+                    last_update: new Date().toISOString()
+                });
+            }
+            return; // Hentikan logic pelacakan karena job sudah beres
         }
+
+        // Jika memang valid masih PROSES, silakan jalankan tracking
+        eksekusiMulaiGpsWatch(dataJob.nopol, dataJob.tujuan);
     }
+}
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {

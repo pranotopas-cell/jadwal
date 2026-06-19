@@ -242,7 +242,7 @@
             if (loginNama) {
                 statusEl.innerHTML = `● ${loginNama}<span style="background:#ff5252; color:#fff; padding:2px 5px; border-radius:3px; font-size:9px; margin-left:4px; font-weight:800; cursor:pointer;" onclick="mintaLogout()">LOGOUT</span>`;
             } else {
-                statusEl.innerHTML = `● GPS SYSTEM ACTIVE`;
+                statusEl.innerHTML = `● GPS ACTIVE`;
             }
             statusEl.style.color = "#66bb6a";
         }
@@ -332,7 +332,7 @@
         if (sopirDariDb && sopirDariDb.toUpperCase().trim().includes(loginNama.toUpperCase().trim())) {
             return true;
         } else {
-            tampilkanNotifikasiKilat("🚫 STOP !! Jadwal Ini Tidak Sesuai Nama Anda", "#ff5252");
+            tampilkanNotifikasiKilat("🚫 STOP !! ANDA SALAH NAMA", "#ff5252");
             return false;
         }
     }
@@ -509,7 +509,7 @@
         if (!currentDriver) return alert("Sesi login habis, silakan login ulang.");
 
         if (!sopirDiJadwal || !sopirDiJadwal.toUpperCase().trim().includes(currentDriver.toUpperCase().trim())) {
-            tampilkanNotifikasiKilat(` 🛇 STOP! Jadwal ini milik ${sopirDiJadwal.toUpperCase()}.\nAnda (${currentDriver.toUpperCase()}) Hubungi Admin Bolo....`, "#ff5252");
+            tampilkanNotifikasiKilat(` 🛇 STOP!JADWAL INI MILIK ${sopirDiJadwal.toUpperCase()}.\nANDA (${currentDriver.toUpperCase()}) HUBUNGI ADMIN BOLO....`, "#ff5252");
             return;
         }
         
@@ -575,7 +575,7 @@
         }
         
         // Notifikasi langsung tanpa pop-up konfirmasi
-        tampilkanNotifikasiKilat("SUKSES SAMPAI TUJUAN", "#28a745");
+        tampilkanNotifikasiKilat("SUKSES SAMPAI LOKASI TUJUAN", "#28a745");
         loadDashboard();
     }
 

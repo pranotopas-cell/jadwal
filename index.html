@@ -140,24 +140,26 @@
 <body>
 
     <div class="header">
-        <div>
-            <h1>JADWAL IKAEN GROUP</h1>
-            <div id="targetDate">MEMUAT...</div>
-        </div>
-        <div class="header-right">
-            <a href="ritase.html" class="btn-maps">
-                <span>RITASE</span>
-            </a>
-         <div class="header-right">
-            <a href="sop.html" class="btn-maps">
-                <span>SOP</span>
-            </a>
-            <div class="clock-container">
-                <div id="clock">00:00:00</div>
-                <div class="cloud-status" id="systemStatus" onclick="mintaLogout()" style="cursor:pointer;">● GPS SYSTEM ACTIVE</div>
-            </div>
-        </div>
+    <div>
+        <h1>JADWAL IKAEN GROUP</h1>
+        <div id="targetDate">MEMUAT...</div>
     </div>
+    <div class="header-right">
+        <!-- Tombol Ritase -->
+        <a href="ritase.html" class="btn-maps">
+            <span>RITASE</span>
+        </a>
+        <!-- Tombol SOP (Digabung di dalam satu container header-right) -->
+        <a href="sop.html" class="btn-maps">
+            <span>SOP</span>
+        </a>
+        
+        <div class="clock-container">
+            <div id="clock">00:00:00</div>
+            <div class="cloud-status" id="systemStatus" onclick="mintaLogout()" style="cursor:pointer;">● GPS SYSTEM ACTIVE</div>
+        </div>
+    </div> <!-- Penutup header-right yang benar -->
+</div>
 
     <div class="main-content">
         <table>

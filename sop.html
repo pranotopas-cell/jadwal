@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tata Tertib & SOP Perusahaan Angkutan BBM Solar</title>
+    <style>
+        :root {
+            --corp-blue: #0a192f;    /* Biru Premium Corporate */
+            --corp-gold: #d4af37;    /* Emas Elegan / Integritas */
+            --corp-red: #9e2a2b;     /* Merah Peringatan Tegas */
+            --text-dark: #232b38;
+            --bg-light: #f4f6f9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+        }
+
+        /* Header Corporate Premium dengan Background Gambar Industri */
+        header {
+            position: relative;
+            background-image: linear-gradient(rgba(10, 25, 47, 0.85), rgba(10, 25, 47, 0.95)), url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=1200');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: white;
+            text-align: center;
+            padding: 2.5rem 1rem; /* Ukuran header dikecilkan */
+            border-bottom: 5px solid var(--corp-gold);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8rem; /* Ukuran judul dikecilkan */
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+
+        header p {
+            margin: 8px 0 0 0;
+            color: var(--corp-gold);
+            font-size: 1rem; /* Ukuran sub-judul dikecilkan */
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Card Section */
+        .card {
+            background: white;
+            padding: 3rem;
+            margin-bottom: 3rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+        }
+
+        .card-title {
+            color: var(--corp-blue);
+            font-size: 1.8rem;
+            border-bottom: 3px solid var(--corp-blue);
+            padding-bottom: 0.8rem;
+            margin-top: 0;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        h3 {
+            color: var(--corp-blue);
+            margin-top: 2rem;
+            font-size: 1.3rem;
+            border-left: 5px solid var(--corp-gold);
+            padding-left: 1rem;
+        }
+
+        /* List & Teks */
+        ul, ol {
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 1rem;
+            padding-left: 0.3rem;
+        }
+
+        strong {
+            color: #000;
+        }
+
+        /* Kotak Peringatan Sederhana */
+        .kotak-peringatan {
+            background-color: #fff5f5;
+            border: 1px solid #feb2b2;
+            border-left: 6px solid var(--corp-red);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 4px;
+        }
+
+        .kotak-peringatan h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--corp-red);
+            text-transform: uppercase;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .kotak-peringatan p {
+            margin: 0;
+            font-size: 1rem;
+            color: #742a2a;
+        }
+
+        /* DYNAMIC QUOTE SLIDER - KOTAK DIKECILKAN */
+        .quote-box {
+            position: relative;
+            background-image: linear-gradient(rgba(240, 244, 248, 0.94), rgba(240, 244, 248, 0.94)), url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800');
+            background-size: cover;
+            background-position: center;
+            border-left: 5px solid var(--corp-blue);
+            padding: 1.2rem 2rem; /* Padding dikecilkan */
+            margin-bottom: 1.5rem; /* Jarak ke gambar di bawahnya rapi */
+            border-radius: 6px;
+            min-height: 80px; /* Tinggi minimum dikecilkan */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+
+        .quote-box h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--corp-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.8rem; /* Judul kotak dikecilkan */
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 2px;
+        }
+
+        .quote-content {
+            font-style: italic;
+            font-size: 1.05rem; /* Ukuran teks quote disesuaikan */
+            color: var(--text-dark);
+            text-align: center;
+            margin: 0;
+            transition: opacity 0.5s ease;
+            font-weight: 500;
+        }
+
+        .quote-author {
+            margin-top: 0.4rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--corp-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: opacity 0.5s ease;
+        }
+
+        /* KOTAK BADGE IMAGE SPIRIT KORPORAT */
+        .spirit-banner-box {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 3rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .spirit-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* Footer Corporate */
+        footer {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            background-color: var(--corp-blue);
+            color: white;
+            font-size: 0.95rem;
+            border-top: 5px solid var(--corp-gold);
+        }
+
+        footer p {
+            margin: 0;
+            opacity: 0.95;
+            letter-spacing: 0.5px;
+        }
+
+        /* Responsive di HP */
+        @media (max-width: 768px) {
+            header h1 { font-size: 1.4rem; }
+            header p { font-size: 0.85rem; }
+            .card { padding: 1.8rem; }
+            .card-title { font-size: 1.4rem; }
+            .quote-content { font-size: 0.95rem; }
+            .spirit-banner-box { padding: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>DOKUMEN REGULASI OPERASIONAL</h1>
+        <p>PT. INVESTAMA KALIMANTAN ENERGI GROUP</p>
+    </header>
+
+    <div class="container">
+
+        <div class="quote-box">
+            <h4>Pesan Integritas & Kejujuran</h4>
+            <p class="quote-content" id="quoteText">Memuat pesan integritas...</p>
+            <div class="quote-author" id="quoteAuthor"></div>
+        </div>
+
+        <div class="spirit-banner-box">
+            <img src="spirit.jpg" alt="Investama Kalimantan Energi SPIRIT" class="spirit-img">
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">I. Tata Tertib Karyawan</h2>
+            <p>Seluruh staf operasional, pengemudi (driver), dan pembantu pengemudi (Helper) wajib mematuhi peraturan di bawah ini demi keselamatan bersama dan nama baik perusahaan.</p>
+            
+            <h3>1. Kedisiplinan Kerja</h3>
+            <ul>
+                <li><strong>Wajib Hadir Tepat Waktu:</strong> Driver harus sudah berada di pool 30 menit sebelum jam keberangkatan. Keterlambatan tanpa alasan logis akan dikenakan sanksi administrasi.</li>
+                <li><strong>Larangan Merokok:</strong> Dilarang keras merokok di dalam kabin truk, atau di dekat tangki solar. Pelanggaran terhadap aturan ini dikenakan SP1 karena membahayakan keselamatan aset perusahaan.</li>
+                <li><strong>Bebas Alkohol & Narkoba:</strong> Personel harus bekerja dalam kondisi sehat dan sadar penuh. Perusahaan berhak melakukan tes kesehatan dadakan. Jika terbukti positif, sanksi pemecatan langsung akan diterapkan.</li>
+                <li><strong>Pakaian Dinas Lengkap (APD):</strong> Wajib memakai seragam kerja, sepatu pengaman (safety shoes), helm, dan rompi pelindung selama bertugas. Tidak mengenakan APD lengkap dilarang melakukan pemuatan.</li>
+                <li><strong>Kelengkapan Dokumen Jalan:</strong> Sebelum unit bergerak, Driver wajib memastikan semua dokumen pribadi (SIM) dan dokumen kendaraan yang dibawa terikat resmi, lengkap, serta masih berlaku.</li>
+                <li><strong>Komunikasi Aktif & Pelaporan:</strong> Seluruh kru wajib memastikan alat komunikasi (Handphone) selalu aktif selama bertugas dan wajib merespon panggilan dari tim Dispatcher / Logistik kantor pusat.</li>
+                <li><strong>Penjagaan Aset Perusahaan:</strong> Driver dan Helper bertanggung jawab penuh atas kebersihan, keutuhan, dan pemeliharaan harian unit truk tangki yang dipercayakan kepada mereka.</li>
+            </ul>
+
+            <div class="kotak-peringatan">
+                <h4>Peringatan Keras (Sanksi Pemecatan langsung)</h4>
+                <p>Perusahaan menerapkan aturan tegas tanpa toleransi bagi yang terbukti melakukan pemindahan, pengurangan, atau penjualan BBM Solar secara ilegal di jalan raya ("kencing di jalan"). Pelaku akan langsung dipecat dan dilaporkan ke pihak kepolisian.</p>
+            </div>
+
+            <h3>2. Aturan Operasional Jalan</h3>
+            <ul>
+                <li><strong>Dilarang Membawa Penumpang Luar:</strong> Hanya kru resmi yang terdaftar yang boleh masuk ke dalam truk.</li>
+                <li><strong>Rute Perjalanan Tetap:</strong> Wajib melewati rute jalan yang sudah ditentukan kantor dan dilarang mematikan GPS pelacak.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">II. Standar Operasional Prosedur (SOP)</h2>
+            
+            <h3>SOP 1: Persiapan Sebelum Berangkat</h3>
+            <ol>
+                <li><strong>Cek Tugas:</strong> Driver melapor ke bagian logistik untuk mengambil Surat Perintah Jalan (SPJ).</li>
+                <li><strong>Cek Fisik Kendaraan:</strong> Driver bersama mekanik wajib memeriksa kondisi ban, fungsi rem, lampu, dan memastikan tidak ada kebocoran sekecil apa pun pada tangki.</li>
+                <li><strong>Cek Alat Keselamatan:</strong> Pastikan minimal ada 2 tabung pemadam api (APAR) di dalam truk dan siap pakai.</li>
+                <li><strong>Cek Surat Kendaraan:</strong> Pastikan SIM, STNK, KIR, dan surat izin angkutan tangki dalam keadaan hidup/aktif.</li>
+            </ol>
+
+            <h3>SOP 2: Pengisian BBM di Depot / Terminal</h3>
+            <ol>
+                <li><strong>Aturan Parkir:</strong> Masuk ke area pengisian dengan kecepatan sangat rendah (maksimal 5 km/jam), matikan mesin, dan ganjal ban truk.</li>
+                <li><strong>Pasang Pengaman Statis:</strong> Pasang kabel arde/grounding yang disediakan depot ke badan truk sebelum pengisian dimulai.</li>
+                <li><strong>Pengawasan Pengisian:</strong> Pastikan jumlah solar yang diisi sesuai dengan surat pesanan (Loading Order). Driver dilarang meninggalkan kendaraan saat pengisian berlangsung.</li>
+                <li><strong>Kunci & Segel:</strong> Setelah diisi, pastikan semua katup ditutup rapat dan dipasang segel resmi ber-nomor seri. Catat nomor segel tersebut di Surat Jalan.</li>
+            </ol>
+
+            <h3>SOP 3: Selama Perjalanan</h3>
+            <ol>
+                <li><strong>Batas Kecepatan:</strong> Jalankan truk dengan aman. Maksimal 60 km/jam di jalan raya luar kota dan maksimal 40 km/jam di area perkotaan/padat.</li>
+                <li><strong>Waktu Istirahat:</strong> Untuk menjaga stamina, Driver wajib istirahat selama 30 menit setiap setelah 4 jam menyetir. Istirahatlah di tempat yang aman seperti SPBU atau Rest Area resmi.</li>
+            </ol>
+
+            <h3>SOP 4: Pembongkaran BBM di Lokasi Tujuan</h3>
+            <ol>
+                <li><strong>Verifikasi Dokumen:</strong> Serahkan surat jalan kepada petugas penerima di lokasi dan minta mereka mencocokkan nomor segel tangki.</li>
+                <li><strong>Ukur Bersama:</strong> Lakukan pengecekan volume solar dan pengambilan sampel kualitas bersama dengan pihak penerima sebelum keran dibuka.</li>
+                <li><strong>Keamanan Pembongkaran:</strong> Matikan mesin, pasang ganjal ban, pasang pembatas pengaman (safety cone), dan siapkan tabung pemadam api (APAR) di dekat selang bongkar.</li>
+                <li><strong>Selesai Bongkar:</strong> Pastikan solar di dalam tangki truk sudah keluar semua hingga kosong (kering). Minta tanda tangan dan stempel resmi penerima pada Berita Acara.</li>
+            </ol>
+
+            <h3>SOP 5: Penanganan Kondisi Darurat</h3>
+            <ul>
+                <li><strong>Jika Ada Kebocoran Kecil:</strong> Segera tepikan truk ke tempat aman, matikan mesin, dan gunakan pasir atau kain penyerap untuk menutupi tumpahan. Jangan disiram menggunakan air.</li>
+                <li><strong>Jika Terjadi Kebakaran:</strong> Gunakan tabung pemadam api (APAR) untuk memadamkan sumber api kecil. Jika api membesar, segera selamatkan diri dan hubungi Pemadam Kebakaran serta kantor pusat.</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>&copy; 2026 PT. INVESTAMA KALIMANTAN ENERGI GROUP</p>
+        <p style="font-size: 0.85rem; margin-top: 6px; color: var(--corp-gold); font-weight: bold;">
+            Keselamatan Kerja &bull; Ketepatan Waktu &bull; Integritas Pelayanan
+        </p>
+    </footer>
+
+    <script>
+        const quotes = [
+            { text: '"Janganlah kamu mengkhianati amanat yang dipercayakan kepadamu, sedang kamu mengetahui."', author: "QS. Al-Anfal: 27" },
+            { text: '"Kecelakaan diganti dengan peringatan, kesalahan diperbaiki dengan kedisiplinan."', author: "Corporate Safety Quote" },
+            { text: '"Tanda-tanda orang munafik itu ada tiga: jika berbicara dia berdusta, jika berjanji dia ingkar, dan jika dipercaya dia berkhianat."', author: "HR. Bukhari & Muslim" },
+            { text: '"Integritas adalah melakukan hal yang benar, bahkan ketika tidak ada orang lain yang melihat."', author: "C.S. Lewis" },
+            { text: '"Rezeki yang berkah tidak akan pernah lahir dari perbuatan yang tidak jujur."', author: "Prinsip Utama Perusahaan" },
+            { text: '"Kejujuran adalah bab pertama dalam buku kebijaksanaan."', author: "Thomas Jefferson" },
+            { text: '"Pekerjaan adalah sebuah amanah. Menjaganya tetap bersih adalah bentuk syukur terbaik kita."', author: "K3 Management" },
+            { text: '"Siapa yang menipu kami, maka dia bukan termasuk golongan kami."', author: "HR. Muslim" },
+            { text: '"Kedisiplinan di jalan mencerminkan profesionalisme Anda di dalam hidup."', author: "Logistics Safety Standard" },
+            { text: '"Carilah rezeki yang halal, karena sesungguhnya rezeki itu mendatangi seorang hamba sebagaimana ajal mendatangingya."', author: "HR. Ibnu Hibban" }
+        ];
+
+        let currentIndex = 0;
+        const textElement = document.getElementById('quoteText');
+        const authorElement = document.getElementById('quoteAuthor');
+
+        function updateQuote() {
+            textElement.style.opacity = 0;
+            authorElement.style.opacity = 0;
+
+            setTimeout(() => {
+                textElement.innerText = quotes[currentIndex].text;
+                authorElement.innerText = quotes[currentIndex].author;
+                
+                textElement.style.opacity = 1;
+                authorElement.style.opacity = 1;
+                
+                currentIndex = (currentIndex + 1) % quotes.length;
+            }, 500);
+        }
+
+        updateQuote();
+        setInterval(updateQuote, 5000);
+    </script>
+
+</body>
+</html>

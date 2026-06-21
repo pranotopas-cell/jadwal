@@ -11,6 +11,8 @@
             --corp-red: #9e2a2b;     /* Merah Peringatan Tegas */
             --text-dark: #232b38;
             --bg-light: #f4f6f9;
+            --success-green: #2d6a4f;
+            --info-blue: #0284c7;
         }
 
         body {
@@ -22,6 +24,34 @@
             color: var(--text-dark);
         }
 
+        /* TOMBOL HOME DI KANAN ATAS */
+        .btn-home {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--corp-gold);
+            color: var(--corp-blue);
+            text-decoration: none;
+            padding: 10px 18px;
+            font-weight: bold;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.9rem;
+            border: 2px solid white;
+        }
+
+        .btn-home:hover {
+            background-color: var(--corp-blue);
+            color: var(--corp-gold);
+            transform: translateY(-3px) scale(1.05);
+            border-color: var(--corp-gold);
+        }
+
         /* Header Corporate Premium dengan Background Gambar Industri */
         header {
             position: relative;
@@ -31,13 +61,13 @@
             background-attachment: fixed;
             color: white;
             text-align: center;
-            padding: 2.5rem 1rem; /* Ukuran header dikecilkan */
+            padding: 2.5rem 1rem;
             border-bottom: 5px solid var(--corp-gold);
         }
 
         header h1 {
             margin: 0;
-            font-size: 1.8rem; /* Ukuran judul dikecilkan */
+            font-size: 1.8rem;
             font-weight: 800;
             letter-spacing: 2px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
@@ -46,7 +76,7 @@
         header p {
             margin: 8px 0 0 0;
             color: var(--corp-gold);
-            font-size: 1rem; /* Ukuran sub-judul dikecilkan */
+            font-size: 1rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -66,6 +96,7 @@
             border-radius: 8px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.04);
             border: 1px solid #e2e8f0;
+            overflow: hidden;
         }
 
         .card-title {
@@ -101,7 +132,7 @@
             color: #000;
         }
 
-        /* Kotak Peringatan Sederhana */
+        /* Kotak Peringatan Sederhana Beranimasi */
         .kotak-peringatan {
             background-color: #fff5f5;
             border: 1px solid #feb2b2;
@@ -109,6 +140,7 @@
             padding: 1.5rem;
             margin: 2rem 0;
             border-radius: 4px;
+            animation: pulseWarning 2.5s infinite;
         }
 
         .kotak-peringatan h4 {
@@ -132,10 +164,10 @@
             background-size: cover;
             background-position: center;
             border-left: 5px solid var(--corp-blue);
-            padding: 1.2rem 2rem; /* Padding dikecilkan */
-            margin-bottom: 1.5rem; /* Jarak ke gambar di bawahnya rapi */
+            padding: 1.2rem 2rem;
+            margin-bottom: 1.5rem;
             border-radius: 6px;
-            min-height: 80px; /* Tinggi minimum dikecilkan */
+            min-height: 80px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -148,14 +180,14 @@
             color: var(--corp-blue);
             text-transform: uppercase;
             letter-spacing: 1px;
-            font-size: 0.8rem; /* Judul kotak dikecilkan */
+            font-size: 0.8rem;
             border-bottom: 1px solid #cbd5e1;
             padding-bottom: 2px;
         }
 
         .quote-content {
             font-style: italic;
-            font-size: 1.05rem; /* Ukuran teks quote disesuaikan */
+            font-size: 1.05rem;
             color: var(--text-dark);
             text-align: center;
             margin: 0;
@@ -192,6 +224,113 @@
             margin: 0 auto;
         }
 
+        /* GAYA MODEL BROSUR MODEL GRID & ANIMASI */
+        .visual-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .visual-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .visual-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        }
+
+        .visual-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .visual-card:hover .icon {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        .visual-card.danger { border-top: 4px solid var(--corp-red); background: #fffafb; }
+        .visual-card.success { border-top: 4px solid var(--success-green); background: #f7fdfa; }
+        .visual-card.info { border-top: 4px solid var(--info-blue); background: #f0f9ff; }
+
+        /* Brosur Alur Berurutan (SOP Flowchart) */
+        .sop-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .sop-step {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-left: 6px solid var(--corp-blue);
+            padding: 16px 20px;
+            border-radius: 4px 8px 8px 4px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+
+        .sop-step:hover {
+            border-left-color: var(--corp-gold);
+            background: #fafafa;
+            transform: translateX(3px);
+        }
+
+        .step-num {
+            background: var(--corp-blue);
+            color: #fff;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            box-shadow: 0 2px 5px rgba(10,25,47,0.3);
+        }
+
+        .step-text {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--corp-gold);
+            font-size: 1.5rem;
+            margin: -8px 0;
+            font-weight: bold;
+            animation: bounceArrow 2s infinite;
+        }
+
+        /* KEYFRAMES ANIMASI */
+        @keyframes pulseWarning {
+            0% { box-shadow: 0 0 0 0 rgba(158, 42, 43, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(158, 42, 43, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(158, 42, 43, 0); }
+        }
+
+        @keyframes bounceArrow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(4px); }
+        }
+
         /* Footer Corporate */
         footer {
             text-align: center;
@@ -216,10 +355,17 @@
             .card-title { font-size: 1.4rem; }
             .quote-content { font-size: 0.95rem; }
             .spirit-banner-box { padding: 0.5rem; }
+            .btn-home { top: 10px; right: 10px; padding: 8px 12px; font-size: 0.8rem; }
+            .sop-step { flex-direction: column; align-items: flex-start; gap: 10px; }
         }
     </style>
 </head>
 <body>
+
+    <!-- TOMBOL HOME -->
+    <a href="index.html" class="btn-home">
+        <span>🏠</span> Rumah / Index
+    </a>
 
     <header>
         <h1>DOKUMEN REGULASI OPERASIONAL</h1>
@@ -238,11 +384,32 @@
             <img src="spirit.jpg" alt="Investama Kalimantan Energi SPIRIT" class="spirit-img">
         </div>
 
+        <!-- SEKSI I: TATA TERTIB KARYAWAN -->
         <div class="card">
             <h2 class="card-title">I. Tata Tertib Karyawan</h2>
             <p>Seluruh staf operasional, pengemudi (driver), dan pembantu pengemudi (Helper) wajib mematuhi peraturan di bawah ini demi keselamatan bersama dan nama baik perusahaan.</p>
             
             <h3>1. Kedisiplinan Kerja</h3>
+            
+            <!-- MODEL BROSUR GRID: TATA TERTIB UTAMA KRU TRUK -->
+            <div class="visual-grid">
+                <div class="visual-card success">
+                    <span class="icon">⏱️</span>
+                    <br><strong>Wajib Hadir Tepat Waktu</strong>
+                    <p style="font-size:0.85rem; margin:8px 0 0 0; color:#4a5568;">Driver & helper harus berada di pool 30 menit sebelum jadwal jam keberangkatan resmi.</p>
+                </div>
+                <div class="visual-card danger">
+                    <span class="icon">🚭</span>
+                    <br><strong>Larangan Keras Merokok</strong>
+                    <p style="font-size:0.85rem; margin:8px 0 0 0; color:#4a5568;">Dilarang merokok di kabin maupun dekat tangki. Melanggar langsung dikenakan SP1.</p>
+                </div>
+                <div class="visual-card info">
+                    <span class="icon">🦺</span>
+                    <br><strong>Pakaian Dinas Alat Pelindung Diri</strong>
+                    <p style="font-size:0.85rem; margin:8px 0 0 0; color:#4a5568;">Wajib lengkap: Seragam kerja, Sepatu Safety, Helm Safety, dan Rompi Pelindung.</p>
+                </div>
+            </div>
+
             <ul>
                 <li><strong>Wajib Hadir Tepat Waktu:</strong> Driver harus sudah berada di pool 30 menit sebelum jam keberangkatan. Keterlambatan tanpa alasan logis akan dikenakan sanksi administrasi.</li>
                 <li><strong>Larangan Merokok:</strong> Dilarang keras merokok di dalam kabin truk, atau di dekat tangki solar. Pelanggaran terhadap aturan ini dikenakan SP1 karena membahayakan keselamatan aset perusahaan.</li>
@@ -259,46 +426,97 @@
             </div>
 
             <h3>2. Aturan Operasional Jalan</h3>
+            
+            <!-- MODEL BROSUR GRID: ATURAN DI JALAN RAYA -->
+            <div class="visual-grid">
+                <div class="visual-card danger">
+                    <span class="icon">🚫</span>
+                    <br><strong>Larangan Penumpang Luar</strong>
+                    <p style="font-size:0.85rem; margin:5px 0 0 0; color:#555;">Hanya kru resmi terdaftar yang boleh masuk kabin truk.</p>
+                </div>
+                <div class="visual-card success">
+                    <span class="icon">📍</span>
+                    <br><strong>Rute Tetap & GPS Aktif</strong>
+                    <p style="font-size:0.85rem; margin:5px 0 0 0; color:#555;">Wajib lewat rute resmi kantor. Dilarang mematikan GPS pelacak.</p>
+                </div>
+            </div>
+
             <ul>
                 <li><strong>Dilarang Membawa Penumpang Luar:</strong> Hanya kru resmi yang terdaftar yang boleh masuk ke dalam truk.</li>
                 <li><strong>Rute Perjalanan Tetap:</strong> Wajib melewati rute jalan yang sudah ditentukan kantor dan dilarang mematikan GPS pelacak.</li>
             </ul>
         </div>
 
+        <!-- SEKSI II: STANDAR OPERASIONAL PROSEDUR (SOP) -->
         <div class="card">
             <h2 class="card-title">II. Standar Operasional Prosedur (SOP)</h2>
             
             <h3>SOP 1: Persiapan Sebelum Berangkat</h3>
-            <ol>
-                <li><strong>Cek Tugas:</strong> Driver melapor ke bagian logistik untuk mengambil Surat Perintah Jalan (SPJ).</li>
-                <li><strong>Cek Fisik Kendaraan:</strong> Driver bersama mekanik wajib memeriksa kondisi ban, fungsi rem, lampu, dan memastikan tidak ada kebocoran sekecil apa pun pada tangki.</li>
-                <li><strong>Cek Alat Keselamatan:</strong> Pastikan minimal ada 2 tabung pemadam api (APAR) di dalam truk dan siap pakai.</li>
-                <li><strong>Cek Surat Kendaraan:</strong> Pastikan SIM, STNK, KIR, dan surat izin angkutan tangki dalam keadaan hidup/aktif.</li>
-            </ol>
+            <div class="sop-flow">
+                <div class="sop-step"><div class="step-num">1</div><p class="step-text"><strong>Cek Tugas:</strong> Driver melapor ke bagian logistik untuk mengambil Surat Perintah Jalan (SPJ).</p></div>
+                <div class="flow-arrow">▼</div>
+                <div class="sop-step"><div class="step-num">2</div><p class="step-text"><strong>Cek Fisik Kendaraan:</strong> Driver bersama mekanik wajib memeriksa kondisi ban, fungsi rem, lampu, dan memastikan tidak ada kebocoran sekecil apa pun pada tangki.</p></div>
+                <div class="flow-arrow">▼</div>
+                <div class="sop-step"><div class="step-num">3</div><p class="step-text"><strong>Cek Alat Keselamatan:</strong> Pastikan minimal ada 2 tabung pemadam api (APAR) di dalam truk dan siap pakai.</p></div>
+                <div class="flow-arrow">▼</div>
+                <div class="sop-step"><div class="step-num">4</div><p class="step-text"><strong>Cek Surat Kendaraan:</strong> Pastikan SIM, STNK, KIR, dan surat izin angkutan tangki dalam keadaan hidup/aktif.</p></div>
+            </div>
 
             <h3>SOP 2: Pengisian BBM di Depot / Terminal</h3>
-            <ol>
-                <li><strong>Aturan Parkir:</strong> Masuk ke area pengisian dengan kecepatan sangat rendah (maksimal 5 km/jam), matikan mesin, dan ganjal ban truk.</li>
-                <li><strong>Pasang Pengaman Statis:</strong> Pasang kabel arde/grounding yang disediakan depot ke badan truk sebelum pengisian dimulai.</li>
-                <li><strong>Pengawasan Pengisian:</strong> Pastikan jumlah solar yang diisi sesuai dengan surat pesanan (Loading Order). Driver dilarang meninggalkan kendaraan saat pengisian berlangsung.</li>
-                <li><strong>Kunci & Segel:</strong> Setelah diisi, pastikan semua katup ditutup rapat dan dipasang segel resmi ber-nomor seri. Catat nomor segel tersebut di Surat Jalan.</li>
-            </ol>
+            <div class="sop-flow">
+                <div class="sop-step"><div class="step-num">1</div><p class="step-text"><strong>Aturan Parkir:</strong> Masuk ke area pengisian dengan kecepatan sangat rendah (maksimal 5 km/jam), matikan mesin, dan ganjal ban truk.</p></div>
+                <div class="flow-arrow">▼</div>
+                <div class="sop-step"><div class="step-num">2</div><p class="step-text"><strong>Pasang Pengaman Statis:</strong> Pasang kabel arde/grounding yang disediakan depot ke badan truk sebelum pengisian dimulai.</p></div>
+                <div class="flow-arrow">▼</div>
+                <div class="sop-step"><div class="step-num">3</div><p class="step-text"><strong>Pengawasan Pengisian:</strong> Pastikan jumlah solar yang diisi sesuai dengan surat pesanan (Loading Order). Driver dilarang meninggalkan kendaraan saat pengisian berlangsung.</p></div>
+                <div class="flow-arrow">▼</div>
+                <div class="sop-step"><div class="step-num">4</div><p class="step-text"><strong>Kunci & Segel:</strong> Setelah diisi, pastikan semua katup ditutup rapat dan dipasang segel resmi ber-nomor seri. Catat nomor segel tersebut di Surat Jalan.</p></div>
+            </div>
 
             <h3>SOP 3: Selama Perjalanan</h3>
+            <!-- BROSUR MINI: BATAS ATURAN KECEPATAN -->
+            <div class="visual-grid">
+                <div class="visual-card info">
+                    <span class="icon">🛣️</span>
+                    <br><strong>Batas Kecepatan Aman</strong>
+                    <p style="font-size:0.9rem; margin:5px 0 0 0; font-weight: 500;">Luar Kota: Maks 60 km/jam<br>Area Perkotaan: Maks 40 km/jam</p>
+                </div>
+                <div class="visual-card success">
+                    <span class="icon">☕</span>
+                    <br><strong>Waktu Wajib Istirahat</strong>
+                    <p style="font-size:0.9rem; margin:5px 0 0 0; font-weight: 500;">Istirahat Selama 30 Menit<br>Setiap Selesai 4 Jam Menyetir</p>
+                </div>
+            </div>
             <ol>
                 <li><strong>Batas Kecepatan:</strong> Jalankan truk dengan aman. Maksimal 60 km/jam di jalan raya luar kota dan maksimal 40 km/jam di area perkotaan/padat.</li>
                 <li><strong>Waktu Istirahat:</strong> Untuk menjaga stamina, Driver wajib istirahat selama 30 menit setiap setelah 4 jam menyetir. Istirahatlah di tempat yang aman seperti SPBU atau Rest Area resmi.</li>
             </ol>
 
             <h3>SOP 4: Pembongkaran BBM di Lokasi Tujuan</h3>
-            <ol>
-                <li><strong>Verifikasi Dokumen:</strong> Serahkan surat jalan kepada petugas penerima di lokasi dan minta mereka mencocokkan nomor segel tangki.</li>
-                <li><strong>Ukur Bersama:</strong> Lakukan pengecekan volume solar dan pengambilan sampel kualitas bersama dengan pihak penerima sebelum keran dibuka.</li>
-                <li><strong>Keamanan Pembongkaran:</strong> Matikan mesin, pasang ganjal ban, pasang pembatas pengaman (safety cone), dan siapkan tabung pemadam api (APAR) di dekat selang bongkar.</li>
-                <li><strong>Selesai Bongkar:</strong> Pastikan solar di dalam tangki truk sudah keluar semua hingga kosong (kering). Minta tanda tangan dan stempel resmi penerima pada Berita Acara.</li>
-            </ol>
+            <div class="sop-flow">
+                <div class="sop-step"><div class="step-num">1</div><p class="step-text"><strong>Verifikasi Dokumen:</strong> Serahkan surat jalan kepada petugas penerima di lokasi dan minta mereka mencocokkan nomor segel tangki.</p></div>
+                <div class="flow-arrow">▼</div>
+                <div class="sop-step"><div class="step-num">2</div><p class="step-text"><strong>Ukur Bersama:</strong> Lakukan pengecekan volume solar dan pengambilan sampel kualitas bersama dengan pihak penerima sebelum keran dibuka.</p></div>
+                <div class="flow-arrow">▼</div>
+                <div class="sop-step"><div class="step-num">3</div><p class="step-text"><strong>Keamanan Pembongkaran:</strong> Matikan mesin, pasang ganjal ban, pasang pembatas pengaman (safety cone), and siapkan tabung pemadam api (APAR) di dekat selang bongkar.</p></div>
+                <div class="flow-arrow">▼</div>
+                <div class="sop-step"><div class="step-num">4</div><p class="step-text"><strong>Selesai Bongkar:</strong> Pastikan solar di dalam tangki truk sudah keluar semua hingga kosong (kering). Minta tanda tangan dan stempel resmi penerima pada Berita Acara.</p></div>
+            </div>
 
             <h3>SOP 5: Penanganan Kondisi Darurat</h3>
+            <!-- BROSUR BANTUAN TANGGAP DARURAT -->
+            <div class="visual-grid">
+                <div class="visual-card danger">
+                    <span class="icon">💧</span>
+                    <br><strong>Jika Ada Kebocoran Kecil</strong>
+                    <p style="font-size:0.85rem; margin:5px 0 0 0; text-align:left; color:#4a5568;">Tepikan truk ke tempat aman, matikan mesin seketika. Tutup tumpahan menggunakan pasir atau kain penyerap. <strong>Dilarang keras menyiram dengan air!</strong></p>
+                </div>
+                <div class="visual-card danger">
+                    <span class="icon">🔥</span>
+                    <br><strong>Jika Terjadi Kebakaran</strong>
+                    <p style="font-size:0.85rem; margin:5px 0 0 0; text-align:left; color:#4a5568;">Gunakan tabung pemadam api (APAR) untuk memadamkan sumber api kecil. Jika api menjalar besar, segera selamatkan diri & hubungi Pemadam Kebakaran.</p>
+                </div>
+            </div>
             <ul>
                 <li><strong>Jika Ada Kebocoran Kecil:</strong> Segera tepikan truk ke tempat aman, matikan mesin, dan gunakan pasir atau kain penyerap untuk menutupi tumpahan. Jangan disiram menggunakan air.</li>
                 <li><strong>Jika Terjadi Kebakaran:</strong> Gunakan tabung pemadam api (APAR) untuk memadamkan sumber api kecil. Jika api membesar, segera selamatkan diri dan hubungi Pemadam Kebakaran serta kantor pusat.</li>

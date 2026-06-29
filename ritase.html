@@ -130,32 +130,12 @@
 
         // DAFTAR TANGGAL MERAH / HARI LIBUR NASIONAL & CUTI BERSAMA 2026 (Format: YYYY-MM-DD)
         const TANGGAL_MERAH_2026 = [
-            "2026-01-01", // Tahun Baru 2026 Masehi
-            "2026-01-23", // Libur Bersama Imlek
-            "2026-02-16", // Isra Mikraj Nabi Muhammad SAW
-            "2026-02-17", // Hari Raya Imlek 2577
-            "2026-03-20", // Hari Suci Nyepi (Tahun Baru Saka 1948)
-            "2026-03-23", // Cuti Bersama Nyepi
-            "2026-04-03", // Wafat Yesus Kristus
-            "2026-04-05", // Hari Paskah
-            "2026-04-16", // Cuti Bersama Idul Fitri 1447 H
-            "2026-04-17", // Cuti Bersama Idul Fitri 1447 H
-            "2026-04-20", // Hari Raya Idul Fitri 1447 H
-            "2026-04-21", // Hari Raya Idul Fitri 1447 H
-            "2026-04-22", // Cuti Bersama Idul Fitri 1447 H
-            "2026-04-23", // Cuti Bersama Idul Fitri 1447 H
-            "2026-05-01", // Hari Buruh Internasional
-            "2026-05-14", // Kenaikan Yesus Kristus
-            "2026-05-22", // Cuti Bersama Hari Raya Waisak 2570
-            "2026-05-24", // Hari Raya Waisak 2570
-            "2026-05-27", // Hari Raya Idul Adha 1447 H
-            "2026-05-28", // Cuti Bersama Idul Adha 1447 H
-            "2026-06-01", // Hari Lahir Pancasila
-            "2026-06-16", // Tahun Baru Islam 1448 H
-            "2026-08-17", // Hari Kemerdekaan RI Ke-81
-            "2026-08-26", // Maulid Nabi Muhammad SAW
-            "2026-12-25", // Hari Raya Natal
-            "2026-12-26"  // Cuti Bersama Hari Raya Natal
+            "2026-01-01", "2026-01-23", "2026-02-16", "2026-02-17", "2026-03-20", 
+            "2026-03-23", "2026-04-03", "2026-04-05", "2026-04-16", "2026-04-17", 
+            "2026-04-20", "2026-04-21", "2026-04-22", "2026-04-23", "2026-05-01", 
+            "2026-05-14", "2026-05-22", "2026-05-24", "2026-05-27", "2026-05-28", 
+            "2026-06-01", "2026-06-16", "2026-08-17", "2026-08-26", "2026-12-25", 
+            "2026-12-26"
         ];
 
         // Buat opsi dropdown untuk Bulan Ini dan Bulan Lalu secara dinamis
@@ -169,7 +149,7 @@
             const bulanIniValue = `${sekarang.getFullYear()}-${sekarang.getMonth()}`;
 
             // Opsi 2: Bulan Lalu
-            const bulanLaluDate = new Date(sekarang.getFullYear(), sekarang.getMonth() - 1, 1);
+            const bulanLaluDate = new Date(sekarang.getFullYear(), Clinical = sekarang.getMonth() - 1, 1);
             const bulanLaluTeks = bulanLaluDate.toLocaleDateString('id-ID', opsiFormat);
             const bulanLaluValue = `${bulanLaluDate.getFullYear()}-${bulanLaluDate.getMonth()}`;
 
@@ -179,7 +159,7 @@
             `;
         }
 
-        // Fungsi inisiasi awal dengan sistem parameter dinamis
+        // Fungsi inisiasi awal dengan perbaikan format tanggal lokal murni
         async function init(tahunPilihan, bulanPilihan) {
             try {
                 // Reset visual tampilan kanan jika ganti bulan
@@ -196,9 +176,16 @@
                 const tahun = tahunPilihan !== undefined ? tahunPilihan : sekarang.getFullYear();
                 const bulan = bulanPilihan !== undefined ? bulanPilihan : sekarang.getMonth();
 
-                // Dapatkan Tanggal Awal dan Tanggal Akhir Bulan Berjalan secara Otomatis
-                const tanggalMulai = new Date(tahun, bulan, 1).toISOString().split('T')[0] + 'T00:00:00';
-                const tanggalSelesai = new Date(tahun, bulan + 1, 0).toISOString().split('T')[0] + 'T23:59:59';
+                // Pembuatan range tanggal menggunakan format lokal murni (Mencegah Bug UTC)
+                const dMulai = new Date(tahun, bulan, 1);
+                const dSelesai = new Date(tahun, bulan + 1, 0); // Mengambil tanggal terakhir bulan berjalan
+
+                const mmMulai = String(dMulai.getMonth() + 1).padStart(2, '0');
+                const mmSelesai = String(dSelesai.getMonth() + 1).padStart(2, '0');
+                const ddSelesai = String(dSelesai.getDate()).padStart(2, '0');
+
+                const tanggalMulai = `${dMulai.getFullYear()}-${mmMulai}-01T00:00:00`;
+                const tanggalSelesai = `${dSelesai.getFullYear()}-${mmSelesai}-${ddSelesai}T23:59:59`;
 
                 const { data, error } = await _supabase
                     .from('data_pengiriman')
@@ -393,7 +380,6 @@
 
             const klonJudulSopir = clone.querySelector('#nama-sopir-terpilih');
             if (klonJudulSopir) {
-                // Mengambil label teks dari opsi dropdown yang sedang aktif saat ini
                 const selectEl = document.getElementById('pilih-periode');
                 const teksPeriode = selectEl.options[selectEl.selectedIndex].text;
                 klonJudulSopir.innerText = `${namaSopirAktif.toUpperCase()} - ${teksPeriode.toUpperCase()}`;
@@ -451,8 +437,8 @@
 
         // Pemuatan window onload terstruktur
         window.onload = function() {
-            setOpsiDropdown(); // Buat opsi bulannya dulu
-            init();            // Ambil data untuk opsi default (bulan ini)
+            setOpsiDropdown(); 
+            init();            
         };
     </script>
 </body>

@@ -3,24 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ritase Sopir</title>
+    <title>Ritase Sopir & Unit Terpisah</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
-        /* Mencegah overscroll rebound yang mengganggu di browser HP */
         html, body {
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Custom scrollbar halus untuk area daftar agar tidak memakan space di HP */
         .custom-scroll::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
         }
         .custom-scroll::-webkit-scrollbar-thumb {
             background-color: #cbd5e1;
-            border-radius: 2px;
+            border-radius: 3px;
         }
     </style>
 </head>
@@ -32,7 +33,7 @@
             <div class="flex items-center gap-2">
                 <span class="text-xl sm:text-2xl">📄</span>
                 <h1 class="text-base sm:text-lg font-bold text-slate-800 tracking-tight uppercase">
-                    Resume Ritase
+                    Resume Ritase SOPIR - UNIT
                 </h1>
             </div>
             
@@ -43,27 +44,37 @@
                 <div class="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 text-xs sm:text-sm font-semibold text-slate-600">
                     <label for="pilih-periode" class="shrink-0 pl-1">Periode:</label>
                     <select id="pilih-periode" onchange="gantiPeriode(this.value)" class="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer pr-1 py-1">
-                        </select>
+                    </select>
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-12 gap-4 items-start">
             
-            <div class="col-span-12 md:col-span-3 bg-zinc-50 p-3 rounded-xl border border-zinc-200">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Daftar Sopir</h2>
-                    <span class="text-[10px] bg-zinc-200 text-zinc-600 px-1.5 py-0.5 rounded-sm sm:hidden font-medium">Scroll bawah ➔</span>
-                </div>
-                <div id="loading-sopir" class="text-xs text-zinc-400 italic py-2">Memuat daftar sopir...</div>
+            <div class="col-span-12 md:col-span-4 lg:col-span-3 bg-zinc-50 p-3 rounded-xl border border-zinc-200">
                 
-                <ul id="daftar-sopir" class="space-y-1.5 max-h-[180px] md:max-h-[450px] overflow-y-auto custom-scroll hidden pr-1"></ul>
+                <div class="flex border-b border-zinc-200 mb-3 bg-zinc-200/60 p-1 rounded-lg">
+                    <button id="tab-sopir" onclick="switchTab('sopir')" class="w-1/2 text-center py-2 text-xs font-bold rounded-md transition-all cursor-pointer bg-white text-slate-800 shadow-sm">
+                        👤 DAFTAR SOPIR
+                    </button>
+                    <button id="tab-unit" onclick="switchTab('unit')" class="w-1/2 text-center py-2 text-xs font-bold rounded-md transition-all cursor-pointer text-zinc-500 hover:text-zinc-800">
+                        🚛 DAFTAR UNIT
+                    </button>
+                </div>
+                
+                <div id="loading-kiri" class="text-xs text-zinc-400 italic py-6 text-center">
+                    Memuat data...
+                </div>
+                
+                <ul id="daftar-sopir-container" class="space-y-1.5 max-h-[350px] md:max-h-[480px] overflow-y-auto custom-scroll pr-1"></ul>
+
+                <ul id="daftar-unit-container" class="space-y-1.5 max-h-[350px] md:max-h-[480px] overflow-y-auto custom-scroll pr-1 hidden"></ul>
             </div>
 
-            <div id="area-cetak-jpg" class="col-span-12 md:col-span-9 bg-zinc-50 p-3 rounded-xl border border-zinc-200 min-h-[320px] md:min-h-[500px] flex flex-col">
+            <div id="area-cetak-jpg" class="col-span-12 md:col-span-8 lg:col-span-9 bg-zinc-50 p-3 rounded-xl border border-zinc-200 min-h-[350px] md:min-h-[545px] flex flex-col">
                 <div class="flex justify-between items-center mb-2.5 gap-2">
                     <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                        Detail Ritase: <span id="nama-sopir-terpilih" class="text-slate-900 normal-case font-extrabold text-sm border-b border-dashed border-slate-400 pb-0.5">-</span>
+                        Detail Ritase <span id="label-tipe-terpilih">(Sopir/Unit)</span>: <span id="nama-terpilih" class="text-slate-900 normal-case font-extrabold text-sm border-b border-dashed border-slate-400 pb-0.5">-</span>
                     </h2>
                     
                     <button id="btn-download-jpg" onclick="downloadJpgPerSopir()" class="hidden flex items-center gap-1 text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-300 px-2.5 py-1 rounded-md transition active:scale-95 cursor-pointer shadow-sm" data-html2canvas-ignore="true">
@@ -72,19 +83,19 @@
                 </div>
                 
                 <div id="placeholder-detail" class="text-zinc-400 italic text-xs text-center my-auto py-12 px-4" data-html2canvas-ignore="true">
-                    <span class="text-2xl block mb-2">👆</span>
-                    Pilih nama sopir di atas terlebih dahulu untuk melihat rincian ritase bulan ini.
+                    <span class="text-2xl block mb-2">👈</span>
+                    Silakan pilih salah satu nama <b>Sopir</b> atau nomor <b>Unit Kendaraan</b> di menu sebelah kiri untuk memunculkan tabel ritase secara spesifik.
                 </div>
 
                 <div id="konten-detail" class="hidden flex-1 flex flex-col">
                     <div class="bg-slate-800 text-white px-3 py-2.5 rounded-lg mb-3 text-xs font-medium flex justify-between items-center shadow-md">
-                        <span class="tracking-wide">TOTAL RITASE PERIODE INI :</span>
+                        <span class="tracking-wide uppercase" id="total-title">TOTAL AKUMULASI RITASE :</span>
                         <span class="bg-white text-slate-900 px-2.5 py-1 rounded-md font-bold text-sm shadow-sm whitespace-nowrap">
                             <span id="total-ritase">0</span> Rit
                         </span>
                     </div>
 
-                    <div class="overflow-x-auto flex-1 max-h-[320px] md:max-h-[380px] overflow-y-auto border border-zinc-200 rounded-lg bg-white custom-scroll shadow-sm">
+                    <div class="overflow-x-auto flex-1 max-h-[320px] md:max-h-[420px] overflow-y-auto border border-zinc-200 rounded-lg bg-white custom-scroll shadow-sm">
                         <table class="min-w-full divide-y divide-zinc-200 table-fixed sm:table-auto">
                             <thead class="bg-slate-100 sticky top-0 z-10 shadow-sm">
                                 <tr class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
@@ -92,7 +103,7 @@
                                     <th class="py-2.5 px-2 text-left w-24 bg-slate-100">Tanggal</th>
                                     <th class="py-2.5 px-2 text-left w-24 bg-slate-100">Nopol</th>
                                     <th class="py-2.5 px-3 text-left w-40 sm:w-auto bg-slate-100">Tujuan</th>
-                                    <th class="py-2.5 px-2 text-left w-32 sm:w-auto bg-slate-100">Lokasi</th>
+                                    <th class="py-2.5 px-2 text-left w-32 sm:w-auto bg-slate-100">Sopir / Kru</th>
                                     <th class="py-2.5 px-2 text-left w-28 bg-slate-100">Status</th>
                                 </tr>
                             </thead>
@@ -112,80 +123,50 @@
         
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let databaseRitaseDiproses = [];
-        let ritaseSopirAktif = []; 
-        let namaSopirAktif = "";     
+        let dataRawMasterGlobal = []; // Menyimpan log murni bulan berjalan
+        let ritaseHasilFilter = []; 
+        let itemAktifTerpilih = "";     
+        let tipeAktifTerpilih = ""; // 'sopir' atau 'unit'
 
-        // Daftar sopir internal
-        const DAFTAR_UNIT_SENDIRI = [
-            "agus wanto", 
-            "agus mulyanto", 
-            "nur kholis", 
-            "alfin", 
-            "supriyadi", 
-            "agus efendi", 
-            "wahid khumaini", 
-            "wiyanto"
-        ];
+        // Master list internal
+        const DAFTAR_UNIT_SENDIRI = ["AGUS WANTO", "AGUS MULYANTO", "NUR KHOLIS", "ALFIN", "SUPRIYADI", "AGUS EFENDI", "WAHID KHUMAINI", "WIYANTO"];
+        const DAFTAR_NOPOL_BARU = ["KH 8942 GN", "KH 8943 GN", "KH 8141 GM", "KH 8042 GH", "KH 8068 GR", "KH 8812 GG", "L 9761 UJ"];
+        const TANGGAL_MERAH_2026 = ["2026-01-01", "2026-01-23", "2026-02-16", "2026-02-17", "2026-03-20", "2026-03-23", "2026-04-03", "2026-04-05", "2026-04-16", "2026-04-17", "2026-04-20", "2026-04-21", "2026-04-22", "2026-04-23", "2026-05-01", "2026-05-14", "2026-05-22", "2026-05-24", "2026-05-27", "2026-05-28", "2026-06-01", "2026-06-16", "2026-08-17", "2026-08-26", "2026-12-25", "2026-12-26"];
 
-        // DAFTAR TANGGAL MERAH / HARI LIBUR NASIONAL & CUTI BERSAMA 2026 (Format: YYYY-MM-DD)
-        const TANGGAL_MERAH_2026 = [
-            "2026-01-01", "2026-01-23", "2026-02-16", "2026-02-17", "2026-03-20", 
-            "2026-03-23", "2026-04-03", "2026-04-05", "2026-04-16", "2026-04-17", 
-            "2026-04-20", "2026-04-21", "2026-04-22", "2026-04-23", "2026-05-01", 
-            "2026-05-14", "2026-05-22", "2026-05-24", "2026-05-27", "2026-05-28", 
-            "2026-06-01", "2026-06-16", "2026-08-17", "2026-08-26", "2026-12-25", 
-            "2026-12-26"
-        ];
-
-        // Buat opsi dropdown untuk Bulan Ini dan Bulan Lalu secara dinamis
         function setOpsiDropdown() {
             const select = document.getElementById('pilih-periode');
             const sekarang = new Date();
             const opsiFormat = { month: 'long', year: 'numeric' };
-
-            // Opsi 1: Bulan Ini
-            const bulanIniTeks = sekarang.toLocaleDateString('id-ID', opsiFormat);
             const bulanIniValue = `${sekarang.getFullYear()}-${sekarang.getMonth()}`;
-
-            // Opsi 2: Bulan Lalu
             const bulanLaluDate = new Date(sekarang.getFullYear(), Clinical = sekarang.getMonth() - 1, 1);
-            const bulanLaluTeks = bulanLaluDate.toLocaleDateString('id-ID', opsiFormat);
             const bulanLaluValue = `${bulanLaluDate.getFullYear()}-${bulanLaluDate.getMonth()}`;
 
             select.innerHTML = `
-                <option value="${bulanIniValue}">${bulanIniTeks}</option>
-                <option value="${bulanLaluValue}">${bulanLaluTeks}</option>
+                <option value="${bulanIniValue}">${sekarang.toLocaleDateString('id-ID', opsiFormat)}</option>
+                <option value="${bulanLaluValue}">${bulanLaluDate.toLocaleDateString('id-ID', opsiFormat)}</option>
             `;
         }
 
-        // Fungsi inisiasi awal dengan perbaikan format tanggal lokal murni
         async function init(tahunPilihan, bulanPilihan) {
             try {
-                // Reset visual tampilan kanan jika ganti bulan
                 document.getElementById('placeholder-detail').classList.remove('hidden');
                 document.getElementById('konten-detail').classList.add('hidden');
                 document.getElementById('btn-download-jpg').classList.add('hidden');
-                document.getElementById('nama-sopir-terpilih').innerText = "-";
+                document.getElementById('nama-terpilih').innerText = "-";
                 
-                document.getElementById('loading-sopir').innerText = "Memuat daftar sopir...";
-                document.getElementById('loading-sopir').classList.remove('hidden');
-                document.getElementById('daftar-sopir').classList.add('hidden');
+                document.getElementById('loading-kiri').classList.remove('hidden');
+                document.getElementById('daftar-sopir-container').classList.add('hidden');
+                document.getElementById('daftar-unit-container').classList.add('hidden');
 
                 const sekarang = new Date();
                 const tahun = tahunPilihan !== undefined ? tahunPilihan : sekarang.getFullYear();
                 const bulan = bulanPilihan !== undefined ? bulanPilihan : sekarang.getMonth();
 
-                // Pembuatan range tanggal menggunakan format lokal murni (Mencegah Bug UTC)
                 const dMulai = new Date(tahun, bulan, 1);
-                const dSelesai = new Date(tahun, bulan + 1, 0); // Mengambil tanggal terakhir bulan berjalan
+                const dSelesai = new Date(tahun, bulan + 1, 0); 
 
-                const mmMulai = String(dMulai.getMonth() + 1).padStart(2, '0');
-                const mmSelesai = String(dSelesai.getMonth() + 1).padStart(2, '0');
-                const ddSelesai = String(dSelesai.getDate()).padStart(2, '0');
-
-                const tanggalMulai = `${dMulai.getFullYear()}-${mmMulai}-01T00:00:00`;
-                const tanggalSelesai = `${dSelesai.getFullYear()}-${mmSelesai}-${ddSelesai}T23:59:59`;
+                const tanggalMulai = `${dMulai.getFullYear()}-${String(dMulai.getMonth() + 1).padStart(2, '0')}-01T00:00:00`;
+                const tanggalSelesai = `${dSelesai.getFullYear()}-${String(dSelesai.getMonth() + 1).padStart(2, '0')}-${String(dSelesai.getDate()).padStart(2, '0')}T23:59:59`;
 
                 const { data, error } = await _supabase
                     .from('data_pengiriman')
@@ -195,157 +176,214 @@
 
                 if (error) throw error;
 
-                prosesDataPengiriman(data || []);
+                dataRawMasterGlobal = data || [];
+                ekstrakDanTampilkanMenuKiri();
 
             } catch (err) {
-                console.error("Gagal mengambil data:", err.message);
-                document.getElementById('loading-sopir').innerText = "Gagal memuat data. Cek koneksi.";
+                console.error(err);
+                document.getElementById('loading-kiri').innerText = "Koneksi Bermasalah.";
             }
         }
 
-        // Fungsi pemicu ketika user mengganti pilihan di dropdown
         function gantiPeriode(value) {
             const [tahun, bulan] = value.split('-').map(Number);
             init(tahun, bulan);
         }
 
-        // Logika pemrosesan data logic
-        function prosesDataPengiriman(dataRaw) {
-            databaseRitaseDiproses = [];
-            let daftarSopirUnik = new Set();
-            let adaUnitLuar = false;
+        function ekstrakDanTampilkanMenuKiri() {
+            let sopirTerdeteksi = new Set();
+            let unitTerdeteksi = new Set();
+            let adaTrukLuarLain = false;
 
-            dataRaw.forEach(item => {
-                if (!item.sopir) return;
+            const masterSopirClean = DAFTAR_UNIT_SENDIRI.map(s => s.trim().toLowerCase());
+            const masterNopolClean = DAFTAR_NOPOL_BARU.map(n => n.replace(/\s+/g, '').toUpperCase());
 
-                const kumpulanNama = item.sopir.split(',').map(nama => nama.trim()).filter(Boolean);
-
-                kumpulanNama.forEach((namaSopir, indeksPosisi) => {
-                    const namaCek = namaSopir.toLowerCase();
-                    const tipeSopir = indeksPosisi === 0 ? "Driver" : "Helper";
-
-                    if (DAFTAR_UNIT_SENDIRI.includes(namaCek)) {
-                        daftarSopirUnik.add(namaSopir);
-                        databaseRitaseDiproses.push({
-                            sopir: namaSopir,
-                            tanggal: item.tanggal,
-                            nopol: item.nopol,
-                            delivery_to: item.delivery_to,
-                            lokasi: item.lokasi,
-                            peran: tipeSopir
-                        });
+            dataRawMasterGlobal.forEach(item => {
+                if (item.sopir) {
+                    item.sopir.split(',').map(s => s.trim()).forEach(nama => {
+                        const idx = masterSopirClean.indexOf(nama.toLowerCase());
+                        if (idx !== -1) {
+                            sopirTerdeteksi.add(DAFTAR_UNIT_SENDIRI[idx].replace(/\b\w/g, l => l.toUpperCase()));
+                        }
+                    });
+                }
+                
+                if (item.nopol) {
+                    const nopolClean = item.nopol.replace(/\s+/g, '').toUpperCase();
+                    const idxNopol = masterNopolClean.indexOf(nopolClean);
+                    if (idxNopol !== -1) {
+                        unitTerdeteksi.add(DAFTAR_NOPOL_BARU[idxNopol]);
                     } else {
-                        adaUnitLuar = true;
-                        databaseRitaseDiproses.push({
-                            sopir: "🚚 UNIT LUAR",
-                            tanggal: item.tanggal,
-                            nopol: item.nopol,
-                            delivery_to: item.delivery_to,
-                            lokasi: item.lokasi,
-                            peran: tipeSopir
-                        });
+                        adaTrukLuarLain = true;
                     }
-                });
+                }
             });
 
-            let hasilDaftarSopir = [...daftarSopirUnik].sort();
+            const containerSopir = document.getElementById('daftar-sopir-container');
+            containerSopir.innerHTML = '';
+            let listSopirUrut = [...sopirTerdeteksi].sort();
             
-            if (adaUnitLuar) {
-                hasilDaftarSopir.push("🚚 UNIT LUAR");
-            }
-
-            tampilkanDaftarSopir(hasilDaftarSopir);
-        }
-
-        // Menampilkan daftar nama sopir ke list kiri
-        function tampilkanDaftarSopir(paraSopir) {
-            const container = document.getElementById('daftar-sopir');
-            const loading = document.getElementById('loading-sopir');
-            container.innerHTML = '';
-
-            if (paraSopir.length === 0) {
-                container.innerHTML = '<li class="text-xs text-zinc-400 italic p-2 text-center">Tidak ada data sopir pada periode ini.</li>';
+            if (listSopirUrut.length === 0) {
+                containerSopir.innerHTML = '<li class="text-xs text-zinc-400 italic p-2 text-center">Tidak ada sopir jalan.</li>';
             } else {
-                paraSopir.forEach(nama => {
-                    const isUnitLuar = nama === "🚚 UNIT LUAR";
-                    const iconSopir = isUnitLuar ? "" : "👤 ";
-                    const kelasWarnaTombol = isUnitLuar 
-                        ? "bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900" 
-                        : "bg-white hover:bg-slate-100 border-zinc-200 text-zinc-700";
-
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <button onclick="pilihSopir(this, '${nama}')" class="btn-sopir w-full text-left px-3 py-2.5 border rounded-lg text-xs font-semibold transition active:scale-[0.99] focus:outline-none flex justify-between items-center cursor-pointer min-h-[42px] ${kelasWarnaTombol}">
-                            <span class="truncate pr-2">${iconSopir}${nama}</span>
-                            <span class="text-[10px] opacity-70 font-normal shrink-0">Pilih ➔</span>
-                        </button>
-                    `;
-                    container.appendChild(li);
+                listSopirUrut.forEach(nama => {
+                    containerSopir.innerHTML += `
+                        <li>
+                            <button onclick="pilihItem(this, '${nama}', 'sopir')" class="btn-item w-full text-left px-3 py-2.5 border border-zinc-200 bg-white hover:bg-slate-50 text-zinc-700 rounded-lg text-xs font-semibold flex justify-between items-center cursor-pointer min-h-[42px] shadow-sm">
+                                <span>👤 ${nama}</span> <span class="text-[10px] opacity-60 font-normal">Pilih ➔</span>
+                            </button>
+                        </li>`;
                 });
             }
 
-            loading.classList.add('hidden');
-            container.classList.remove('hidden');
+            const containerUnit = document.getElementById('daftar-unit-container');
+            containerUnit.innerHTML = '';
+            let listUnitUrut = [...unitTerdeteksi].sort();
+
+            if (listUnitUrut.length === 0 && !adaTrukLuarLain) {
+                containerUnit.innerHTML = '<li class="text-xs text-zinc-400 italic p-2 text-center">Tidak ada unit jalan.</li>';
+            } else {
+                listUnitUrut.forEach(nopol => {
+                    containerUnit.innerHTML += `
+                        <li>
+                            <button onclick="pilihItem(this, '${nopol}', 'unit')" class="btn-item w-full text-left px-3 py-2.5 border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 rounded-lg text-xs font-bold flex justify-between items-center cursor-pointer min-h-[42px] shadow-sm">
+                                <span>Report 🚛 ${nopol}</span> <span class="text-[10px] opacity-60 font-normal">Pilih ➔</span>
+                            </button>
+                        </li>`;
+                });
+                if (adaTrukLuarLain) {
+                    containerUnit.innerHTML += `
+                        <li>
+                            <button onclick="pilihItem(this, '🚚 UNIT LUAR ', 'unit')" class="btn-item w-full text-left px-3 py-2.5 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-lg text-xs font-bold flex justify-between items-center cursor-pointer min-h-[42px] shadow-sm">
+                                <span>🚚 UNIT LUAR </span> <span class="text-[10px] opacity-60 font-normal">Pilih ➔</span>
+                            </button>
+                        </li>`;
+                }
+            }
+
+            document.getElementById('loading-kiri').classList.add('hidden');
+            document.getElementById('daftar-sopir-container').classList.remove('hidden');
         }
 
-        // Logika klik nama sopir
-        function pilihSopir(elemenTombol, namaSopir) {
-            document.querySelectorAll('.btn-sopir').forEach(btn => {
-                btn.classList.remove('border-slate-800', 'bg-slate-100', 'text-slate-900', 'ring-2', 'ring-slate-800/20');
-            });
-            elemenTombol.classList.add('border-slate-800', 'bg-slate-100', 'text-slate-900', 'ring-2', 'ring-slate-800/20');
-            
-            document.getElementById('nama-sopir-terpilih').innerText = namaSopir;
-            namaSopirAktif = namaSopir; 
-            
-            ritaseSopirAktif = databaseRitaseDiproses
-                .filter(item => item.sopir === namaSopir)
-                .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+        function switchTab(tipe) {
+            const btnSopir = document.getElementById('tab-sopir');
+            const btnUnit = document.getElementById('tab-unit');
+            const boxSopir = document.getElementById('daftar-sopir-container');
+            const boxUnit = document.getElementById('daftar-unit-container');
 
-            document.getElementById('total-ritase').innerText = ritaseSopirAktif.length;
+            if (tipe === 'sopir') {
+                btnSopir.className = "w-1/2 text-center py-2 text-xs font-bold rounded-md bg-white text-slate-800 shadow-sm cursor-pointer";
+                btnUnit.className = "w-1/2 text-center py-2 text-xs font-bold rounded-md text-zinc-500 hover:text-zinc-800 cursor-pointer";
+                boxSopir.classList.remove('hidden');
+                boxUnit.classList.add('hidden');
+            } else {
+                btnUnit.className = "w-1/2 text-center py-2 text-xs font-bold rounded-md bg-white text-slate-800 shadow-sm cursor-pointer";
+                btnSopir.className = "w-1/2 text-center py-2 text-xs font-bold rounded-md text-zinc-500 hover:text-zinc-800 cursor-pointer";
+                boxUnit.classList.remove('hidden');
+                boxSopir.classList.add('hidden');
+            }
+        }
+
+        function pilihItem(elemenTombol, value, tipe) {
+            document.querySelectorAll('.btn-item').forEach(btn => {
+                btn.classList.remove('border-slate-800', 'bg-slate-100', 'text-slate-950', 'ring-2', 'ring-slate-800/20');
+            });
+            elemenTombol.classList.add('border-slate-800', 'bg-slate-100', 'text-slate-950', 'ring-2', 'ring-slate-800/20');
+            
+            itemAktifTerpilih = value;
+            tipeAktifTerpilih = tipe;
+
+            document.getElementById('nama-terpilih').innerText = value;
+            document.getElementById('label-tipe-terpilih').innerText = (tipe === 'sopir') ? "(Perorangan)" : "(Per Kendaraan)";
+            document.getElementById('total-title').innerText = (tipe === 'sopir') ? `TOTAL RITASE DRIVER [ ${value.toUpperCase()} ] :` : `TOTAL RITASE UNIT TRUK [ ${value.toUpperCase()} ] :`;
+
+            if (tipe === 'sopir') {
+                ritaseHasilFilter = dataRawMasterGlobal.filter(item => {
+                    if (!item.sopir) return false;
+                    return item.sopir.toLowerCase().includes(value.toLowerCase());
+                });
+            } else {
+                if (value === "🚚 UNIT LUAR ") {
+                    const masterNopolClean = DAFTAR_NOPOL_BARU.map(n => n.replace(/\s+/g, '').toUpperCase());
+                    ritaseHasilFilter = dataRawMasterGlobal.filter(item => {
+                        if (!item.nopol) return true;
+                        const itemClean = item.nopol.replace(/\s+/g, '').toUpperCase();
+                        return !masterNopolClean.includes(itemClean);
+                    });
+                } else {
+                    ritaseHasilFilter = dataRawMasterGlobal.filter(item => {
+                        if (!item.nopol) return false;
+                        return item.nopol.replace(/\s+/g, '').toUpperCase() === value.replace(/\s+/g, '').toUpperCase();
+                    });
+                }
+            }
+
+            ritaseHasilFilter.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+            document.getElementById('total-ritase').innerText = ritaseHasilFilter.length;
 
             const tbody = document.getElementById('tabel-ritase');
             tbody.innerHTML = '';
 
-            ritaseSopirAktif.forEach((rit, index) => {
+            ritaseHasilFilter.forEach((rit, index) => {
                 const tglObj = new Date(rit.tanggal);
-                const tglFormat = tglObj.toLocaleDateString('id-ID', {
-                    day: '2-digit',
-                    month: 'short'
-                });
-
+                const tglFormat = tglObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
                 const formatStringTanggal = tglObj.toISOString().split('T')[0];
                 const isTanggalMerah = TANGGAL_MERAH_2026.includes(formatStringTanggal);
 
                 let statusArr = [];
-                statusArr.push(rit.peran || "Driver");
+                const masterSopirClean = DAFTAR_UNIT_SENDIRI.map(s => s.trim().toLowerCase());
                 
+                // Memecah string sopir berdasarkan tanda koma
+                const listKru = rit.sopir ? rit.sopir.split(',').map(s => s.trim().toLowerCase()) : [];
+                const namaKruUtama = listKru[0] || "";
+
+                if (masterSopirClean.includes(namaKruUtama)) {
+                    statusArr.push("Internal");
+                } else {
+                    statusArr.push("Unit Luar");
+                }
+
+                // LOGIKA BARU: Driver / Helper berdasarkan posisi index array nama yang di-klik
+                if (tipe === 'sopir' && listKru.length > 1) {
+                    const idxTerpilih = listKru.indexOf(value.toLowerCase());
+                    if (idxTerpilih === 0) {
+                        statusArr.push("Driver");
+                    } else if (idxTerpilih > 0) {
+                        statusArr.push("Helper");
+                    }
+                } else if (tipe === 'sopir' && listKru.length === 1) {
+                    statusArr.push("Driver");
+                }
+
                 if (tglObj.getDay() === 0 || isTanggalMerah) { 
                     statusArr.push("Lembur");
                 }
                 
                 const statusTeks = statusArr.join(", ");
-                
                 let kelasWarnaStatus = "text-zinc-500 font-medium";
+                
+                // LOGIKA WARNA STATUS: Lembur & Unit Luar tetap diprioritaskan, Driver & Helper dibedakan warnanya
                 if (statusArr.includes("Lembur")) {
                     kelasWarnaStatus = "text-red-700 font-semibold bg-red-50 px-1.5 py-0.5 rounded-sm border border-red-200/60";
-                } else if (statusArr.includes("Helper")) {
+                } else if (statusArr.includes("Unit Luar")) {
+                    kelasWarnaStatus = "text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded-sm border border-emerald-200/60";
+                } else if (statusArr.includes("Driver")) {
                     kelasWarnaStatus = "text-blue-700 font-semibold bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-200/60";
+                } else if (statusArr.includes("Helper")) {
+                    kelasWarnaStatus = "text-indigo-700 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded-sm border border-indigo-200/60";
                 }
 
                 const kelasZebra = (index % 2 === 0) ? "bg-white" : "bg-zinc-50/50";
 
-                const tr = document.createElement('tr');
-                tr.className = `hover:bg-zinc-50 transition-colors ${kelasZebra}`;
-                tr.innerHTML = `
-                    <td class="py-2.5 px-2.5 font-medium text-zinc-400 text-center">${index + 1}</td>
-                    <td class="py-2.5 px-2 whitespace-nowrap font-medium text-zinc-700">${tglFormat}</td>
-                    <td class="py-2.5 px-2 font-bold text-slate-700 uppercase whitespace-nowrap">${rit.nopol || '-'}</td>
-                    <td class="py-2.5 px-3 font-semibold text-slate-800 break-words max-w-[160px] sm:max-w-none">${rit.delivery_to || '-'}</td>
-                    <td class="py-2.5 px-2 text-zinc-500 truncate max-w-[120px] sm:max-w-none" title="${rit.lokasi || '-'}">${rit.lokasi || '-'}</td>
-                    <td class="py-2.5 px-2 whitespace-nowrap"><span class="${kelasWarnaStatus}">${statusTeks}</span></td>
-                `;
-                tbody.appendChild(tr);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-zinc-50 transition-colors ${kelasZebra}">
+                        <td class="py-2.5 px-2.5 font-medium text-zinc-400 text-center">${index + 1}</td>
+                        <td class="py-2.5 px-2 whitespace-nowrap font-medium text-zinc-700">${tglFormat}</td>
+                        <td class="py-2.5 px-2 font-bold text-slate-700 uppercase whitespace-nowrap">${rit.nopol || '-'}</td>
+                        <td class="py-2.5 px-3 font-semibold text-slate-800 break-words max-w-[160px] sm:max-w-none">${rit.delivery_to || '-'}</td>
+                        <td class="py-2.5 px-2 text-zinc-600 font-medium break-words max-w-[120px] sm:max-w-none">${rit.sopir || '-'}</td>
+                        <td class="py-2.5 px-2 whitespace-nowrap"><span class="${kelasWarnaStatus}">${statusTeks}</span></td>
+                    </tr>`;
             });
 
             document.getElementById('placeholder-detail').classList.add('hidden');
@@ -353,20 +391,15 @@
             document.getElementById('btn-download-jpg').classList.remove('hidden');
             
             if (window.innerWidth < 768) {
-                document.getElementById('nama-sopir-terpilih').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.getElementById('nama-terpilih').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
-        // Fungsi Cetak Gambar
         function downloadJpgPerSopir() {
-            if (ritaseSopirAktif.length === 0) {
-                alert("Tidak ada data ritase untuk didownload.");
-                return;
-            }
+            if (ritaseHasilFilter.length === 0) return;
 
             const targetElement = document.getElementById('area-cetak-jpg');
             const btnJpg = document.getElementById('btn-download-jpg');
-            
             btnJpg.innerText = "⏳ PROSES...";
             btnJpg.disabled = true;
 
@@ -378,12 +411,10 @@
             clone.style.height = 'auto'; 
             document.body.appendChild(clone);
 
-            const klonJudulSopir = clone.querySelector('#nama-sopir-terpilih');
-            if (klonJudulSopir) {
+            const klonJudul = clone.querySelector('#nama-terpilih');
+            if (klonJudul) {
                 const selectEl = document.getElementById('pilih-periode');
-                const teksPeriode = selectEl.options[selectEl.selectedIndex].text;
-                klonJudulSopir.innerText = `${namaSopirAktif.toUpperCase()} - ${teksPeriode.toUpperCase()}`;
-                klonJudulSopir.className = "text-slate-900 uppercase font-extrabold text-sm border-b border-dashed border-slate-400 pb-0.5";
+                klonJudul.innerText = `${itemAktifTerpilih.toUpperCase()} - ${selectEl.options[selectEl.selectedIndex].text.toUpperCase()}`;
             }
 
             const klonTabelKontainer = clone.querySelector('.overflow-x-auto');
@@ -403,43 +434,37 @@
                 scale: 2, 
                 useCORS: true,
                 allowTaint: true, 
-                logging: false,
                 backgroundColor: "#f4f4f5",
                 windowWidth: targetElement.scrollWidth,
                 windowHeight: clone.scrollHeight
             }).then(canvas => {
                 const dataJpg = canvas.toDataURL('image/jpeg', 0.95);
-                
                 const selectEl = document.getElementById('pilih-periode');
                 const teksPeriode = selectEl.options[selectEl.selectedIndex].text.replace(/ /g, "_");
-                const namaClean = namaSopirAktif.replace(/[^\w\s]/gi, '').trim().replace(/ /g, "_");
-                const namaFile = `Ritase_${namaClean}_${teksPeriode}.jpg`;
-
+                const namaClean = itemAktifTerpilih.replace(/[^\w\s]/gi, '').trim().replace(/ /g, "_");
+                
                 const linkSimpan = document.createElement('a');
                 linkSimpan.href = dataJpg;
-                linkSimpan.download = namaFile;
+                linkSimpan.download = `Ritase_${tipeAktifTerpilih.toUpperCase()}_${namaClean}_${teksPeriode}.jpg`;
                 document.body.appendChild(linkSimpan);
                 linkSimpan.click();
+                
                 document.body.removeChild(linkSimpan);
-
                 document.body.removeChild(clone);
-
                 btnJpg.innerText = "DOWNLOAD";
                 btnJpg.disabled = false;
             }).catch(err => {
-                console.error("Gagal membuat gambar:", err);
-                alert("Gagal memproses gambar.");
+                console.error(err);
                 if (document.body.contains(clone)) document.body.removeChild(clone);
                 btnJpg.innerText = "DOWNLOAD";
                 btnJpg.disabled = false;
             });
         }
 
-        // Pemuatan window onload terstruktur
         window.onload = function() {
             setOpsiDropdown(); 
-            init();            
+            init();             
         };
     </script>
-</body>
+</body> 
 </html>

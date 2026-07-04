@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -215,6 +215,7 @@
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const sopirPhoneMap = {
+        "ADMIN UTAMA": "02041978",
         "AGUS EFENDI": "082264220069", "WAHID KHUMAINI": "08115232946",
         "AGUS WANTO": "081228008887", "NUR KHOLIS": "082151512123",
         "AGUS MULYANTO": "081255852929", "SUPRIYADI": "082330138377",
@@ -332,6 +333,9 @@
     }
 
     function verifikasiHakAksesSopir(sopirDariDb) {
+        const loginPhone = localStorage.getItem('login_sopir_phone');
+        if (loginPhone === "02041978") return true; // Bypass Admin Utama
+
         const loginNama = localStorage.getItem('login_sopir_nama');
         if (!loginNama) return false;
 
@@ -512,11 +516,15 @@
         
     async function takeJob(nopol, rowId, sopirDiJadwal, tujuan) {
         const currentDriver = localStorage.getItem('login_sopir_nama'); 
+        const loginPhone = localStorage.getItem('login_sopir_phone');
         if (!currentDriver) return alert("Sesi login habis, silakan login ulang.");
 
-        if (!sopirDiJadwal || !sopirDiJadwal.toUpperCase().trim().includes(currentDriver.toUpperCase().trim())) {
-            tampilkanNotifikasiKilat(` 🛇 STOP!JADWAL INI MILIK ${sopirDiJadwal.toUpperCase()}.\nANDA (${currentDriver.toUpperCase()}) HUBUNGI ADMIN BOLO....`, "#ff5252");
-            return;
+        // Jika nomor HP bukan admin, validasi kesesuaian nama sopir
+        if (loginPhone !== "02041978") {
+            if (!sopirDiJadwal || !sopirDiJadwal.toUpperCase().trim().includes(currentDriver.toUpperCase().trim())) {
+                tampilkanNotifikasiKilat(` 🛇 STOP!JADWAL INI MILIK ${sopirDiJadwal.toUpperCase()}.\nANDA (${currentDriver.toUpperCase()}) HUBUNGI ADMIN BOLO....`, "#ff5252");
+                return;
+            }
         }
         
         if (!navigator.geolocation) {
@@ -524,7 +532,11 @@
             return;
         }
 
-        // POP-UP CONFIRM SUDAH DIHILANGKAN, LANGSUNG EKSEKUSI DI BAWAH INI:
+        // POP-UP KONFIRMASI DIKEMBALIKAN
+        if (!confirm(`Apakah Anda yakin ingin AMBIL JOB ini?\nUnit: ${nopol}\nTujuan: ${tujuan}`)) {
+            return;
+        }
+
         navigator.geolocation.getCurrentPosition(async (posAwal) => {
             const latitude = posAwal.coords.latitude;
             const longitude = posAwal.coords.longitude;
@@ -619,6 +631,10 @@
         if (backupJob) {
         const dataJob = JSON.parse(backupJob);
         const loginNama = localStorage.getItem('login_sopir_nama');
+        const loginPhone = localStorage.getItem('login_sopir_phone');
+
+        // Jika yang login adalah admin, tracking dibatasi/dilewati agar tidak menimpa gps sopir asli
+        if (loginPhone === "02041978") return;
 
         // Validasi langsung ke Supabase: Apakah sopir ini benar-benar masih punya job PROSES?
         const { data: cekJobAktif } = await _supabase
@@ -667,8 +683,9 @@
     _supabase.channel('db-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'data_pengiriman' }, (payload) => {
             const loginNama = localStorage.getItem('login_sopir_nama');
+            const loginPhone = localStorage.getItem('login_sopir_phone');
             
-            if (payload.eventType === 'UPDATE' && loginNama) {
+            if (payload.eventType === 'UPDATE' && loginNama && loginPhone !== "02041978") {
                 const dataBaru = payload.new;
                 if (dataBaru.sopir && 
                     dataBaru.sopir.toUpperCase().trim().includes(loginNama.toUpperCase().trim()) && 
@@ -702,4 +719,4 @@
     });
 </script> 
 </body>
-</html>      
+</html>

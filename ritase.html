@@ -96,18 +96,19 @@
                     </div>
 
                     <div class="overflow-x-auto flex-1 max-h-[320px] md:max-h-[420px] overflow-y-auto border border-zinc-200 rounded-lg bg-white custom-scroll shadow-sm">
-                        <table class="min-w-full divide-y divide-zinc-200 table-fixed sm:table-auto">
+                        <table class="min-w-full divide-y divide-zinc-200 table-auto">
                             <thead class="bg-slate-100 sticky top-0 z-10 shadow-sm">
-                                <tr class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                                    <th class="py-2.5 px-2.5 text-left w-10 bg-slate-100">No</th>
-                                    <th class="py-2.5 px-2 text-left w-24 bg-slate-100">Tanggal</th>
-                                    <th class="py-2.5 px-2 text-left w-24 bg-slate-100">Nopol</th>
-                                    <th class="py-2.5 px-3 text-left w-40 sm:w-auto bg-slate-100">Tujuan</th>
-                                    <th class="py-2.5 px-2 text-left w-32 sm:w-auto bg-slate-100">Sopir / Kru</th>
-                                    <th class="py-2.5 px-2 text-left w-28 bg-slate-100">Status</th>
+                                <tr class="text-[10px] sm:text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                                    <th class="py-2 px-2 text-center w-8 bg-slate-100 whitespace-nowrap">No</th>
+                                    <th class="py-2 px-2 text-left bg-slate-100 whitespace-nowrap">Tanggal</th>
+                                    <th class="py-2 px-2 text-left bg-slate-100 whitespace-nowrap">Nopol</th>
+                                    <th class="py-2 px-2.5 text-left bg-slate-100 whitespace-nowrap">Tujuan</th>
+                                    <th class="py-2 px-2.5 text-left bg-slate-100 whitespace-nowrap">Lokasi</th>
+                                    <th class="py-2 px-2 text-left bg-slate-100 whitespace-nowrap">Sopir / Kru</th>
+                                    <th class="py-2 px-2 text-left bg-slate-100 whitespace-nowrap">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabel-ritase" class="divide-y divide-zinc-100 text-xs text-zinc-600 font-normal"></tbody>
+                            <tbody id="tabel-ritase" class="divide-y divide-zinc-100 text-[10px] sm:text-[11px] text-zinc-600 font-normal"></tbody>
                         </table>
                     </div>
                 </div>
@@ -138,7 +139,7 @@
             const sekarang = new Date();
             const opsiFormat = { month: 'long', year: 'numeric' };
             const bulanIniValue = `${sekarang.getFullYear()}-${sekarang.getMonth()}`;
-            const bulanLaluDate = new Date(sekarang.getFullYear(), Clinical = sekarang.getMonth() - 1, 1);
+            const bulanLaluDate = new Date(sekarang.getFullYear(), sekarang.getMonth() - 1, 1);
             const bulanLaluValue = `${bulanLaluDate.getFullYear()}-${bulanLaluDate.getMonth()}`;
 
             select.innerHTML = `
@@ -343,7 +344,7 @@
                     statusArr.push("Unit Luar");
                 }
 
-                // LOGIKA BARU: Driver / Helper berdasarkan posisi index array nama yang di-klik
+                // Driver / Helper berdasarkan posisi index array nama yang di-klik
                 if (tipe === 'sopir' && listKru.length > 1) {
                     const idxTerpilih = listKru.indexOf(value.toLowerCase());
                     if (idxTerpilih === 0) {
@@ -362,27 +363,28 @@
                 const statusTeks = statusArr.join(", ");
                 let kelasWarnaStatus = "text-zinc-500 font-medium";
                 
-                // LOGIKA WARNA STATUS: Lembur & Unit Luar tetap diprioritaskan, Driver & Helper dibedakan warnanya
+                // LOGIKA WARNA STATUS
                 if (statusArr.includes("Lembur")) {
-                    kelasWarnaStatus = "text-red-700 font-semibold bg-red-50 px-1.5 py-0.5 rounded-sm border border-red-200/60";
+                    kelasWarnaStatus = "text-red-700 font-semibold bg-red-50 px-1 py-0.5 rounded-sm border border-red-200/60";
                 } else if (statusArr.includes("Unit Luar")) {
-                    kelasWarnaStatus = "text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded-sm border border-emerald-200/60";
+                    kelasWarnaStatus = "text-emerald-700 font-semibold bg-emerald-50 px-1 py-0.5 rounded-sm border border-emerald-200/60";
                 } else if (statusArr.includes("Driver")) {
-                    kelasWarnaStatus = "text-blue-700 font-semibold bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-200/60";
+                    kelasWarnaStatus = "text-blue-700 font-semibold bg-blue-50 px-1 py-0.5 rounded-sm border border-blue-200/60";
                 } else if (statusArr.includes("Helper")) {
-                    kelasWarnaStatus = "text-indigo-700 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded-sm border border-indigo-200/60";
+                    kelasWarnaStatus = "text-indigo-700 font-semibold bg-indigo-50 px-1 py-0.5 rounded-sm border border-indigo-200/60";
                 }
 
                 const kelasZebra = (index % 2 === 0) ? "bg-white" : "bg-zinc-50/50";
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-zinc-50 transition-colors ${kelasZebra}">
-                        <td class="py-2.5 px-2.5 font-medium text-zinc-400 text-center">${index + 1}</td>
-                        <td class="py-2.5 px-2 whitespace-nowrap font-medium text-zinc-700">${tglFormat}</td>
-                        <td class="py-2.5 px-2 font-bold text-slate-700 uppercase whitespace-nowrap">${rit.nopol || '-'}</td>
-                        <td class="py-2.5 px-3 font-semibold text-slate-800 break-words max-w-[160px] sm:max-w-none">${rit.delivery_to || '-'}</td>
-                        <td class="py-2.5 px-2 text-zinc-600 font-medium break-words max-w-[120px] sm:max-w-none">${rit.sopir || '-'}</td>
-                        <td class="py-2.5 px-2 whitespace-nowrap"><span class="${kelasWarnaStatus}">${statusTeks}</span></td>
+                        <td class="py-2 px-2 font-medium text-zinc-400 text-center whitespace-nowrap">${index + 1}</td>
+                        <td class="py-2 px-2 whitespace-nowrap font-medium text-zinc-700">${tglFormat}</td>
+                        <td class="py-2 px-2 font-bold text-slate-700 uppercase whitespace-nowrap">${rit.nopol || '-'}</td>
+                        <td class="py-2 px-2.5 font-semibold text-slate-800 whitespace-nowrap">${rit.delivery_to || '-'}</td>
+                        <td class="py-2 px-2.5 font-medium text-slate-700 whitespace-nowrap">${rit.lokasi || '-'}</td>
+                        <td class="py-2 px-2 text-zinc-600 font-medium whitespace-nowrap">${rit.sopir || '-'}</td>
+                        <td class="py-2 px-2 whitespace-nowrap"><span class="${kelasWarnaStatus}">${statusTeks}</span></td>
                     </tr>`;
             });
 

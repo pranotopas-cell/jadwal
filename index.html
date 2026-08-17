@@ -362,7 +362,7 @@
 
         function verifikasiHakAksesSopir(sopirDariDb) {
             const loginPhone = localStorage.getItem('login_sopir_phone');
-            if (loginPhone === "02041978") return true; // Bypass Admin Utama
+            if (loginPhone === "02041978") return true;
 
             const loginNama = localStorage.getItem('login_sopir_nama');
             if (!loginNama) return false;
@@ -389,8 +389,13 @@
 
             const { data, error } = await _supabase.from('data_pengiriman').select('*').gte('tanggal', isoHariIni);
             isFetching = false;
+
+            if (error) {
+                console.error("Supabase Error:", error);
+                return;
+            }
             
-            if (!error && data) {
+            if (data) {
                 const statusPriority = { "PROSES": 10, "LANGSIRAN": 20, "TERJADWAL": 30, "OPER": 40, "NGISI AJA": 50, "TUNGGU": 60, "DELIVERED": 70 };
 
                 data.sort((a, b) => {
@@ -523,7 +528,6 @@
                         status: 'ON_JOB', 
                         last_update: updateTime
                     });
-                    console.log("Firebase Tracking Updated:", coords.latitude, coords.longitude);
                 }
             }
 
@@ -549,7 +553,6 @@
             const loginPhone = localStorage.getItem('login_sopir_phone');
             if (!currentDriver) return alert("Sesi login habis, silakan login ulang.");
 
-            // Validasi kesesuaian sopir jika bukan admin
             if (loginPhone !== "02041978") {
                 if (!sopirDiJadwal || !sopirDiJadwal.toUpperCase().trim().includes(currentDriver.toUpperCase().trim())) {
                     tampilkanNotifikasiKilat(` 🛇 STOP! JADWAL INI MILIK ${sopirDiJadwal.toUpperCase()}.\nANDA (${currentDriver.toUpperCase()}) HUBUNGI ADMIN BOLO....`, "#ff5252");
@@ -568,13 +571,11 @@
 
             tampilkanNotifikasiKilat("⏳ MENGUNCI GPS & MENGAMBIL JOB...", "#fb8c00");
 
-            // Ambil no_rangka via window.getNoRangka
             let noRangkaVal = '-';
             if (window.getNoRangka) {
                 noRangkaVal = await window.getNoRangka(nopol);
             }
 
-            // Percobaan 1: High Accuracy GPS
             navigator.geolocation.getCurrentPosition(async (posAwal) => {
                 const latitude = posAwal.coords.latitude;
                 const longitude = posAwal.coords.longitude;
@@ -602,9 +603,6 @@
                 loadDashboard(); 
 
             }, async (error) => {
-                console.warn("GPS Akurasi Tinggi Gagal, mencoba Mode Standar/Network...", error.message);
-                
-                // Percobaan 2: Mode GPS Standar
                 navigator.geolocation.getCurrentPosition(async (posStandar) => {
                     const latitude = posStandar.coords.latitude;
                     const longitude = posStandar.coords.longitude;

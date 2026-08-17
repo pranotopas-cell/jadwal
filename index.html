@@ -183,7 +183,7 @@
 
    <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
@@ -205,6 +205,30 @@
         } catch (e) {
             console.error("Gagal menyimpan ke Firebase: ", e);
         }
+    };
+
+    // Fungsi tambahan untuk mengambil no_rangka berdasarkan nopol dari koleksi master_kendaraan
+    window.getNoRangka = async function(nopol) {
+        if (!nopol || nopol === '-') return "-";
+        try {
+            // Hilangkan spasi berlebih untuk pencarian akurat
+            const cleanNopol = nopol.trim();
+            const q = query(collection(dbFirestore, "master_kendaraan"), where("nopol", "==", cleanNopol));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                let noRangka = "-";
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    if (data.no_rangka) {
+                        noRangka = data.no_rangka;
+                    }
+                });
+                return noRangka;
+            }
+        } catch (e) {
+            console.error("Gagal mengambil no_rangka dari master_kendaraan: ", e);
+        }
+        return "-";
     };
 </script>
 
@@ -463,11 +487,11 @@
         tbody.appendChild(fragment);
     }
 
-    function eksekusiMulaiGpsWatch(nopol, tujuan) {
+    function eksekusiMulaiGpsWatch(nopol, tujuan, noRangka = '-') {
         if (watchId) navigator.geolocation.clearWatch(watchId);
         if (gpsBackupInterval) clearInterval(gpsBackupInterval);
         
-        currentActiveJob = { nopol, tujuan };
+        currentActiveJob = { nopol, tujuan, noRangka };
         localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
 
         const currentDriver = localStorage.getItem('login_sopir_nama');
@@ -475,6 +499,7 @@
 
         const nopolValid = nopol || '-';
         const tujuanValid = tujuan || '-';
+        const noRangkaValid = noRangka || '-';
 
         const gpsOptions = { 
             enableHighAccuracy: true, 
@@ -487,6 +512,7 @@
             if (window.saveToFirebase) {
                 window.saveToFirebase(currentDriver, {
                     nopol: nopolValid,
+                    no_rangka: noRangkaValid,
                     lat: coords.latitude,
                     lon: coords.longitude,
                     tujuan: tujuanValid,
@@ -539,6 +565,12 @@
         // Tampilkan indikator loading kilat
         tampilkanNotifikasiKilat("⏳ MENGUNCI GPS & MENGAMBIL JOB...", "#fb8c00");
 
+        // Ambil no_rangka dari Firebase master_kendaraan berdasarkan nopol
+        let noRangkaVal = '-';
+        if (window.getNoRangka) {
+            noRangkaVal = await window.getNoRangka(nopol);
+        }
+
         // Percobaan 1: GPS Akurasi Tinggi (Timeout 30 detik)
         navigator.geolocation.getCurrentPosition(async (posAwal) => {
             const latitude = posAwal.coords.latitude;
@@ -554,6 +586,7 @@
             
             await window.saveToFirebase(currentDriver, {
                 nopol: nopol,
+                no_rangka: noRangkaVal,
                 lat: latitude,
                 lon: longitude,
                 tujuan: tujuan,
@@ -562,7 +595,7 @@
             });
 
             tampilkanNotifikasiKilat("✅ SUKSES..HATI HATI DI JALAN BANG"); 
-            eksekusiMulaiGpsWatch(nopol, tujuan);
+            eksekusiMulaiGpsWatch(nopol, tujuan, noRangkaVal);
             loadDashboard(); 
 
         }, async (error) => {
@@ -583,6 +616,7 @@
                 
                 await window.saveToFirebase(currentDriver, {
                     nopol: nopol,
+                    no_rangka: noRangkaVal,
                     lat: latitude,
                     lon: longitude,
                     tujuan: tujuan,
@@ -591,7 +625,7 @@
                 });
 
                 tampilkanNotifikasiKilat("✅ SUKSES AMBIL JOB (Mode GPS Standar)"); 
-                eksekusiMulaiGpsWatch(nopol, tujuan);
+                eksekusiMulaiGpsWatch(nopol, tujuan, noRangkaVal);
                 loadDashboard(); 
 
             }, (errFinal) => {
@@ -622,6 +656,7 @@
         if (window.saveToFirebase) {
            await window.saveToFirebase(currentDriver, {
            nopol: "-",            // Reset nopol agar tidak menggantung
+           no_rangka: "-",        // Reset no_rangka agar tidak menggantung
            tujuan: "-",           // Reset tujuan agar tidak menggantung
            status: 'LOGIN_ACTIVE',
            last_update: skrg.toISOString()
@@ -689,6 +724,7 @@
             if (window.saveToFirebase) {
                 window.saveToFirebase(loginNama, {
                     nopol: "-",
+                    no_rangka: "-",
                     tujuan: "-",
                     status: 'LOGIN_ACTIVE',
                     last_update: new Date().toISOString()
@@ -698,7 +734,7 @@
         }
 
         // Jika memang valid masih PROSES, silakan jalankan tracking
-        eksekusiMulaiGpsWatch(dataJob.nopol, dataJob.tujuan);
+        eksekusiMulaiGpsWatch(dataJob.nopol, dataJob.tujuan, dataJob.noRangka);
     }
 }
 

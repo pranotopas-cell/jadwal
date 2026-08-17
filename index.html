@@ -478,7 +478,7 @@
 
         const gpsOptions = { 
             enableHighAccuracy: true, 
-            timeout: 5000,       
+            timeout: 10000,       
             maximumAge: 0        
         };
 
@@ -509,7 +509,7 @@
                     kirimKeFirebase(pos.coords);
                 }, (err) => {
                     console.error("Gagal mengambil GPS Cadangan:", err.message);
-                }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
+                }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 });
             }
         }, 20000); 
     }
@@ -532,11 +532,14 @@
             return;
         }
 
-        // POP-UP KONFIRMASI DIKEMBALIKAN
         if (!confirm(`Apakah Anda yakin ingin AMBIL JOB ini?\nUnit: ${nopol}\nTujuan: ${tujuan}`)) {
             return;
         }
 
+        // Tampilkan indikator loading kilat
+        tampilkanNotifikasiKilat("⏳ MENGUNCI GPS & MENGAMBIL JOB...", "#fb8c00");
+
+        // Percobaan 1: GPS Akurasi Tinggi (Timeout 30 detik)
         navigator.geolocation.getCurrentPosition(async (posAwal) => {
             const latitude = posAwal.coords.latitude;
             const longitude = posAwal.coords.longitude;
@@ -562,9 +565,40 @@
             eksekusiMulaiGpsWatch(nopol, tujuan);
             loadDashboard(); 
 
-        }, (error) => {
-            alert("Gagal mengunci GPS! Periksa izin lokasi HP: " + error.message);
-        }, { enableHighAccuracy: true, timeout: 15000 });
+        }, async (error) => {
+            console.warn("GPS Akurasi Tinggi Timeout/Gagal, Mencoba Mode Standar/Network...", error.message);
+            
+            // Percobaan 2 (FALLBACK): GPS Mode Standar / Network Cell Triangulation
+            navigator.geolocation.getCurrentPosition(async (posStandar) => {
+                const latitude = posStandar.coords.latitude;
+                const longitude = posStandar.coords.longitude;
+                const updateTime = new Date().toISOString();
+
+                const { error: errStatus } = await _supabase.from('data_pengiriman').update({ 
+                    status: 'PROSES',
+                    sopir: sopirDiJadwal 
+                }).eq('id', rowId);
+
+                if (errStatus) return alert("Gagal update : " + errStatus.message);
+                
+                await window.saveToFirebase(currentDriver, {
+                    nopol: nopol,
+                    lat: latitude,
+                    lon: longitude,
+                    tujuan: tujuan,
+                    status: 'ON_JOB',
+                    last_update: updateTime
+                });
+
+                tampilkanNotifikasiKilat("✅ SUKSES AMBIL JOB (Mode GPS Standar)"); 
+                eksekusiMulaiGpsWatch(nopol, tujuan);
+                loadDashboard(); 
+
+            }, (errFinal) => {
+                alert("Gagal mengunci GPS! Periksa izin lokasi HP & pastikan GPS aktif.\nError: " + errFinal.message);
+            }, { enableHighAccuracy: false, timeout: 30000, maximumAge: 10000 });
+
+        }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 5000 });
     }
 
     async function finishJob(nopol, rowId, sopir) {

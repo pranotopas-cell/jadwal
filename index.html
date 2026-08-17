@@ -53,9 +53,9 @@
 
         /* Maps Button Style */
         .btn-maps {
-            background: #66bb6a ; color: white; border: none; border-radius: 6px; padding: 2px 8px;
+            background: #66bb6a ; color: white; border: none; border-radius: 6px; padding: 0 15px;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-decoration: none; transition: background 0.3s; cursor: pointer;
+            text-decoration: none; transition: background 0.3s; cursor: pointer; padding: 2px 4px;
         }
         .btn-maps:active { background: #42a5f5; }
         .btn-maps i { font-size: 18px; margin-bottom: 2px; }
@@ -181,7 +181,6 @@
         </div>
     </div>
 
-    <!-- SCRIPT FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -198,25 +197,23 @@
         const app = initializeApp(firebaseConfig);
         const dbFirestore = getFirestore(app);
 
-        // Menyimpan data ke koleksi tracking_unit
         window.saveToFirebase = async function(sopir, data) {
             if (!sopir) return;
             try {
                 await setDoc(doc(dbFirestore, "tracking_unit", sopir), data, { merge: true });
-                console.log("Berhasil simpan ke Firebase:", data);
+                console.log("Berhasil sinkronisasi ke Firebase Firestore untuk Sopir: " + sopir);
             } catch (e) {
                 console.error("Gagal menyimpan ke Firebase: ", e);
             }
         };
 
-        // Mengambil no_rangka dari koleksi master_kendaraan berdasarkan Nopol
+        // Fungsi pencarian no_rangka berdasarkan nopol kendaraan dari koleksi master_kendaraan
         window.getNoRangka = async function(nopol) {
             if (!nopol || nopol === '-') return "-";
             try {
                 const cleanNopol = nopol.trim();
                 const q = query(collection(dbFirestore, "master_kendaraan"), where("nopol", "==", cleanNopol));
                 const querySnapshot = await getDocs(q);
-                
                 if (!querySnapshot.empty) {
                     let noRangka = "-";
                     querySnapshot.forEach((docSnap) => {
@@ -226,8 +223,6 @@
                         }
                     });
                     return noRangka;
-                } else {
-                    console.warn(`Nopol ${cleanNopol} tidak ditemukan di master_kendaraan!`);
                 }
             } catch (e) {
                 console.error("Gagal mengambil no_rangka dari master_kendaraan: ", e);
@@ -236,10 +231,10 @@
         };
     </script>
 
-    <!-- SCRIPT UTAMA UTILITY & LOGIK JADWAL -->
     <script>
+        // Inisialisasi Supabase Client
         const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInRefiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
         const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const sopirPhoneMap = {
@@ -362,7 +357,7 @@
 
         function verifikasiHakAksesSopir(sopirDariDb) {
             const loginPhone = localStorage.getItem('login_sopir_phone');
-            if (loginPhone === "02041978") return true;
+            if (loginPhone === "02041978") return true; // Bypass Admin Utama
 
             const loginNama = localStorage.getItem('login_sopir_nama');
             if (!loginNama) return false;
@@ -389,13 +384,8 @@
 
             const { data, error } = await _supabase.from('data_pengiriman').select('*').gte('tanggal', isoHariIni);
             isFetching = false;
-
-            if (error) {
-                console.error("Supabase Error:", error);
-                return;
-            }
             
-            if (data) {
+            if (!error && data) {
                 const statusPriority = { "PROSES": 10, "LANGSIRAN": 20, "TERJADWAL": 30, "OPER": 40, "NGISI AJA": 50, "TUNGGU": 60, "DELIVERED": 70 };
 
                 data.sort((a, b) => {
@@ -528,13 +518,14 @@
                         status: 'ON_JOB', 
                         last_update: updateTime
                     });
+                    console.log("Firebase Diperbarui via Watch:", coords.latitude, coords.longitude);
                 }
             }
 
             watchId = navigator.geolocation.watchPosition((pos) => {
                 kirimKeFirebase(pos.coords);
             }, (err) => {
-                console.warn("Watch GPS Error, fallback active:", err.message);
+                console.warn("Watch GPS Backup Active. Message:", err.message);
             }, gpsOptions);
 
             gpsBackupInterval = setInterval(() => {
@@ -553,9 +544,10 @@
             const loginPhone = localStorage.getItem('login_sopir_phone');
             if (!currentDriver) return alert("Sesi login habis, silakan login ulang.");
 
+            // Jika nomor HP bukan admin, validasi kesesuaian nama sopir
             if (loginPhone !== "02041978") {
                 if (!sopirDiJadwal || !sopirDiJadwal.toUpperCase().trim().includes(currentDriver.toUpperCase().trim())) {
-                    tampilkanNotifikasiKilat(` 🛇 STOP! JADWAL INI MILIK ${sopirDiJadwal.toUpperCase()}.\nANDA (${currentDriver.toUpperCase()}) HUBUNGI ADMIN BOLO....`, "#ff5252");
+                    tampilkanNotifikasiKilat(` 🛇 STOP!JADWAL INI MILIK ${sopirDiJadwal.toUpperCase()}.\nANDA (${currentDriver.toUpperCase()}) HUBUNGI ADMIN BOLO....`, "#ff5252");
                     return;
                 }
             }
@@ -565,17 +557,20 @@
                 return;
             }
 
-            if (!confirm(`APAKAH YAKIN AMBIL JOB ini?\nUnit: ${nopol}\nTujuan: ${tujuan}`)) {
+            if (!confirm(`Apakah Anda yakin ingin AMBIL JOB ini?\nUnit: ${nopol}\nTujuan: ${tujuan}`)) {
                 return;
             }
 
+            // Indikator loading kilat
             tampilkanNotifikasiKilat("⏳ MENGUNCI GPS & MENGAMBIL JOB...", "#fb8c00");
 
+            // Mengambil no_rangka dari Firestore master_kendaraan (AWAIT untuk memastikan nilai didapat dahulu)
             let noRangkaVal = '-';
             if (window.getNoRangka) {
                 noRangkaVal = await window.getNoRangka(nopol);
             }
 
+            // Percobaan 1: GPS Akurasi Tinggi
             navigator.geolocation.getCurrentPosition(async (posAwal) => {
                 const latitude = posAwal.coords.latitude;
                 const longitude = posAwal.coords.longitude;
@@ -603,6 +598,9 @@
                 loadDashboard(); 
 
             }, async (error) => {
+                console.warn("GPS Akurasi Tinggi Timeout/Gagal, Mencoba Mode Standar/Network...", error.message);
+                
+                // Percobaan 2: GPS Mode Standar
                 navigator.geolocation.getCurrentPosition(async (posStandar) => {
                     const latitude = posStandar.coords.latitude;
                     const longitude = posStandar.coords.longitude;
@@ -625,7 +623,7 @@
                         last_update: updateTime
                     });
 
-                    tampilkanNotifikasiKilat("✅ BISMILLAH AMBIL JOB "); 
+                    tampilkanNotifikasiKilat("✅ SUKSES AMBIL JOB"); 
                     eksekusiMulaiGpsWatch(nopol, tujuan, noRangkaVal);
                     loadDashboard(); 
 
@@ -639,6 +637,7 @@
         async function finishJob(nopol, rowId, sopir) {
             if (!verifikasiHakAksesSopir(sopir)) return;
             
+            // Mematikan tracking GPS
             if (watchId) navigator.geolocation.clearWatch(watchId);
             if (gpsBackupInterval) clearInterval(gpsBackupInterval); 
             
@@ -649,8 +648,10 @@
             const skrg = getWIB();
             const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
 
+            // Update status ke Supabase
             await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
 
+            // Update status di Firebase
             if (window.saveToFirebase) {
                 await window.saveToFirebase(currentDriver, {
                     nopol: "-",            
@@ -661,7 +662,7 @@
                 });
             }
             
-            tampilkanNotifikasiKilat("ALHAMDULILLAH ...SUKSES SAMPAI LOKASI TUJUAN", "#28a745");
+            tampilkanNotifikasiKilat("ALHAMDULILLAH .. SAMPAI LOKASI TUJUAN", "#28a745");
             loadDashboard();
         }
 

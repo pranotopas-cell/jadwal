@@ -255,16 +255,38 @@
         let currentActiveJob = null; 
         let gpsBackupInterval = null;
 
-        // Fungsi Suara (Text-to-Speech)
-        function bersuara(teks) {
+        // Inisialisasi Suara & Pemicu Audio khusus Mobile (iOS/Android)
+        let voicesList = [];
+        function initVoices() {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Hentikan suara sebelumnya jika ada
-                const ucapan = new SpeechSynthesisUtterance(teks);
-                ucapan.lang = 'id-ID';
-                ucapan.rate = 0.9; // Kecepatan bicara
-                ucapan.pitch = 1.0;
-                window.speechSynthesis.speak(ucapan);
+                voicesList = window.speechSynthesis.getVoices();
             }
+        }
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = initVoices;
+            initVoices();
+        }
+
+        // Fungsi Suara yang kompatibel dengan Mobile Chrome & iOS Safari
+        function bersuara(teks) {
+            if (!('speechSynthesis' in window)) return;
+
+            window.speechSynthesis.cancel(); // Reset antrean suara
+
+            const ucapan = new SpeechSynthesisUtterance(teks);
+            ucapan.lang = 'id-ID';
+            ucapan.rate = 0.9;
+            ucapan.pitch = 1.0;
+
+            // Memilih suara Bahasa Indonesia terbaik jika tersedia di sistem HP
+            if (voicesList.length === 0) voicesList = window.speechSynthesis.getVoices();
+            const idVoice = voicesList.find(v => v.lang.includes('id') || v.lang.includes('ID'));
+            if (idVoice) ucapan.voice = idVoice;
+
+            // Jalankan suara secara terpisah untuk mencegah keblokir kebijakan autostart mobile
+            setTimeout(() => {
+                window.speechSynthesis.speak(ucapan);
+            }, 100);
         }
 
         function getWIB() {
@@ -573,10 +595,13 @@
                 return;
             }
 
+            // Putar Suara LANGSUNG saat diklik agar tidak diblokir kebijakan browser HP
+            bersuara("Bismillah sukses, hati-hati di jalan bang");
+
             // Indikator loading kilat
             tampilkanNotifikasiKilat("⏳ MENGUNCI GPS & MENGAMBIL JOB...", "#fb8c00");
 
-            // Mengambil no_rangka dari Firestore master_kendaraan (AWAIT untuk memastikan nilai didapat dahulu)
+            // Mengambil no_rangka dari Firestore master_kendaraan
             let noRangkaVal = '-';
             if (window.getNoRangka) {
                 noRangkaVal = await window.getNoRangka(nopol);
@@ -605,9 +630,7 @@
                     last_update: updateTime
                 });
 
-                const msgSukses = "✅ BISMILLAH SUKSES..HATI HATI DI JALAN BANG";
-                tampilkanNotifikasiKilat(msgSukses); 
-                bersuara("Bismillah sukses, hati-hati di jalan bang");
+                tampilkanNotifikasiKilat("✅ BISMILLAH SUKSES..HATI HATI DI JALAN BANG"); 
                 eksekusiMulaiGpsWatch(nopol, tujuan, noRangkaVal);
                 loadDashboard(); 
 
@@ -638,7 +661,6 @@
                     });
 
                     tampilkanNotifikasiKilat("✅ SUKSES AMBIL JOB"); 
-                    bersuara("Bismillah sukses, hati-hati di jalan bang");
                     eksekusiMulaiGpsWatch(nopol, tujuan, noRangkaVal);
                     loadDashboard(); 
 
@@ -652,6 +674,9 @@
         async function finishJob(nopol, rowId, sopir) {
             if (!verifikasiHakAksesSopir(sopir)) return;
             
+            // Putar Suara LANGSUNG saat diklik agar tidak diblokir kebijakan browser HP
+            bersuara("Alhamdulillah, sampai lokasi tujuan");
+
             // Mematikan tracking GPS
             if (watchId) navigator.geolocation.clearWatch(watchId);
             if (gpsBackupInterval) clearInterval(gpsBackupInterval); 
@@ -677,9 +702,7 @@
                 });
             }
             
-            const msgSelesai = "ALHAMDULILLAH .. SAMPAI LOKASI TUJUAN";
-            tampilkanNotifikasiKilat(msgSelesai, "#28a745");
-            bersuara("Alhamdulillah, sampai lokasi tujuan");
+            tampilkanNotifikasiKilat("ALHAMDULILLAH .. SAMPAI LOKASI TUJUAN", "#28a745");
             loadDashboard();
         }
 

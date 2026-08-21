@@ -255,6 +255,18 @@
         let currentActiveJob = null; 
         let gpsBackupInterval = null;
 
+        // Fungsi Suara (Text-to-Speech)
+        function bersuara(teks) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Hentikan suara sebelumnya jika ada
+                const ucapan = new SpeechSynthesisUtterance(teks);
+                ucapan.lang = 'id-ID';
+                ucapan.rate = 0.9; // Kecepatan bicara
+                ucapan.pitch = 1.0;
+                window.speechSynthesis.speak(ucapan);
+            }
+        }
+
         function getWIB() {
             return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
         }
@@ -593,7 +605,9 @@
                     last_update: updateTime
                 });
 
-                tampilkanNotifikasiKilat("✅ BISMILLAH SUKSES..HATI HATI DI JALAN BANG"); 
+                const msgSukses = "✅ BISMILLAH SUKSES..HATI HATI DI JALAN BANG";
+                tampilkanNotifikasiKilat(msgSukses); 
+                bersuara("Bismillah sukses, hati-hati di jalan bang");
                 eksekusiMulaiGpsWatch(nopol, tujuan, noRangkaVal);
                 loadDashboard(); 
 
@@ -624,6 +638,7 @@
                     });
 
                     tampilkanNotifikasiKilat("✅ SUKSES AMBIL JOB"); 
+                    bersuara("Bismillah sukses, hati-hati di jalan bang");
                     eksekusiMulaiGpsWatch(nopol, tujuan, noRangkaVal);
                     loadDashboard(); 
 
@@ -662,7 +677,9 @@
                 });
             }
             
-            tampilkanNotifikasiKilat("ALHAMDULILLAH .. SAMPAI LOKASI TUJUAN", "#28a745");
+            const msgSelesai = "ALHAMDULILLAH .. SAMPAI LOKASI TUJUAN";
+            tampilkanNotifikasiKilat(msgSelesai, "#28a745");
+            bersuara("Alhamdulillah, sampai lokasi tujuan");
             loadDashboard();
         }
 

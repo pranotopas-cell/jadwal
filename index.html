@@ -595,8 +595,12 @@
                 return;
             }
 
-            // Putar Suara LANGSUNG saat diklik agar tidak diblokir kebijakan browser HP
-            bersuara("Bismillah sukses, hati-hati di jalan bang");
+            // PERBAIKAN: Pembersihan nama sopir untuk dibaca oleh Text-To-Speech HP secara jelas
+            let namaSopirAudio = currentDriver || sopirDiJadwal || "";
+            namaSopirAudio = namaSopirAudio.replace(/[^a-zA-Z\s]/g, "").trim(); // Hapus karakter khusus/angka jika ada
+            
+            // Putar suara langsung dengan menyebutkan Nama Sopir secara konsisten
+            bersuara(`Bismillah sukses, hati-hati di jalan bang ${namaSopirAudio}`);
 
             // Indikator loading kilat
             tampilkanNotifikasiKilat("⏳ MENGUNCI GPS & MENGAMBIL JOB...", "#fb8c00");

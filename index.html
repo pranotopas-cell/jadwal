@@ -197,11 +197,11 @@
         const app = initializeApp(firebaseConfig);
         const dbFirestore = getFirestore(app);
 
-        window.saveToFirebase = async function(sopir, data) {
-            if (!sopir) return;
+        window.saveToFirebase = async function(sopirKey, data) {
+            if (!sopirKey) return;
             try {
-                await setDoc(doc(dbFirestore, "tracking_unit", sopir), data, { merge: true });
-                console.log("Berhasil sinkronisasi ke Firebase Firestore untuk Sopir: " + sopir);
+                await setDoc(doc(dbFirestore, "tracking_unit", sopirKey), data, { merge: true });
+                console.log("Berhasil sinkronisasi ke Firebase Firestore untuk Sopir: " + sopirKey);
             } catch (e) {
                 console.error("Gagal menyimpan ke Firebase: ", e);
             }
@@ -546,6 +546,7 @@
                     window.saveToFirebase(currentDriver, {
                         nopol: nopolValid,
                         no_rangka: noRangkaValid,
+                        sopir: currentDriver,
                         lat: coords.latitude,
                         lon: coords.longitude,
                         tujuan: tujuanValid,
@@ -627,6 +628,7 @@
                 await window.saveToFirebase(currentDriver, {
                     nopol: nopol,
                     no_rangka: noRangkaVal,
+                    sopir: currentDriver,
                     lat: latitude,
                     lon: longitude,
                     tujuan: tujuan,
@@ -657,6 +659,7 @@
                     await window.saveToFirebase(currentDriver, {
                         nopol: nopol,
                         no_rangka: noRangkaVal,
+                        sopir: currentDriver,
                         lat: latitude,
                         lon: longitude,
                         tujuan: tujuan,
@@ -700,6 +703,7 @@
                 await window.saveToFirebase(currentDriver, {
                     nopol: "-",            
                     no_rangka: "-",        
+                    sopir: currentDriver,
                     tujuan: "-",           
                     status: 'LOGIN_ACTIVE',
                     last_update: skrg.toISOString()
@@ -764,6 +768,7 @@
                         window.saveToFirebase(loginNama, {
                             nopol: "-",
                             no_rangka: "-",
+                            sopir: loginNama,
                             tujuan: "-",
                             status: 'LOGIN_ACTIVE',
                             last_update: new Date().toISOString()
@@ -811,6 +816,7 @@
                                 window.saveToFirebase(loginNama, {
                                     nopol: "-",
                                     no_rangka: "-",
+                                    sopir: loginNama,
                                     tujuan: "-",
                                     status: 'LOGIN_ACTIVE',
                                     last_update: new Date().toISOString()

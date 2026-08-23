@@ -183,7 +183,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
@@ -207,23 +207,24 @@
             }
         };
 
-        // Fungsi pencarian no_rangka berdasarkan nopol kendaraan dari koleksi master_kendaraan
+        // Fungsi pencarian no_rangka dengan metode pencocokan nopol fleksibel
         window.getNoRangka = async function(nopol) {
             if (!nopol || nopol === '-') return "-";
             try {
-                const cleanNopol = nopol.trim();
-                const q = query(collection(dbFirestore, "master_kendaraan"), where("nopol", "==", cleanNopol));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    let noRangka = "-";
-                    querySnapshot.forEach((docSnap) => {
-                        const data = docSnap.data();
-                        if (data.no_rangka) {
-                            noRangka = data.no_rangka;
+                const targetClean = nopol.replace(/\s+/g, '').toUpperCase();
+                const querySnapshot = await getDocs(collection(dbFirestore, "master_kendaraan"));
+                
+                let foundRangka = "-";
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    if (data.nopol) {
+                        const dbNopolClean = String(data.nopol).replace(/\s+/g, '').toUpperCase();
+                        if (dbNopolClean === targetClean) {
+                            foundRangka = data.no_rangka || docSnap.id || "-";
                         }
-                    });
-                    return noRangka;
-                }
+                    }
+                });
+                return foundRangka;
             } catch (e) {
                 console.error("Gagal mengambil no_rangka dari master_kendaraan: ", e);
             }
@@ -267,7 +268,7 @@
             initVoices();
         }
 
-        // Fungsi Suara yang kompatibel dengan Mobile Chrome & iOS Safari
+        // Fungsi Suara
         function bersuara(teks) {
             if (!('speechSynthesis' in window)) return;
 
@@ -278,12 +279,10 @@
             ucapan.rate = 0.9;
             ucapan.pitch = 1.0;
 
-            // Memilih suara Bahasa Indonesia terbaik jika tersedia di sistem HP
             if (voicesList.length === 0) voicesList = window.speechSynthesis.getVoices();
             const idVoice = voicesList.find(v => v.lang.includes('id') || v.lang.includes('ID'));
             if (idVoice) ucapan.voice = idVoice;
 
-            // Jalankan suara secara terpisah untuk mencegah keblokir kebijakan autostart mobile
             setTimeout(() => {
                 window.speechSynthesis.speak(ucapan);
             }, 100);
@@ -534,9 +533,10 @@
             const tujuanValid = tujuan || '-';
             const noRangkaValid = noRangka || '-';
 
+            // Mengurangi delay GPS secara optimal (Realtime/Live Mode)
             const gpsOptions = { 
                 enableHighAccuracy: true, 
-                timeout: 10000,       
+                timeout: 5000,       
                 maximumAge: 0        
             };
 
@@ -553,25 +553,23 @@
                         status: 'ON_JOB', 
                         last_update: updateTime
                     });
-                    console.log("Firebase Diperbarui via Watch:", coords.latitude, coords.longitude);
                 }
             }
 
             watchId = navigator.geolocation.watchPosition((pos) => {
                 kirimKeFirebase(pos.coords);
             }, (err) => {
-                console.warn("Watch GPS Backup Active. Message:", err.message);
+                console.warn("Watch GPS Active:", err.message);
             }, gpsOptions);
 
+            // Backup pembaruan lokasi dengan frekuensi lebih cepat (3 Detik)
             gpsBackupInterval = setInterval(() => {
                 if (navigator.geolocation && currentActiveJob) {
                     navigator.geolocation.getCurrentPosition((pos) => {
                         kirimKeFirebase(pos.coords);
-                    }, (err) => {
-                        console.error("Gagal mengambil GPS Cadangan:", err.message);
-                    }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 });
+                    }, (err) => {}, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
                 }
-            }, 20000); 
+            }, 3000); 
         }
             
         async function takeJob(nopol, rowId, sopirDiJadwal, tujuan) {
@@ -579,7 +577,6 @@
             const loginPhone = localStorage.getItem('login_sopir_phone');
             if (!currentDriver) return alert("Sesi login habis, silakan login ulang.");
 
-            // Jika nomor HP bukan admin, validasi kesesuaian nama sopir
             if (loginPhone !== "02041978") {
                 if (!sopirDiJadwal || !sopirDiJadwal.toUpperCase().trim().includes(currentDriver.toUpperCase().trim())) {
                     tampilkanNotifikasiKilat(` 🛇 STOP!JADWAL INI MILIK ${sopirDiJadwal.toUpperCase()}.\nANDA (${currentDriver.toUpperCase()}) HUBUNGI ADMIN BOLO....`, "#ff5252");
@@ -596,23 +593,18 @@
                 return;
             }
 
-            // Pembersihan nama sopir untuk dibaca oleh Text-To-Speech HP secara jelas
             let namaSopirAudio = currentDriver || sopirDiJadwal || "";
             namaSopirAudio = namaSopirAudio.replace(/[^a-zA-Z\s]/g, "").trim();
             
-            // Putar suara langsung dengan menyebutkan Nama Sopir secara konsisten
             bersuara(`Bismillah sukses, hati-hati di jalan bang ${namaSopirAudio}`);
-
-            // Indikator loading kilat
             tampilkanNotifikasiKilat("⏳ MENGUNCI GPS & MENGAMBIL JOB...", "#fb8c00");
 
-            // Mengambil no_rangka dari Firestore master_kendaraan
+            // Pastikan mengambil no_rangka selesai sepenuhnya sebelum lanjut
             let noRangkaVal = '-';
             if (window.getNoRangka) {
                 noRangkaVal = await window.getNoRangka(nopol);
             }
 
-            // Percobaan 1: GPS Akurasi Tinggi
             navigator.geolocation.getCurrentPosition(async (posAwal) => {
                 const latitude = posAwal.coords.latitude;
                 const longitude = posAwal.coords.longitude;
@@ -641,9 +633,7 @@
                 loadDashboard(); 
 
             }, async (error) => {
-                console.warn("GPS Akurasi Tinggi Timeout/Gagal, Mencoba Mode Standar/Network...", error.message);
-                
-                // Percobaan 2: GPS Mode Standar
+                // Percobaan cadangan jika GPS akurasi tinggi sempat terkendala
                 navigator.geolocation.getCurrentPosition(async (posStandar) => {
                     const latitude = posStandar.coords.latitude;
                     const longitude = posStandar.coords.longitude;
@@ -673,18 +663,16 @@
 
                 }, (errFinal) => {
                     alert("Gagal mengunci GPS! Periksa izin lokasi HP & pastikan GPS aktif.\nError: " + errFinal.message);
-                }, { enableHighAccuracy: false, timeout: 30000, maximumAge: 10000 });
+                }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 });
 
-            }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 5000 });
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
         }
 
         async function finishJob(nopol, rowId, sopir) {
             if (!verifikasiHakAksesSopir(sopir)) return;
             
-            // Putar Suara LANGSUNG saat diklik agar tidak diblokir kebijakan browser HP
             bersuara("Alhamdulillah, sampai lokasi tujuan");
 
-            // Mematikan tracking GPS
             if (watchId) navigator.geolocation.clearWatch(watchId);
             if (gpsBackupInterval) clearInterval(gpsBackupInterval); 
             
@@ -695,10 +683,8 @@
             const skrg = getWIB();
             const fmtWaktu = skrg.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).toUpperCase().replace('.', ':');
 
-            // Update status ke Supabase
             await _supabase.from('data_pengiriman').update({ status: `DELIVERED\n(${fmtWaktu})` }).eq('id', rowId);
 
-            // Update status di Firebase
             if (window.saveToFirebase) {
                 await window.saveToFirebase(currentDriver, {
                     nopol: "-",            

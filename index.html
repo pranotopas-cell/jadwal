@@ -183,7 +183,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
@@ -205,30 +205,6 @@
             } catch (e) {
                 console.error("Gagal menyimpan ke Firebase: ", e);
             }
-        };
-
-        // Fungsi pencarian no_rangka dengan metode pencocokan nopol fleksibel
-        window.getNoRangka = async function(nopol) {
-            if (!nopol || nopol === '-') return "-";
-            try {
-                const targetClean = nopol.replace(/\s+/g, '').toUpperCase();
-                const querySnapshot = await getDocs(collection(dbFirestore, "master_kendaraan"));
-                
-                let foundRangka = "-";
-                querySnapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    if (data.nopol) {
-                        const dbNopolClean = String(data.nopol).replace(/\s+/g, '').toUpperCase();
-                        if (dbNopolClean === targetClean) {
-                            foundRangka = data.no_rangka || docSnap.id || "-";
-                        }
-                    }
-                });
-                return foundRangka;
-            } catch (e) {
-                console.error("Gagal mengambil no_rangka dari master_kendaraan: ", e);
-            }
-            return "-";
         };
     </script>
 
@@ -256,7 +232,7 @@
         let currentActiveJob = null; 
         let gpsBackupInterval = null;
 
-        // Inisialisasi Suara & Pemicu Audio khusus Mobile (iOS/Android)
+        // Inisialisasi Suara
         let voicesList = [];
         function initVoices() {
             if ('speechSynthesis' in window) {
@@ -268,12 +244,9 @@
             initVoices();
         }
 
-        // Fungsi Suara
         function bersuara(teks) {
             if (!('speechSynthesis' in window)) return;
-
-            window.speechSynthesis.cancel(); // Reset antrean suara
-
+            window.speechSynthesis.cancel();
             const ucapan = new SpeechSynthesisUtterance(teks);
             ucapan.lang = 'id-ID';
             ucapan.rate = 0.9;
@@ -390,7 +363,7 @@
 
         function verifikasiHakAksesSopir(sopirDariDb) {
             const loginPhone = localStorage.getItem('login_sopir_phone');
-            if (loginPhone === "02041978") return true; // Bypass Admin Utama
+            if (loginPhone === "02041978") return true;
 
             const loginNama = localStorage.getItem('login_sopir_nama');
             if (!loginNama) return false;
@@ -523,7 +496,16 @@
             if (watchId) navigator.geolocation.clearWatch(watchId);
             if (gpsBackupInterval) clearInterval(gpsBackupInterval);
             
-            currentActiveJob = { nopol, tujuan, noRangka };
+            let fixRangka = noRangka;
+            if (!fixRangka || fixRangka === '-') {
+                const saved = localStorage.getItem('active_tracking_job');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.noRangka && parsed.noRangka !== '-') fixRangka = parsed.noRangka;
+                }
+            }
+
+            currentActiveJob = { nopol, tujuan, noRangka: fixRangka };
             localStorage.setItem('active_tracking_job', JSON.stringify(currentActiveJob));
 
             const currentDriver = localStorage.getItem('login_sopir_nama');
@@ -531,9 +513,7 @@
 
             const nopolValid = nopol || '-';
             const tujuanValid = tujuan || '-';
-            const noRangkaValid = noRangka || '-';
 
-            // Mengurangi delay GPS secara optimal (Realtime/Live Mode)
             const gpsOptions = { 
                 enableHighAccuracy: true, 
                 timeout: 5000,       
@@ -545,7 +525,7 @@
                 if (window.saveToFirebase) {
                     window.saveToFirebase(currentDriver, {
                         nopol: nopolValid,
-                        no_rangka: noRangkaValid,
+                        no_rangka: fixRangka,
                         sopir: currentDriver,
                         lat: coords.latitude,
                         lon: coords.longitude,
@@ -562,7 +542,6 @@
                 console.warn("Watch GPS Active:", err.message);
             }, gpsOptions);
 
-            // Backup pembaruan lokasi dengan frekuensi lebih cepat (3 Detik)
             gpsBackupInterval = setInterval(() => {
                 if (navigator.geolocation && currentActiveJob) {
                     navigator.geolocation.getCurrentPosition((pos) => {
@@ -579,7 +558,7 @@
 
             if (loginPhone !== "02041978") {
                 if (!sopirDiJadwal || !sopirDiJadwal.toUpperCase().trim().includes(currentDriver.toUpperCase().trim())) {
-                    tampilkanNotifikasiKilat(` 🛇 STOP!JADWAL INI MILIK ${sopirDiJadwal.toUpperCase()}.\nANDA (${currentDriver.toUpperCase()}) HUBUNGI ADMIN BOLO....`, "#ff5252");
+                    tampilkanNotifikasiKilat(` 🛇 STOP! JADWAL INI MILIK ${sopirDiJadwal.toUpperCase()}.\nANDA (${currentDriver.toUpperCase()}) HUBUNGI ADMIN BOLO....`, "#ff5252");
                     return;
                 }
             }
@@ -599,10 +578,20 @@
             bersuara(`Bismillah sukses, hati-hati di jalan bang ${namaSopirAudio}`);
             tampilkanNotifikasiKilat("⏳ MENGUNCI GPS & MENGAMBIL JOB...", "#fb8c00");
 
-            // Pastikan mengambil no_rangka selesai sepenuhnya sebelum lanjut
+            // AMBIL NO_RANGKA LANGSUNG DARI DB SUPABASE (DATA PENGIRIMAN)
             let noRangkaVal = '-';
-            if (window.getNoRangka) {
-                noRangkaVal = await window.getNoRangka(nopol);
+            try {
+                const { data: dataRow } = await _supabase
+                    .from('data_pengiriman')
+                    .select('no_rangka')
+                    .eq('id', rowId)
+                    .maybeSingle();
+
+                if (dataRow && dataRow.no_rangka) {
+                    noRangkaVal = dataRow.no_rangka;
+                }
+            } catch (err) {
+                console.error("Gagal mengambil no_rangka dari Supabase:", err);
             }
 
             navigator.geolocation.getCurrentPosition(async (posAwal) => {
@@ -633,7 +622,6 @@
                 loadDashboard(); 
 
             }, async (error) => {
-                // Percobaan cadangan jika GPS akurasi tinggi sempat terkendala
                 navigator.geolocation.getCurrentPosition(async (posStandar) => {
                     const latitude = posStandar.coords.latitude;
                     const longitude = posStandar.coords.longitude;

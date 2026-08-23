@@ -595,9 +595,9 @@
                 return;
             }
 
-            // PERBAIKAN: Pembersihan nama sopir untuk dibaca oleh Text-To-Speech HP secara jelas
+            // Pembersihan nama sopir untuk dibaca oleh Text-To-Speech HP secara jelas
             let namaSopirAudio = currentDriver || sopirDiJadwal || "";
-            namaSopirAudio = namaSopirAudio.replace(/[^a-zA-Z\s]/g, "").trim(); // Hapus karakter khusus/angka jika ada
+            namaSopirAudio = namaSopirAudio.replace(/[^a-zA-Z\s]/g, "").trim();
             
             // Putar suara langsung dengan menyebutkan Nama Sopir secara konsisten
             bersuara(`Bismillah sukses, hati-hati di jalan bang ${namaSopirAudio}`);
@@ -809,6 +809,9 @@
 
                             if (window.saveToFirebase) {
                                 window.saveToFirebase(loginNama, {
+                                    nopol: "-",
+                                    no_rangka: "-",
+                                    tujuan: "-",
                                     status: 'LOGIN_ACTIVE',
                                     last_update: new Date().toISOString()
                                 });

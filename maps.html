@@ -2,368 +2,816 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>IKAEN MAPS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Live</title>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <!-- Supabase & ResponsiveVoice CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
-    <script src="https://unpkg.com/leaflet-marker-slide-to@1.2.3/dist/Leaflet.Marker.SlideTo.js"></script>
-    
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=FREE_KEY"></script>
+
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; background: #1a1a1a; }
-        #map { height: 100vh; width: 100%; z-index: 1; }
-        
-        /* Menu Samping Kiri */
-        .side-menu {
-            position: absolute; top: 10px; left: 10px;
-            z-index: 1001; display: flex; flex-direction: column; gap: 8px;
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #151c2e;
+            --text-gold: #f3ba2f;
+            --text-gold-soft: #d1a638;
+            --text-white: #ffffff;
+            --text-white-soft: #cbd5e1;
+            --text-blue-soft: #38bdf8;
+            --border-color: #1e293b;
         }
 
-        /* Container Menu Kanan */
-        .right-menu-container {
-            position: absolute; top: 10px; right: 10px;
-            z-index: 1001; display: none; flex-direction: column; gap: 10px;
-            width: 200px; max-width: 80vw; max-height: 90vh; overflow-y: auto;
-            padding-bottom: 10px;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        .layer-menu {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px); padding: 12px;
-            border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
-            color: white; display: flex; flex-direction: column; gap: 8px;
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-white);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        .layer-menu select {
-            background: #333; color: white; border: 1px solid #444;
-            padding: 8px; border-radius: 6px; font-size: 14px; width: 100%;
-            outline: none; box-sizing: border-box; -webkit-appearance: none;
+        /* Modal Aktivasi Suara di Awal Loading */
+        #audioInitModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(11, 15, 25, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
         }
 
-        /* Tombol Floating */
-        .float-item {
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.1);
+        .modal-content {
+            background: var(--bg-card);
+            border: 2px solid var(--text-gold);
+            padding: 30px;
             border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            color: white; cursor: pointer; transition: 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            text-align: center;
+            box-shadow: 0 0 20px rgba(243, 186, 47, 0.3);
+            max-width: 400px;
         }
 
-        .nav-btn { width: 48px; height: 48px; font-size: 20px; text-decoration: none; }
-        .btn-toggle-menu { background: #3498db; color: white; border: none; }
-
-        /* Popup Unit */
-        .unit-popup .leaflet-popup-content-wrapper {
-            background: rgba(0, 0, 0, 0.9); color: #fff; border: 1px solid #3498db; border-radius: 8px; font-size: 12px;
-        }
-        .unit-popup .leaflet-popup-tip { background: #3498db; }
-
-        /* Custom Zoom Control Tengah Atas */
-        .leaflet-top.leaflet-center { left: 50%; transform: translateX(-50%); top: 10px; }
-        .leaflet-center .leaflet-control { margin: 0; display: flex; flex-direction: row; }
-        .leaflet-center .leaflet-control-zoom-in, 
-        .leaflet-center .leaflet-control-zoom-out {
-            border-radius: 8px !important; margin: 0 5px; background: rgba(0, 0, 0, 0.8) !important;
-            color: white !important; border: 1px solid rgba(255,255,255,0.2) !important;
-            width: 40px !important; height: 40px !important; line-height: 40px !important;
+        .modal-content h2 {
+            color: var(--text-gold);
+            margin-bottom: 12px;
+            font-size: 20px;
         }
 
-        /* Desain Ikon Panah Custom Berotasi (Gaya Google Maps) */
-        .truck-icon-container {
-            transition: transform 0.4s ease-in-out;
+        .modal-content p {
+            color: var(--text-white-soft);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .btn-activate {
+            background: var(--text-gold);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-weight: bold;
+            font-size: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .btn-activate:hover {
+            transform: scale(1.05);
+            background-color: #e5ad28;
+        }
+
+        /* Header Layout */
+        header {
+            background-color: var(--bg-card);
+            border-bottom: 2px solid var(--border-color);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .header-title h1 {
+            color: var(--text-gold);
+            font-size: 24px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .header-title p {
+            color: var(--text-white-soft);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .header-controls {
             display: flex;
             align-items: center;
-            justify-content: center;
-            background: #3498db;
+            gap: 20px;
+        }
+
+        .clock-block {
+            text-align: right;
+        }
+
+        .clock-time {
+            font-size: 26px;
+            font-weight: bold;
+            color: var(--text-gold);
+            font-family: monospace;
+        }
+
+        .audio-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .audio-btn {
+            background: var(--text-gold);
+            border: none;
+            color: #000;
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0px 2px 6px rgba(0,0,0,0.5);
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .truck-icon-container svg {
-            width: 16px;
-            height: 16px;
-            fill: white;
-            transition: transform 0.4s ease-in-out;
+
+        /* Scroll Area & Table */
+        #scrollContainer {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 25px;
+            scroll-behavior: smooth;
+        }
+
+        #scrollContainer::-webkit-scrollbar {
+            display: none;
+        }
+        #scrollContainer {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: var(--bg-card);
+            color: var(--text-white-soft);
+            text-transform: uppercase;
+            font-size: 13px;
+            letter-spacing: 1px;
+            padding: 12px 16px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .flight-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+
+        .nopol-block {
+            background-color: var(--text-gold);
+            color: #000;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .sopir-name {
+            font-weight: bold;
+            font-size: 16px;
+            color: var(--text-white);
+        }
+
+        /* Status Colors */
+        .st-proses { color: #f59e0b; }
+        .st-langsir { color: #3b82f6; }
+        .st-terjadwal { color: #94a3b8; }
+        .st-oper { color: #a855f7; }
+        .st-tunggu { color: #ef4444; }
+        .st-ngisi { color: #06b6d4; }
+        .st-delivered { color: #10b981; }
+
+        /* Quote Overlay Animation */
+        #quoteOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(11, 15, 25, 0.96);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .quote-box {
+            max-width: 800px;
+        }
+
+        #quoteText {
+            font-size: 28px;
+            line-height: 1.6;
+            color: var(--text-white);
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        #quoteSource {
+            font-size: 20px;
+            color: var(--text-gold);
+            font-weight: bold;
+        }
+
+        .word-wrapper {
+            display: inline-block;
+            white-space: nowrap;
+            margin-right: 8px;
+        }
+
+        .letter-wrapper {
+            display: inline-block;
+            overflow: hidden;
+            vertical-align: bottom;
+        }
+
+        .letter {
+            display: inline-block;
+            transform: translateY(100%);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.1, 0.7, 0.1, 1), opacity 0.4s ease;
+        }
+
+        .letter.in {
+            transform: translateY(0%);
+            opacity: 1;
+        }
+
+        .letter.out {
+            transform: translateY(-100%);
+            opacity: 0;
         }
     </style>
 </head>
 <body>
 
-    <div class="side-menu">
-        <button class="float-item nav-btn" onclick="location.reload()"><i class="fa-solid fa-rotate"></i></button>
-        <button class="float-item nav-btn btn-toggle-menu" onclick="toggleRightMenu()"><i class="fa-solid fa-bars"></i></button>
-    </div>
-
-    <div class="right-menu-container" id="right-menu">
-        <div class="layer-menu">
-            <div style="font-size: 11px; font-weight: bold; color: #e67e22;"><i class="fa-solid fa-layer-group"></i> TAMPILAN PETA</div>
-            <select id="select-layer" onchange="changeLayer(this.value)">
-                <option value="osm">Standard (OSM)</option>
-                <option value="satelit">Satelit (Hybrid)</option>
-                <option value="terrain">Gelap (CartoDB)</option>
-            </select>
+    <!-- Modal Aktivasi Suara Awal Loading -->
+    <div id="audioInitModal">
+        <div class="modal-content">
+            <h2>SISTEM DASHBOARD LIVE</h2>
+            <p>Klik tombol di bawah untuk mengaktifkan fitur suara pengumuman dan audio sistem.</p>
+            <button class="btn-activate" onclick="enableAudioSystem()">🔊 AKTIFKAN SUARA</button>
         </div>
     </div>
-        
-    <div id="map"></div>
 
-    <script type="module">
-        // 1. IMPORT FIREBASE LIBRARIES
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <!-- Header Section -->
+    <header>
+        <div class="header-title">
+            <h1>DASHBOARD INVESTAMA KALIMANTAN ENERGI GROUP</h1>
+            <p id="targetDate">MENGAMBIL DATA...</p>
+        </div>
+        <div class="header-controls">
+            <div class="audio-control">
+                <button class="audio-btn" id="playPauseBtn" onclick="toggleAudio()">▶</button>
+                <span id="audio-status" style="font-size: 12px; font-weight: bold;">STOP</span>
+            </div>
+            <div class="clock-block">
+                <div class="clock-time" id="clock">00:00:00</div>
+            </div>
+        </div>
+    </header>
 
-        // CONFIG SUPABASE
-        const SUPABASE_URL = 'https://ntaECTphgoelmhzrkatp.supabase.co';
+    <!-- Table & Scroll Container -->
+    <div id="scrollContainer">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 35%;">Armada / Driver</th>
+                    <th style="width: 15%; text-align: center;">Jumlah</th>
+                    <th style="width: 30%;">Tujuan / Depo</th>
+                    <th style="width: 20%; text-align: right;">Status</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Data dari Supabase -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Quote Overlay -->
+    <div id="quoteOverlay">
+        <div class="quote-box">
+            <div id="quoteText"></div>
+            <div id="quoteSource"></div>
+        </div>
+    </div>
+
+    <audio id="murottalAudio" crossorigin="anonymous"></audio>
+
+    <script>
+        const SUPABASE_URL = 'https://ntaectphgoelmhzrkatp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50YWVjdHBoZ29lbG1oenJrYXRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NzExNDYsImV4cCI6MjA4ODE0NzE0Nn0.-8E98wpkzHBARRhW6PKhBtf2XKhWFjq7idAzw9jlcKg';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 2. CONFIG FIREBASE FIRESTORE
-        const firebaseConfig = {
-            apiKey: "AIzaSyBxupBCjk-pcp3KR8tqDrSgDe96SGxQigY",
-            authDomain: "ikaen-tracking.firebaseapp.com",
-            projectId: "ikaen-tracking",
-            storageBucket: "ikaen-tracking.firebasestorage.app",
-            messagingSenderId: "390072449388",
-            appId: "1:390072449388:web:78b880e0abd8793b69db49"
-        };
+        const quotes = [
+            { t: "Sesungguhnya sesudah kesulitan itu ada kemudahan.", s: "QS. Al-Insyirah: 6" },
+            { t: "Bekerjalah untuk duniamu seolah hidup selamanya,\nberamallah untuk akhiratmu seolah mati besok.", s: "Ali bin Abi Thalib" },
+            { t: "Sebaik-baik manusia adalah yang paling bermanfaat bagi orang lain.", s: "HR. Ahmad" },
+            { t: "Barangsiapa bertaqwa kepada Allah,\nniscaya Dia akan membukakan jalan keluar baginya.", s: "QS. At-Talaq: 2" },
+            { t: "Allah mencintai seorang hamba yang apabila bekerja,\nia bekerja dengan itqan (profesional).", s: "HR. Al-Baihaqi" },
+            { t: "Niatkan kerjamu sebagai ibadah, maka lelahmu menjadi pahala.", s: "Kata Bijak Muslim" },
+            { t: "Rezeki sudah diatur, tugas kita hanyalah menjemputnya dengan cara yang baik.", s: "Nasehat Tauhid" },
+            { t: "Tangan di atas lebih baik daripada tangan di bawah.", s: "HR. Bukhari & Muslim" },
+            { t: "Mencari rezeki halal adalah wajib setelah ibadah fardhu.", s: "HR. Ath-Thabrani" },
+            { t: "Janganlah kamu berputus asa dari rahmat Allah.", s: "QS. Az-Zumar: 53"},
+            { t: "Ridha Allah terletak pada ridha kedua orang tua.", s: "HR. Tirmidzi" },
+            { t: "Harta tidak akan berkurang karena sedekah.", s: "HR. Muslim" },
+            { t: "Dan barangsiapa yang bertawakal kepada Allah, niscaya Allah akan mencukupkan keperluannya.", s: "QS. At-Talaq: 3" },
+            { t: "Kekayaan bukanlah dengan banyaknya harta, namun kekayaan adalah hati yang selalu merasa cukup.", s: "HR. Bukhari" },
+            { t: "Jadikanlah sabar dan shalat sebagai penolongmu. Dan sesungguhnya yang demikian itu sungguh berat, kecuali bagi orang-orang yang khusyu.", s: "QS. Al-Baqarah: 45" },
+            { t: "Tidak ada satu subuh pun yang dialami hamba-hamba Allah melainkan malaikat turun dan berdoa: Ya Allah, berikanlah ganti bagi orang yang berinfak.", s: "HR. Bukhari" },
+            { t: "Mukmin yang kuat lebih baik dan lebih dicintai Allah daripada mukmin yang lemah.", s: "HR. Muslim" },
+            { t: "Sesungguhnya Allah tidak akan mengubah keadaan suatu kaum sebelum mereka mengubah keadaan diri mereka sendiri.", s: "QS. Ar-Ra'd: 11" },
+            { t: "Senyummu di hadapan saudaramu adalah sedekah.", s: "HR. Tirmidzi" },
+            { t: "Bersemangatlah atas hal-hal yang bermanfaat bagimu dan mintalah pertolongan kepada Allah, jangan menjadi lemah.", s: "HR. Muslim" },
+            { t: "Sesungguhnya bersama kesulitan ada kemudahan, maka melangkahlah dengan iman.", s: "QS. Al-Insyirah: 6" },
+            { t: "Jangan remehkan kebaikan sekecil apa pun, karena kita tidak pernah tahu kebaikan mana yang membawakan surga.", s: "HR. Muslim" },
+            { t: "Rezeki yang berkah bukan tentang seberapa banyak jumlahnya, melainkan seberapa tenang hati yang menerimanya.", s: "Nasehat Tauhid" },
+            { t: "Dunia ini hanya tempat persinggahan; jadikan setiap lelahmu di sini sebagai bekal pulang yang indah.", s: "Kata Bijak Muslim" },
+            { t: "Barangsiapa yang menempuh jalan untuk mencari ilmu, maka Allah akan mudahkan jalannya menuju surga.", s: "HR. Muslim" },
+            { t: "Bukan kesulitan yang membuat kita takut, melainkan ketakutan yang membuat segalanya menjadi sulit. Bertawakallah.", s: "Ali bin Abi Thalib" },
+            { t: "Dan bersabarlah kamu, sesungguhnya janji Allah adalah benar.", s: "QS. Ar-Rum: 60" },
+            { t: "Bekerjalah dengan jujur, karena rezeki yang berkah akan melahirkan keturunan yang berkah pula.", s: "Nasehat Bijak" },
+            { t: "Dua nikmat yang sering dilupakan oleh manusia adalah kesehatan dan waktu luang.", s: "HR. Bukhari" },
+            { t: "Ketika kamu merasa sendirian, ingatlah bahwa Allah senantiasa mendengar bisikan doa dalam sujudmu.", s: "Kata Bijak Muslim" },
+            { t: "Siapa yang menabur kebaikan, ia akan memanen kebahagiaan, baik di dunia maupun di akhirat.", s: "Nasehat Tauhid" },
+            { t: "Bukan kemiskinan yang kita takuti, melainkan hilangnya rasa syukur saat harta melimpah.", s: "Kata Hikmah" },
+            { t: "Jika Allah menunda sesuatu yang kamu inginkan, itu karena Dia ingin memberimu sesuatu yang jauh lebih baik pada waktu yang tepat.", s: "QS. Al-Baqarah: 216" },
+            { t: "Senyummu di hadapan saudaramu adalah bernilai sedekah.", s: "HR. Tirmidzi" },
+            { t: "Mulailah pagimu dengan bismillah, jalani siangmu dengan alhamdulillah, dan tutuplah malammu dengan istighfar.", s: "Nasehat Bijak" }
+        ];
 
-        const app = initializeApp(firebaseConfig);
-        const dbFirestore = getFirestore(app);
+        let quoteIndex = 0;
+        const audio = document.getElementById('murottalAudio');
+        const streamSources = [
+            "https://live.mp3quran.net/makkah",
+            "https://live.mp3quran.net/madinah",
+            "https://qurango.net/radio/mix"
+        ];
+        let currentSourceIndex = 0;
 
-        // SETUP MAPS UTAMA
-        const savedLat = localStorage.getItem('map_lat') || -2.5489;
-        const savedLon = localStorage.getItem('map_lon') || 118.0149;
-        const savedZoom = localStorage.getItem('map_zoom') || 5;
+        let previousStatusMap = {};
+        let isInitialLoad = true;
+        let isAudioAllowed = false;
+        let isScrolling = false;
+        let scrollRequest = null;
 
-        const map = L.map('map', { 
-            zoomControl: false, 
-            attributionControl: false,
-            rotate: true, 
-            touchRotate: true, 
-            shiftKeyRotate: true,
-            bearing: 0 
-        }).setView([savedLat, savedLon], savedZoom);
-
-        const centerControl = map._controlCorners;
-        centerControl.topcenter = L.DomUtil.create('div', 'leaflet-top leaflet-center', map._controlContainer);
-        new L.Control.Zoom({ position: 'topcenter' }).addTo(map);
-
-        const baseLayers = {
-            'osm': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
-            'satelit': L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'),
-            'terrain': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png')
-        };
-        
-        baseLayers.osm.addTo(map);
-
-        window.changeLayer = function(type) {
-            Object.values(baseLayers).forEach(layer => map.removeLayer(layer));
-            if (baseLayers[type]) baseLayers[type].addTo(map);
+        function getWIBDateString() {
+            const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
         }
 
-        map.on('moveend zoomend rotateend', () => {
-            const center = map.getCenter();
-            localStorage.setItem('map_lat', center.lat);
-            localStorage.setItem('map_lon', center.lng);
-            localStorage.setItem('map_zoom', map.getZoom());
-        });
+        function playAirportChime() {
+            return new Promise((resolve) => {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContext) {
+                        resolve();
+                        return;
+                    }
+                    const ctx = new AudioContext();
 
-        let markers = { units: {}, pois: {} };
-        let routeLayer = null; 
-        let userMarker = null;
-        let searchMarker = null;
-        let isAddMode = false;
-        let userCoords = null;
-        let firebaseUnsubscribe = null;
+                    const notes = [
+                        { freq: 698.46, time: 0.00, duration: 0.45 },
+                        { freq: 587.33, time: 0.35, duration: 0.45 },
+                        { freq: 440.00, time: 0.70, duration: 0.45 },
+                        { freq: 349.23, time: 1.05, duration: 1.10 }
+                    ];
 
-        window.toggleRightMenu = function() {
-            const menu = document.getElementById('right-menu');
-            menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
-        }
+                    notes.forEach(note => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
 
-        function calculateBearing(lat1, lon1, lat2, lon2) {
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const lat1Rad = lat1 * Math.PI / 180;
-            const lat2Rad = lat2 * Math.PI / 180;
-            const y = Math.sin(dLon) * Math.cos(lat2Rad);
-            const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
-            const brng = Math.atan2(y, x) * 180 / Math.PI;
-            return (brng + 360) % 360;
-        }
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(note.freq, ctx.currentTime + note.time);
 
-        function handleTrackingDone() {
-            if (firebaseUnsubscribe) {
-                firebaseUnsubscribe();
-                firebaseUnsubscribe = null;
-            }
+                        gain.gain.setValueAtTime(0.0001, ctx.currentTime + note.time);
+                        gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + note.time + 0.03);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + note.time + note.duration);
 
-            Object.keys(markers.units).forEach(nopol => {
-                map.removeLayer(markers.units[nopol]);
-                delete markers.units[nopol];
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+
+                        osc.start(ctx.currentTime + note.time);
+                        osc.stop(ctx.currentTime + note.time + note.duration);
+                    });
+
+                    setTimeout(() => {
+                        ctx.close();
+                        resolve();
+                    }, 2200);
+                } catch (e) {
+                    console.error("Gagal memutar chime:", e);
+                    resolve();
+                }
             });
-
-            document.body.innerHTML = `
-                <div style="text-align:center; margin-top:100px; font-family:sans-serif; padding:20px;">
-                    <div style="font-size:60px; color:#2ecc71; margin-bottom:20px;">🔒</div>
-                    <h2 style="color:#2c3e50;">Link Pelacakan Kedaluwarsa</h2>
-                    <p style="color:#7f8c8d; font-size:16px;">Unit armada telah sampai di tujuan dan status pengiriman telah selesai (DONE).</p>
-                    <p style="color:#bdc3c7; font-size:12px; margin-top:20px;">Demi keamanan data, pelacakan otomatis dinonaktifkan.</p>
-                </div>`;
         }
 
-        // 3. DATA REAL-TIME & KONTROL LEAFLET
-        async function initTrackingRealtime() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const targetId = urlParams.get('id');
+        async function playVoiceAnnouncement(text) {
+            if (!isAudioAllowed) return;
 
-            if (!targetId) {
-                document.body.innerHTML = `
-                    <div style="text-align:center; margin-top:100px; font-family:sans-serif; padding:20px;">
-                        <h2 style="color:#e74c3c;">⚠️ Akses Ditolak</h2>
-                        <p style="color:#555;">Link tidak valid. Silakan gunakan link resmi dari WhatsApp.</p>
-                    </div>`;
+            const originalVolume = audio.volume;
+            if (!audio.paused) audio.volume = 0.1;
+
+            await playAirportChime();
+
+            const safetyMessage = "jaga kualitas dan kuantitas pengiriman bbm, serta utamakan keselamatan dan selalu gunakan alat pelindung diri saat bertugas. Terima kasih.";
+            const fullText = text + safetyMessage;
+
+            const finishAnnouncement = async () => {
+                await playAirportChime();
+                if (!audio.paused) audio.volume = originalVolume;
+            };
+
+            const speakFallback = () => {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const msg = new SpeechSynthesisUtterance(fullText);
+                    msg.lang = 'id-ID';
+                    msg.rate = 0.75;
+                    msg.onend = finishAnnouncement;
+                    msg.onerror = finishAnnouncement;
+                    window.speechSynthesis.speak(msg);
+                } else {
+                    finishAnnouncement();
+                }
+            };
+
+            if (window.responsiveVoice && typeof responsiveVoice.speak === 'function') {
+                try {
+                    responsiveVoice.speak(fullText, "Indonesian Female", {
+                        pitch: 1,
+                        rate: 0.75,
+                        volume: 1,
+                        onend: finishAnnouncement,
+                        onerror: speakFallback
+                    });
+                } catch (e) {
+                    speakFallback();
+                }
+            } else {
+                speakFallback();
+            }
+        }
+
+        function enableAudioSystem() {
+            isAudioAllowed = true;
+            document.getElementById('audioInitModal').style.display = 'none';
+            playVoiceAnnouncement("Sistem suara telah aktif.");
+        }
+
+        function toggleAudio() {
+            const btn = document.getElementById('playPauseBtn');
+            const statusLabel = document.getElementById('audio-status');
+            if (audio.paused) { playCurrentSource(); } 
+            else { audio.pause(); btn.innerText = "▶"; statusLabel.innerText = "STOP"; }
+        }
+
+        function playCurrentSource() {
+            const btn = document.getElementById('playPauseBtn');
+            const statusLabel = document.getElementById('audio-status');
+            statusLabel.innerText = "CONNECTING...";
+            audio.src = streamSources[currentSourceIndex];
+            audio.play().then(() => {
+                btn.innerText = "⏸";
+                statusLabel.innerText = "QUR'AN LIVE";
+            }).catch(() => tryNextSource());
+        }
+
+        function tryNextSource() {
+            currentSourceIndex = (currentSourceIndex + 1) % streamSources.length;
+            playCurrentSource();
+        }
+
+        function wrapText(element) {
+            const text = element.textContent;
+            element.innerHTML = '';
+            const words = text.split(' ');
+            words.forEach((word) => {
+                if (!word) return;
+                const wordSpan = document.createElement('span');
+                wordSpan.className = 'word-wrapper';
+                word.split('').forEach(char => {
+                    const wrapper = document.createElement('span');
+                    wrapper.className = 'letter-wrapper';
+                    const s = document.createElement('span');
+                    s.className = 'letter';
+                    s.innerHTML = char;
+                    wrapper.appendChild(s);
+                    wordSpan.appendChild(wrapper);
+                });
+                element.appendChild(wordSpan);
+            });
+        }
+
+        async function animateIn(overlay) {
+            overlay.style.display = 'flex';
+            overlay.offsetHeight;
+            overlay.style.opacity = '1';
+            const letters = overlay.querySelectorAll('.letter');
+            for (let i = 0; i < letters.length; i++) {
+                letters[i].classList.remove('out');
+                letters[i].classList.add('in');
+                if (i % 3 === 0) await new Promise(r => setTimeout(r, 15));
+            }
+        }
+
+        async function animateOut(overlay) {
+            const letters = overlay.querySelectorAll('.letter');
+            for (let i = 0; i < letters.length; i++) {
+                letters[i].classList.remove('in');
+                letters[i].classList.add('out');
+                if (i % 4 === 0) await new Promise(r => setTimeout(r, 10));
+            }
+            overlay.style.opacity = '0';
+            await new Promise(r => setTimeout(r, 800));
+            overlay.style.display = 'none';
+        }
+
+        async function showQuote() {
+            const overlay = document.getElementById('quoteOverlay');
+            const qTxt = document.getElementById('quoteText');
+            const qSrc = document.getElementById('quoteSource');
+            
+            const q = quotes[quoteIndex];
+            quoteIndex = (quoteIndex + 1) % quotes.length;
+
+            qTxt.textContent = q.t;
+            qSrc.textContent = q.s;
+            
+            wrapText(qTxt);
+            wrapText(qSrc);
+            
+            await animateIn(overlay);
+            await new Promise(r => setTimeout(r, 30000)); 
+            await animateOut(overlay);
+        }
+
+        const scrollContainer = document.getElementById('scrollContainer');
+        
+        function stopAutoScroll() {
+            if (scrollRequest) {
+                cancelAnimationFrame(scrollRequest);
+                scrollRequest = null;
+            }
+            isScrolling = false;
+        }
+
+        function startAutoScroll() {
+            stopAutoScroll();
+
+            if (scrollContainer.scrollHeight <= scrollContainer.clientHeight) {
+                setTimeout(async () => {
+                    await showQuote();
+                    loadDashboard();
+                }, 10000);
                 return;
             }
 
-            try {
-                const { data: dataUnit, error } = await _supabase
-                    .from('data_pengiriman') 
-                    .select('*')
-                    .eq('id', targetId)
-                    .maybeSingle();
+            isScrolling = true;
+            const scrollSpeed = 0.4; 
 
-                if (error || !dataUnit) {
-                    document.body.innerHTML = `
-                        <div style="text-align:center; margin-top:100px; font-family:sans-serif; padding:20px;">
-                            <h2 style="color:#e74c3c;">Data Tidak Ditemukan</h2>
-                            <p style="color:#555;">ID Pengiriman tidak terdaftar di sistem kami.</p>
-                        </div>`;
-                    return;
+            function step() {
+                if (!isScrolling) return;
+
+                const currentPos = scrollContainer.scrollTop + scrollContainer.clientHeight + 2;
+                const maxPos = scrollContainer.scrollHeight;
+
+                if (currentPos >= maxPos) {
+                    stopAutoScroll();
+                    setTimeout(async () => {
+                        await showQuote(); 
+                        scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                        setTimeout(() => { 
+                            loadDashboard(); 
+                        }, 500); 
+                    }, 1000);
+                    return; 
                 }
 
-                const statusRaw = (dataUnit.status || '').toUpperCase();
-                if (statusRaw.includes('DELIVERED') || statusRaw.includes('DONE')) {
-                    handleTrackingDone();
-                    return;
+                scrollContainer.scrollTop += scrollSpeed;
+                scrollRequest = requestAnimationFrame(step);
+            }
+
+            setTimeout(() => { 
+                if (isScrolling) {
+                    scrollRequest = requestAnimationFrame(step); 
                 }
+            }, 3000); 
+        }
 
-                const nopolSupabase = dataUnit.nopol || dataUnit.Nopol || dataUnit.unit;
+        function getWIB() { return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" })); }
 
-                const q = query(
-                    collection(dbFirestore, "tracking_unit"), 
-                    where("nopol", "==", nopolSupabase)
-                );
-                
-                firebaseUnsubscribe = onSnapshot(q, async (snapshot) => {
-                    const { data: reCheck } = await _supabase.from('data_pengiriman').select('status').eq('id', targetId).maybeSingle();
-                    if (reCheck) {
-                        const currentStatus = (reCheck.status || '').toUpperCase();
-                        if (currentStatus.includes('DELIVERED') || currentStatus.includes('DONE')) {
-                            handleTrackingDone();
-                            return;
-                        }
-                    }
+        // FUNGSI PENGUMUMAN SUARA (JAM SAJA SAAT DELIVERED)
+        function announceStatusChange(item, statusType) {
+            const nopolEja = (item.nopol || 'Tanpa Nopol').split('').join(' ');
+            const sopir = item.sopir || 'Sopir';
+            const tujuan = item.delivery_to || 'Tujuan';
 
-                    const activeNopols = [];
+            // Ambil hanya Jam:Menit WIB
+            const jamSekarang = getWIB().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-                    snapshot.forEach((doc) => {
-                        const u = doc.data();
-                        const sopir = doc.id; 
-                        const nopol = u.nopol || sopir;
-                        activeNopols.push(nopol);
+            let teks = "";
+            if (statusType.includes("PROSES")) {
+                teks = `Mohon perhatian, armada dengan nomor polisi ${nopolEja}. pengemudi ${sopir}, tujuan pengiriman ${tujuan}, status PROSES menuju lokasi pengiriman.`;
+            } else if (statusType.includes("DELIVERED")) {
+                teks = `Mohon perhatian, armada dengan nomor polisi ${nopolEja}. pengemudi ${sopir}, tujuan pengiriman ${tujuan}, status DELIVERED telah sampai lokasi pengiriman pada pukul ${jamSekarang}.`;
+            }
 
-                        const lat = parseFloat(u.lat), lon = parseFloat(u.lon);
-                        if (isNaN(lat) || isNaN(lon)) return;
-
-                        const popupContent = `
-                            <div style="line-height:1.6; color:#fff;">
-                                <b style="color:#3498db; font-size:14px;">📍 ${nopol} (ON JOB)</b><br>
-                                <b>Sopir:</b> ${sopir}<br>
-                                <b>Tujuan:</b> ${u.tujuan || '-'}
-                            </div>
-                        `;
-
-                        if (markers.units[nopol]) {
-                            const currentLatLng = markers.units[nopol].getLatLng();
-                            let bearing = u.bearing || 0;
-                            if (currentLatLng.lat !== lat || currentLatLng.lng !== lon) {
-                                bearing = calculateBearing(currentLatLng.lat, currentLatLng.lng, lat, lon);
-                            }
-
-                            // Perbaikan Rotasi: Targetkan struktur SVG internal secara spesifik sebelum/saat slide berjalan
-                            const markerElement = markers.units[nopol].getElement();
-                            if (markerElement) {
-                                const svgElement = markerElement.querySelector('svg');
-                                if (svgElement) {
-                                    svgElement.style.transform = `rotate(${bearing}deg)`;
-                                }
-                            }
-
-                            // SISTEM EMERGENSI: Jika slideTo macet/gagal karena isu library, setLatLng akan langsung memindahkan posisi
-                            if (typeof markers.units[nopol].slideTo === "function") {
-                                markers.units[nopol].slideTo([lat, lon], {
-                                    duration: 3500,
-                                    keepAtCenter: false
-                                });
-                            } else {
-                                markers.units[nopol].setLatLng([lat, lon]);
-                            }
-                            
-                            markers.units[nopol].getPopup().setContent(popupContent);
-                        } else {
-                            const initialIcon = L.divIcon({
-                                html: `
-                                    <div class="truck-icon-container">
-                                        <svg viewBox="0 0 24 24" style="transform: rotate(${u.bearing || 0}deg);">
-                                            <path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/>
-                                        </svg>
-                                    </div>
-                                `,
-                                className: '',
-                                iconSize: [32, 32],
-                                iconAnchor: [16, 16]
-                            });
-
-                            markers.units[nopol] = L.marker([lat, lon], { icon: initialIcon })
-                            .addTo(map)
-                            .bindPopup(popupContent, { className: 'unit-popup', offset: [0, -12] });
-
-                            map.flyTo([lat, lon], 14);
-                        }
-                    });
-
-                    Object.keys(markers.units).forEach(nopol => {
-                        if (!activeNopols.includes(nopol)) {
-                            map.removeLayer(markers.units[nopol]);
-                            delete markers.units[nopol];
-                        }
-                    });
-
-                }, (error) => {
-                    console.error("Firebase error tracking: ", error);
-                });
-
-            } catch (err) {
-                console.error("Sistem Error Pelacakan:", err);
+            if (teks) {
+                playVoiceAnnouncement(teks);
             }
         }
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((pos) => {
-                userCoords = [pos.coords.latitude, pos.coords.longitude];
-            }, () => { console.log("Izin lokasi awal ditolak."); });
+        async function loadDashboard() {
+            try {
+                const hariIni = getWIB();
+                const isoHariIni = getWIBDateString();
+                document.getElementById('targetDate').innerText = hariIni.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+
+                const { data, error } = await _supabase.from('data_pengiriman').select('*').gte('tanggal', isoHariIni);
+                if (error) throw error;
+                
+                const currentData = data || [];
+
+                currentData.forEach(item => {
+                    const id = item.id || (item.sopir + '_' + item.tanggal + '_' + item.delivery_to);
+                    const statusBaru = (item.status || "").toUpperCase();
+                    const isHariIni = (item.tanggal === isoHariIni);
+
+                    if (!isInitialLoad && isHariIni) {
+                        const statusLama = previousStatusMap[id];
+                        
+                        if (statusBaru.includes("PROSES") && statusLama && !statusLama.includes("PROSES")) {
+                            announceStatusChange(item, "PROSES");
+                        }
+                        else if (statusBaru.includes("DELIVERED") && statusLama && !statusLama.includes("DELIVERED")) {
+                            announceStatusChange(item, "DELIVERED");
+                        }
+                    }
+                    previousStatusMap[id] = statusBaru;
+                });
+
+                isInitialLoad = false;
+                renderData(currentData);
+            } catch (err) { 
+                console.error("Gagal:", err.message); 
+                startAutoScroll();
+            }
         }
 
-        initTrackingRealtime();
+        function setupRealtimeListener() {
+            _supabase
+                .channel('realtime_pengiriman')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'data_pengiriman' },
+                    (payload) => {
+                        if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+                            const item = payload.new;
+                            const isoHariIni = getWIBDateString();
+                            const id = item.id || (item.sopir + '_' + item.tanggal + '_' + item.delivery_to);
+                            const statusBaru = (item.status || "").toUpperCase();
+                            const statusLama = previousStatusMap[id];
+
+                            if (item.tanggal === isoHariIni) {
+                                if (statusBaru.includes("PROSES") && statusLama && !statusLama.includes("PROSES")) {
+                                    announceStatusChange(item, "PROSES");
+                                } else if (statusBaru.includes("DELIVERED") && statusLama && !statusLama.includes("DELIVERED")) {
+                                    announceStatusChange(item, "DELIVERED");
+                                }
+                            }
+                            previousStatusMap[id] = statusBaru;
+                        }
+                        loadDashboard();
+                    }
+                )
+                .subscribe();
+        }
+
+        // FUNGSI RENDER TABEL (PEMBATAS HARI/TANGGAL DIHILANGKAN & DELIVERED DITAMPILKAN DENGAN JAM)
+        async function renderData(data) {
+            stopAutoScroll();
+
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            const priority = { "PROSES": 1, "LANGSIR": 2, "TERJADWAL": 3, "OPER": 4, "NGISI ": 5, "TUNGGU": 6, "DELIVERED": 7 };
+
+            data.sort((a, b) => {
+                if(a.tanggal !== b.tanggal) return a.tanggal.localeCompare(b.tanggal);
+                return (priority[a.status?.toUpperCase()] || 99) - (priority[b.status?.toUpperCase()] || 99);
+            });
+
+            for (let row of data) {
+                const tr = document.createElement('tr');
+                const st = (row.status || "").toUpperCase();
+                
+                let cls = "st-terjadwal";
+                if (st.includes("PROSES")) cls = "st-proses";
+                else if (st.includes("LANGSIR")) cls = "st-langsir";
+                else if (st.includes("OPER")) cls = "st-oper";
+                else if (st.includes("TUNGGU")) cls = "st-tunggu";
+                else if (st.includes("NGISI")) cls = "st-ngisi";
+                else if (st.includes("DELIVERED")) cls = "st-delivered";
+
+                // Format teks status (jika DELIVERED tambahkan jam)
+                let statusDisplay = st;
+                if (st.includes("DELIVERED")) {
+                    const jamSelesai = row.updated_at 
+                        ? new Date(row.updated_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })
+                        : getWIB().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    statusDisplay = `DELIVERED (${jamSelesai})`;
+                }
+
+                tr.innerHTML = `
+                    <td>
+                        <div class="flight-cell">
+                            <div class="nopol-block">${row.nopol || '-'}</div>
+                            <div class="sopir-name">${row.sopir || '-'}</div>
+                        </div>
+                        <div style="font-size:15px; color:var(--text-blue-soft); margin-left:2px;">LOCATION : ${row.lokasi || '-'}</div>
+                    </td>
+                    <td style="text-align:center; font-weight:bold; color:var(--text-gold-soft); font-size:18px;">${row.jumlah_keluar || '0'}</td>
+                    <td>
+                        <div style="color:var(--text-white-soft); font-weight:bold; font-size:16px; margin-bottom:4px;">${row.delivery_to || '-'}</div>
+                        <div style="color:var(--text-blue-soft); font-size:14px; font-weight:600; text-transform:uppercase;">DEPO : ${row.supplier || '-'}</div>
+                    </td>
+                    <td class="${cls}" style="text-align:right; font-size:16px; font-weight:bold; letter-spacing:1px;">${statusDisplay}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            scrollContainer.scrollTop = 0;
+            startAutoScroll();
+        }
+
+        setInterval(() => {
+            const now = getWIB();
+            document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
+        }, 1000);
+
+        loadDashboard();
+        setupRealtimeListener();
     </script>
 </body>
 </html>

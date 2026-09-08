@@ -232,7 +232,7 @@
         let currentActiveJob = null; 
         let gpsBackupInterval = null;
 
-        // Inisialisasi Suara
+        // Inisialisasi Suara Bawaan
         let voicesList = [];
         function initVoices() {
             if ('speechSynthesis' in window) {
@@ -259,6 +259,22 @@
             setTimeout(() => {
                 window.speechSynthesis.speak(ucapan);
             }, 100);
+        }
+
+        // FUNGSI KHUSUS PEMUTAR AUDIO SUARA JOKOWI
+        function putarSuaraJokowi(jenis) {
+            let audioPath = '';
+            
+            if (jenis === 'ambil_job') {
+                audioPath = 'jokowi_ambil_job.mp3';
+            } else if (jenis === 'done') {
+                audioPath = 'jokowi_done.mp3';
+            }
+
+            if (audioPath) {
+                const audio = new Audio(audioPath);
+                audio.play().catch(err => console.log("Gagal memutar audio Jokowi:", err));
+            }
         }
 
         function getWIB() {
@@ -572,10 +588,9 @@
                 return;
             }
 
-            let namaSopirAudio = currentDriver || sopirDiJadwal || "";
-            namaSopirAudio = namaSopirAudio.replace(/[^a-zA-Z\s]/g, "").trim();
+            // DIPANGGIL SUARA JOKOWI
+            putarSuaraJokowi('ambil_job');
             
-            bersuara(`Bismillah sukses, hati-hati di jalan bang ${namaSopirAudio}`);
             tampilkanNotifikasiKilat("⏳ MENGUNCI GPS & MENGAMBIL JOB...", "#fb8c00");
 
             // AMBIL NO_RANGKA LANGSUNG DARI DB SUPABASE (DATA PENGIRIMAN)
@@ -659,7 +674,8 @@
         async function finishJob(nopol, rowId, sopir) {
             if (!verifikasiHakAksesSopir(sopir)) return;
             
-            bersuara("Alhamdulillah, sampai lokasi tujuan");
+            // DIPANGGIL SUARA JOKOWI
+            putarSuaraJokowi('done');
 
             if (watchId) navigator.geolocation.clearWatch(watchId);
             if (gpsBackupInterval) clearInterval(gpsBackupInterval); 

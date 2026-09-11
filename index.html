@@ -266,14 +266,14 @@
             let audioPath = '';
             
             if (jenis === 'ambil_job') {
-                audioPath = 'jokowi_ambil_job.mp3';
+                audioPath = 'prabowo_ambil_job.mp3';
             } else if (jenis === 'done') {
-                audioPath = 'jokowi_done.mp3';
+                audioPath = 'prabowo_done.mp3';
             }
 
             if (audioPath) {
                 const audio = new Audio(audioPath);
-                audio.play().catch(err => console.log("Gagal memutar audio Jokowi:", err));
+                audio.play().catch(err => console.log("Gagal memutar audio prabowo:", err));
             }
         }
 

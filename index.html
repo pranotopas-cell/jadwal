@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>JADWAL PENGIRIMAN</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -28,9 +28,9 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0; background-color: var(--bg-airport); 
-            color: var(--text-white-soft); height: 100vh;
+            color: var(--text-white-soft); height: 100vh; height: 100dvh;
             display: flex; flex-direction: column; overflow: hidden; 
             width: 100%;
         }
@@ -40,6 +40,7 @@
             background: var(--header-bg); padding: 12px 15px;
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 2px solid var(--text-gold-soft); flex-shrink: 0; z-index: 101;
+            padding-top: max(12px, env(safe-area-inset-top));
         }
         .header h1 { margin: 0; font-size: 16px; letter-spacing: 2px; font-weight: 800; color: var(--text-gold-soft); }
         #targetDate { font-size: 14px; color: var(--text-white-soft); font-weight: 700; margin-top: 4px; }
@@ -62,11 +63,11 @@
         .btn-maps span { font-size: 10px; font-weight: 800; }
 
         /* TABLE STYLE */
-        .main-content { flex: 1; overflow-y: auto; padding-bottom: 60px; }
+        .main-content { flex: 1; overflow-y: auto; padding-bottom: 60px; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         
         th {
-            background: rgba(5, 8, 17, 0.9); color: var(--text-gold-soft);
+            background: rgba(5, 8, 17, 0.95); color: var(--text-gold-soft);
             padding: 14px 8px; font-size: 14px; text-transform: uppercase;
             position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border-blue);
             font-weight: 900; letter-spacing: 1px;
@@ -126,6 +127,7 @@
             color: var(--text-white-soft); height: 35px; overflow: hidden;
             border-top: 1px solid var(--text-gold-soft); z-index: 100;
             display: flex; align-items: center;
+            padding-bottom: env(safe-area-inset-bottom);
         }
         .marquee-content {
             display: inline-block; white-space: nowrap; padding-left: 100%;
@@ -138,7 +140,7 @@
 
         /* --- STYLES MENU CHATTING REAL-TIME --- */
         .chat-fab {
-            position: fixed; bottom: 50px; right: 15px;
+            position: fixed; bottom: max(50px, calc(35px + env(safe-area-inset-bottom))); right: 15px;
             background: #42a5f5; color: #fff; width: 50px; height: 50px;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5); cursor: pointer; z-index: 1000;
@@ -158,20 +160,21 @@
 
         .chat-modal {
             position: fixed; bottom: 0; right: 0; left: 0; top: 0;
-            background: rgba(10, 15, 29, 0.95); z-index: 1001;
-            display: none; flex-direction: column; width: 100%; height: 100vh;
+            background: rgba(10, 15, 29, 0.98); z-index: 1001;
+            display: none; flex-direction: column; width: 100%; height: 100vh; height: 100dvh;
         }
         .chat-header {
             background: var(--header-bg); padding: 12px 15px; display: flex;
             justify-content: space-between; align-items: center;
             border-bottom: 2px solid var(--text-gold-soft);
+            padding-top: max(12px, env(safe-area-inset-top));
         }
         .chat-header h3 { margin: 0; color: var(--text-gold-soft); font-size: 16px; }
-        .chat-close-btn { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
+        .chat-close-btn { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; padding: 5px; }
         
         .chat-body {
             flex: 1; padding: 15px; overflow-y: auto; display: flex;
-            flex-direction: column; gap: 10px;
+            flex-direction: column; gap: 10px; -webkit-overflow-scrolling: touch;
         }
         .chat-bubble {
             max-width: 80%; padding: 8px 12px; border-radius: 8px; font-size: 13px;
@@ -190,19 +193,20 @@
 
         .chat-footer {
             padding: 10px; background: var(--header-bg); border-top: 1px solid var(--border-blue);
-            display: flex; gap: 8px; align-items: center; margin-bottom: 35px;
+            display: flex; gap: 8px; align-items: center;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
         }
         .chat-input {
             flex: 1; background: #16213e; border: 1px solid var(--border-blue);
-            padding: 10px; border-radius: 20px; color: #fff; font-size: 13px; outline: none;
+            padding: 10px 14px; border-radius: 20px; color: #fff; font-size: 14px; outline: none;
         }
         .btn-chat-action {
             background: #2e7d32; color: #fff; border: none; width: 38px; height: 38px;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 14px;
+            cursor: pointer; font-size: 14px; flex-shrink: 0;
         }
         .btn-mic-recording { background: #ff5252 !important; animation: pulse-light 1s infinite; }
-        audio { width: 200px; height: 35px; margin-top: 5px; }
+        audio { max-width: 220px; height: 36px; margin-top: 5px; width: 100%; }
     </style>
 </head>
 <body>
@@ -328,10 +332,24 @@
         // --- VARIABEL UNREAD CHAT & NOTIFIKASI SUARA ---
         let unreadCount = 0;
         let isChatOpen = false;
+        let audioCtx = null;
+
+        // Inisialisasi AudioContext dengan aman (khusus iOS/Safari)
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) audioCtx = new AudioContextClass();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
 
         function playNotificationSound() {
             try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                initAudioContext();
+                if (!audioCtx) return;
+
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
 
@@ -364,6 +382,7 @@
         }
 
         function toggleChatModal() {
+            initAudioContext(); // Aktifkan Web Audio API saat di-tap oleh pengguna
             const modal = document.getElementById('chatModal');
             if (modal.style.display === 'flex') {
                 modal.style.display = 'none';
@@ -431,7 +450,7 @@
                 contentHtml += `<div>${msg.message}</div>`;
             }
             if (msg.audio_url) {
-                contentHtml += `<audio controls src="${msg.audio_url}"></audio>`;
+                contentHtml += `<audio controls playsinline preload="metadata" src="${msg.audio_url}"></audio>`;
             }
             contentHtml += `<div class="chat-time">${timeStr} WIB</div>`;
 
@@ -469,41 +488,50 @@
             if (e.key === 'Enter') sendTextMessage();
         }
 
+        // Penentuan MimeType pintar (Aman di iOS & Android)
+        function getSupportedMimeType() {
+            const types = [
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/mp4',
+                'audio/aac',
+                'audio/ogg'
+            ];
+            for (let t of types) {
+                if (MediaRecorder.isTypeSupported(t)) return t;
+            }
+            return '';
+        }
+
         async function toggleRecordVoice() {
+            initAudioContext();
             const micBtn = document.getElementById('micBtn');
 
             if (!isRecording) {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mimeType = getSupportedMimeType();
 
-                    // Deteksi MIME type yang didukung browser
-                    let mimeType = 'audio/webm';
-                    if (MediaRecorder.isTypeSupported('audio/webm')) {
-                        mimeType = 'audio/webm';
-                    } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-                        mimeType = 'audio/mp4';
-                    } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
-                        mimeType = 'audio/ogg';
-                    }
-
-                    mediaRecorder = new MediaRecorder(stream);
+                    const options = mimeType ? { mimeType } : {};
+                    mediaRecorder = new MediaRecorder(stream, options);
                     audioChunks = [];
 
                     mediaRecorder.ondataavailable = event => {
-                        if (event.data.size > 0) audioChunks.push(event.data);
+                        if (event.data && event.data.size > 0) audioChunks.push(event.data);
                     };
 
                     mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: mimeType });
-                        await uploadAndSendVoiceNote(audioBlob, mimeType);
+                        const finalMime = mediaRecorder.mimeType || mimeType || 'audio/mp4';
+                        const audioBlob = new Blob(audioChunks, { type: finalMime });
+                        await uploadAndSendVoiceNote(audioBlob, finalMime);
                     };
 
-                    mediaRecorder.start();
+                    mediaRecorder.start(100); // Kumpulkan data tiap 100ms agar stabil di iOS
                     isRecording = true;
                     micBtn.classList.add('btn-mic-recording');
                     tampilkanNotifikasiKilat("🔴 SEDANG MEREKAM SUARA...", "#ff5252");
                 } catch (err) {
-                    alert("Gagal mengakses mikrofon: " + err.message);
+                    alert("Gagal mengakses mikrofon! Pastikan izin mikrofon telah diberikan di browser.\nError: " + err.message);
                 }
             } else {
                 mediaRecorder.stop();
@@ -519,7 +547,11 @@
         async function uploadAndSendVoiceNote(audioBlob, mimeType) {
             const sender = localStorage.getItem('login_sopir_nama') || 'ANONIM';
 
-            const ext = mimeType.includes('mp4') ? 'm4a' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+            let ext = 'mp4';
+            if (mimeType.includes('webm')) ext = 'webm';
+            else if (mimeType.includes('ogg')) ext = 'ogg';
+            else if (mimeType.includes('aac') || mimeType.includes('m4a')) ext = 'm4a';
+
             const fileName = `vn_${Date.now()}_${sender.replace(/\s+/g, '_')}.${ext}`;
 
             const { data: storageData, error: storageErr } = await _supabase.storage
@@ -575,7 +607,7 @@
             })
             .subscribe();
 
-        // Inisialisasi Suara
+        // Inisialisasi Suara SpeechSynthesis
         let voicesList = [];
         function initVoices() {
             if ('speechSynthesis' in window) {
@@ -1103,6 +1135,10 @@
                 cekSesiGantungMatiLayar();
             }
         });
+
+        // Trigger inisialisasi Audio Context pada sentuhan pertama di layar (khusus Safari iOS)
+        document.addEventListener('touchstart', initAudioContext, { once: true });
+        document.addEventListener('click', initAudioContext, { once: true });
 
         const clockEl = document.getElementById('clock');
         if (clockEl) {

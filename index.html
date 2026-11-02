@@ -1033,26 +1033,43 @@
         async function finishJob(nopol, rowId, sopir) {
     if (!verifikasiHakAksesSopir(sopir)) return;
 
-    let namaTujuan = "tujuan";
+    // 1. Coba ambil nama tujuan dari localStorage terlebih dahulu
+    let namaTujuan = "";
+    const activeJobData = localStorage.getItem('active_tracking_job');
+    
+    if (activeJobData) {
+        try {
+            const parsed = JSON.parse(activeJobData);
+            // Cek properti delivery_to atau tujuan di localStorage
+            namaTujuan = parsed.delivery_to || parsed.tujuan || "";
+        } catch (e) {
+            console.log("Gagal parsing active_tracking_job", e);
+        }
+    }
 
-    try {
-        // Mengambil data dari kolom 'delivery_to' di Supabase
-        const { data, error } = await _supabase
+    // 2. Jika di localStorage tidak ada / bukan JSON, tarik dari Supabase (pakai await)
+    if (!namaTujuan) {
+        const { data } = await _supabase
             .from('data_pengiriman')
             .select('delivery_to')
             .eq('id', rowId)
-            .single();
+            .maybeSingle();
 
-        if (data && data.delivery_to && data.delivery_to !== "-") {
+        if (data && data.delivery_to) {
             namaTujuan = data.delivery_to;
         }
-    } catch (err) {
-        console.error("Gagal mengambil nama tujuan:", err);
     }
 
-    // Bersuara menyebutkan Alhamdulillah + nama lokasi dari 'delivery_to'
-    bersuara(`Alhamdulillah, sampai lokasi tujuan di ${namaTujuan}`);
+    // 3. Susun teks ucapan
+    const teksTujuan = namaTujuan ? `di ${namaTujuan}` : "";
+    const ucapan = `Alhamdulillah, sampai lokasi tujuan ${teksTujuan}`;
 
+    // 4. Panggil suara
+    if (typeof bersuara === "function") {
+        bersuara(ucapan);
+    }
+
+    // --- SISA KODE PROSES FINISH ---
     if (watchId) navigator.geolocation.clearWatch(watchId);
     if (gpsBackupInterval) clearInterval(gpsBackupInterval); 
     

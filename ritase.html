@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ritase Sopir & Unit Terpisah</title>
+    <title>Ritase Sopir & Unit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -37,13 +37,19 @@
                 </h1>
             </div>
             
-            <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+            <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto flex-wrap">
                 <a href="index.html" class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-zinc-300 min-h-[36px] px-3 py-1.5 rounded-lg transition active:scale-95 cursor-pointer shadow-sm">
                     HOME
                 </a>
-                <div class="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 text-xs sm:text-sm font-semibold text-slate-600">
-                    <label for="pilih-periode" class="shrink-0 pl-1">Periode:</label>
-                    <select id="pilih-periode" onchange="gantiPeriode(this.value)" class="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer pr-1 py-1">
+                
+                <!-- FILTER BULAN & TAHUN -->
+                <div class="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 text-xs sm:text-sm font-semibold text-slate-600">
+                    <label for="pilihan-bulan" class="shrink-0">Periode:</label>
+                    <select id="pilihan-bulan" onchange="jalankanInitDariFilter()" class="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer py-1">
+                        <!-- Diisi otomatis oleh JavaScript -->
+                    </select>
+                    <select id="pilihan-tahun" onchange="jalankanInitDariFilter()" class="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer py-1">
+                        <!-- Diisi otomatis oleh JavaScript -->
                     </select>
                 </div>
             </div>
@@ -124,28 +130,58 @@
         
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let dataRawMasterGlobal = []; // Menyimpan log murni bulan berjalan
+        let dataRawMasterGlobal = []; 
         let ritaseHasilFilter = []; 
-        let itemAktifTerpilih = "";     
-        let tipeAktifTerpilih = ""; // 'sopir' atau 'unit'
+        let itemAktifTerpilih = "";      
+        let tipeAktifTerpilih = ""; 
 
         // Master list internal
-        const DAFTAR_UNIT_SENDIRI = ["AGUS WANTO", "AGUS MULYANTO", "NUR KHOLIS", "ALFIN PURNAWAN", "SUPRIYADI", "WASIT SUSANTO", "WAHYUDI", ];
+        const DAFTAR_UNIT_SENDIRI = ["AGUS WANTO", "AGUS MULYANTO", "NUR KHOLIS", "ALFIN PURNAWAN", "SUPRIYADI", "WASIT SUSANTO", "WAHYUDI" ,"MISNAN", "WAHID KHUMAINI", "AGUS EFENDI", "WIYANTO", "RONNI PRESTIADI",];
         const DAFTAR_NOPOL_BARU = ["KH 8942 GN", "KH 8943 GN", "KH 8141 GM", "KH 8068 GR", "L 9761 UJ", "KH 8734 GH"];
         const TANGGAL_MERAH_2026 = ["2026-01-01", "2026-01-23", "2026-02-16", "2026-02-17", "2026-03-20", "2026-03-23", "2026-04-03", "2026-04-05", "2026-04-16", "2026-04-17", "2026-04-20", "2026-04-21", "2026-04-22", "2026-04-23", "2026-05-01", "2026-05-14", "2026-05-22", "2026-05-24", "2026-05-27", "2026-05-28", "2026-06-01", "2026-06-16", "2026-08-17", "2026-08-26", "2026-12-25", "2026-12-26"];
 
-        function setOpsiDropdown() {
-            const select = document.getElementById('pilih-periode');
-            const sekarang = new Date();
-            const opsiFormat = { month: 'long', year: 'numeric' };
-            const bulanIniValue = `${sekarang.getFullYear()}-${sekarang.getMonth()}`;
-            const bulanLaluDate = new Date(sekarang.getFullYear(), sekarang.getMonth() - 1, 1);
-            const bulanLaluValue = `${bulanLaluDate.getFullYear()}-${bulanLaluDate.getMonth()}`;
+        const namaBulan = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ];
 
-            select.innerHTML = `
-                <option value="${bulanIniValue}">${sekarang.toLocaleDateString('id-ID', opsiFormat)}</option>
-                <option value="${bulanLaluValue}">${bulanLaluDate.toLocaleDateString('id-ID', opsiFormat)}</option>
-            `;
+        function setupFilterBulanTahun() {
+            const selectBulan = document.getElementById('pilihan-bulan');
+            const selectTahun = document.getElementById('pilihan-tahun');
+            
+            const sekarang = new Date();
+            const bulanAktif = sekarang.getMonth(); // 0 - 11
+            const tahunAktif = sekarang.getFullYear();
+
+            // 1. Render Opsi Bulan
+            selectBulan.innerHTML = '';
+            namaBulan.forEach((nama, index) => {
+                const opsi = document.createElement('option');
+                opsi.value = index;
+                opsi.textContent = nama;
+                if (index === bulanAktif) {
+                    opsi.selected = true;
+                }
+                selectBulan.appendChild(opsi);
+            });
+
+            // 2. Render Opsi Tahun (Rentang 2 tahun ke belakang hingga 1 tahun ke depan)
+            selectTahun.innerHTML = '';
+            for (let t = tahunAktif - 2; t <= tahunAktif + 1; t++) {
+                const opsi = document.createElement('option');
+                opsi.value = t;
+                opsi.textContent = t;
+                if (t === tahunAktif) {
+                    opsi.selected = true;
+                }
+                selectTahun.appendChild(opsi);
+            }
+        }
+
+        function jalankanInitDariFilter() {
+            const bulanPilihan = parseInt(document.getElementById('pilihan-bulan').value);
+            const tahunPilihan = parseInt(document.getElementById('pilihan-tahun').value);
+            init(tahunPilihan, bulanPilihan);
         }
 
         async function init(tahunPilihan, bulanPilihan) {
@@ -184,11 +220,6 @@
                 console.error(err);
                 document.getElementById('loading-kiri').innerText = "Koneksi Bermasalah.";
             }
-        }
-
-        function gantiPeriode(value) {
-            const [tahun, bulan] = value.split('-').map(Number);
-            init(tahun, bulan);
         }
 
         function ekstrakDanTampilkanMenuKiri() {
@@ -334,7 +365,6 @@
                 let statusArr = [];
                 const masterSopirClean = DAFTAR_UNIT_SENDIRI.map(s => s.trim().toLowerCase());
                 
-                // Memecah string sopir berdasarkan tanda koma
                 const listKru = rit.sopir ? rit.sopir.split(',').map(s => s.trim().toLowerCase()) : [];
                 const namaKruUtama = listKru[0] || "";
 
@@ -344,7 +374,6 @@
                     statusArr.push("Unit Luar");
                 }
 
-                // Driver / Helper berdasarkan posisi index array nama yang di-klik
                 if (tipe === 'sopir' && listKru.length > 1) {
                     const idxTerpilih = listKru.indexOf(value.toLowerCase());
                     if (idxTerpilih === 0) {
@@ -363,7 +392,6 @@
                 const statusTeks = statusArr.join(", ");
                 let kelasWarnaStatus = "text-zinc-500 font-medium";
                 
-                // LOGIKA WARNA STATUS
                 if (statusArr.includes("Lembur")) {
                     kelasWarnaStatus = "text-red-700 font-semibold bg-red-50 px-1 py-0.5 rounded-sm border border-red-200/60";
                 } else if (statusArr.includes("Unit Luar")) {
@@ -415,8 +443,10 @@
 
             const klonJudul = clone.querySelector('#nama-terpilih');
             if (klonJudul) {
-                const selectEl = document.getElementById('pilih-periode');
-                klonJudul.innerText = `${itemAktifTerpilih.toUpperCase()} - ${selectEl.options[selectEl.selectedIndex].text.toUpperCase()}`;
+                const selectBulan = document.getElementById('pilihan-bulan');
+                const selectTahun = document.getElementById('pilihan-tahun');
+                const teksPeriode = `${selectBulan.options[selectBulan.selectedIndex].text} ${selectTahun.value}`;
+                klonJudul.innerText = `${itemAktifTerpilih.toUpperCase()} - ${teksPeriode.toUpperCase()}`;
             }
 
             const klonTabelKontainer = clone.querySelector('.overflow-x-auto');
@@ -441,8 +471,9 @@
                 windowHeight: clone.scrollHeight
             }).then(canvas => {
                 const dataJpg = canvas.toDataURL('image/jpeg', 0.95);
-                const selectEl = document.getElementById('pilih-periode');
-                const teksPeriode = selectEl.options[selectEl.selectedIndex].text.replace(/ /g, "_");
+                const selectBulan = document.getElementById('pilihan-bulan');
+                const selectTahun = document.getElementById('pilihan-tahun');
+                const teksPeriode = `${selectBulan.options[selectBulan.selectedIndex].text}_${selectTahun.value}`;
                 const namaClean = itemAktifTerpilih.replace(/[^\w\s]/gi, '').trim().replace(/ /g, "_");
                 
                 const linkSimpan = document.createElement('a');
@@ -464,8 +495,8 @@
         }
 
         window.onload = function() {
-            setOpsiDropdown(); 
-            init();             
+            setupFilterBulanTahun(); 
+            jalankanInitDariFilter();         
         };
     </script>
 </body> 

@@ -33,13 +33,17 @@
                     <i class="fa-solid fa-car-wrench text-lg text-white"></i>
                 </div>
                 <div>
-                    <h1 class="text-base font-bold leading-tight">AutoLog Service</h1>
+                    <h1 class="text-base font-bold leading-tight">AutoLog Servis</h1>
                     <p class="text-[10px] text-indigo-200">Catatan Perbaikan & Maintenance Armada</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
+                <!-- Tombol Kembali -->
+                <a href="index.html" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 text-[11px] font-medium rounded-md transition flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-arrow-left"></i> Kembali
+                </a>
                 <span id="syncStatus" class="text-[11px] bg-indigo-700 px-2.5 py-1 rounded-md text-indigo-100 flex items-center gap-1">
-                    <i class="fa-solid fa-cloud text-emerald-400"></i> Connected
+                    <i class="fa-solid fa-cloud text-emerald-400"></i>Connected
                 </span>
             </div>
         </div>
@@ -54,7 +58,7 @@
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
                     <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
                         <i class="fa-solid fa-pen-to-square text-indigo-600"></i>
-                        <span id="formTitle">Tambah Catatan</span>
+                        <span id="formTitle">Tambah Catatan </span>
                     </h2>
                     <button id="btnResetForm" onclick="resetForm()" class="text-[11px] text-slate-400 hover:text-slate-600 hidden">
                         Batal Edit
@@ -153,7 +157,7 @@
                     <div class="pt-1 flex gap-2">
                         <button type="submit" id="btnSubmit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-3 rounded-lg shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
                             <i class="fa-solid fa-save"></i>
-                            <span>Simpan ke Supabase</span>
+                            <span>Simpan</span>
                         </button>
                     </div>
                 </form>
@@ -166,15 +170,15 @@
                         <div>
                             <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
                                 <i class="fa-solid fa-list-check text-indigo-600"></i>
-                                Riwayat Perbaikan
+                                Riwayat Perbaikan Unit
                             </h2>
                             <p class="text-[10px] text-slate-500" id="totalRecordsText">Total: 0 Catatan</p>
                         </div>
                         
-                        <!-- Filter Bar: Dropdown Nopol, Dropdown Driver, Search -->
+                        <!-- Filter Bar: Dropdown Nopol, Driver, Bulan, & Search -->
                         <div class="flex flex-wrap items-center gap-2">
-                            <div class="relative w-32 sm:w-36">
-                                <select id="filterNopol" onchange="renderTable()" class="w-full pl-2 pr-6 py-1 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-slate-700">
+                            <div class="relative w-28">
+                                <select id="filterNopol" onchange="renderTable()" class="w-full pl-2 pr-4 py-1 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-slate-700">
                                     <option value="">Semua Nopol</option>
                                     <option value="KH 8734 GH">KH 8734 GH</option>
                                     <option value="KH 8942 GN">KH 8942 GN</option>
@@ -184,8 +188,8 @@
                                     <option value="L 9761 UJ">L 9761 UJ</option>
                                 </select>
                             </div>
-                            <div class="relative w-32 sm:w-36">
-                                <select id="filterDriver" onchange="renderTable()" class="w-full pl-2 pr-6 py-1 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-slate-700">
+                            <div class="relative w-28">
+                                <select id="filterDriver" onchange="renderTable()" class="w-full pl-2 pr-4 py-1 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-slate-700">
                                     <option value="">Semua Driver</option>
                                     <option value="Wahyudi">Wahyudi</option>
                                     <option value="Nur Kholis">Nur Kholis</option>
@@ -195,8 +199,25 @@
                                     <option value="Alfin Purnawan">Alfin Purnawan</option>
                                 </select>
                             </div>
-                            <div class="relative flex-1 min-w-[130px]">
-                                <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari kata kunci..." class="w-full pl-7 pr-2.5 py-1 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <div class="relative w-28">
+                                <select id="filterBulan" onchange="renderTable()" class="w-full pl-2 pr-4 py-1 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-slate-700">
+                                    <option value="">Semua Bulan</option>
+                                    <option value="01">Januari</option>
+                                    <option value="02">Februari</option>
+                                    <option value="03">Maret</option>
+                                    <option value="04">April</option>
+                                    <option value="05">Mei</option>
+                                    <option value="06">Juni</option>
+                                    <option value="07">Juli</option>
+                                    <option value="08">Agustus</option>
+                                    <option value="09">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                            </div>
+                            <div class="relative flex-1 min-w-[110px]">
+                                <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari..." class="w-full pl-7 pr-2.5 py-1 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
                                 <i class="fa-solid fa-magnifying-glass absolute left-2 top-2 text-[10px] text-slate-400"></i>
                             </div>
                         </div>
@@ -221,7 +242,7 @@
 
                     <div id="emptyState" class="py-10 text-center text-slate-400 hidden">
                         <i class="fa-regular fa-folder-open text-3xl mb-2"></i>
-                        <p class="text-xs">Belum ada riwayat catatan perbaikan</p>
+                        <p class="text-xs">Belum ada riwayat catatan perbaikan di database.</p>
                     </div>
                 </div>
             </section>
@@ -404,22 +425,35 @@
             fetchLogsFromSupabase();
         }
 
-        // 3. Render Tabel dengan Filter Dropdown Nopol & Driver
+        // 3. Render Tabel dengan Filter Nopol, Driver, dan Bulan
         function renderTable() {
             const tableBody = document.getElementById('tableBody');
             const emptyState = document.getElementById('emptyState');
             const searchInput = document.getElementById('searchInput').value.toLowerCase();
             const filterNopol = document.getElementById('filterNopol').value;
             const filterDriver = document.getElementById('filterDriver').value;
+            const filterBulan = document.getElementById('filterBulan').value;
             const totalText = document.getElementById('totalRecordsText');
 
             const filteredLogs = globalLogs.filter(log => {
                 const matchNopolFilter = filterNopol === "" || log.nopol === filterNopol;
                 const matchDriverFilter = filterDriver === "" || log.driver === filterDriver;
+                
+                let matchBulanFilter = true;
+                if (filterBulan !== "") {
+                    if (log.tanggal) {
+                        const bulanLog = log.tanggal.split('-')[1]; // Format YYYY-MM-DD diambil bagian MM
+                        matchBulanFilter = bulanLog === filterBulan;
+                    } else {
+                        matchBulanFilter = false;
+                    }
+                }
+
                 const matchSearch = (log.nopol && log.nopol.toLowerCase().includes(searchInput)) ||
                                     (log.driver && log.driver.toLowerCase().includes(searchInput)) ||
                                     (log.catatan_lain && log.catatan_lain.toLowerCase().includes(searchInput));
-                return matchNopolFilter && matchDriverFilter && matchSearch;
+                
+                return matchNopolFilter && matchDriverFilter && matchBulanFilter && matchSearch;
             });
 
             totalText.innerText = `Total: ${filteredLogs.length} Catatan`;

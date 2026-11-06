@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catatan Perbaikan & Servis Mobil (Supabase)</title>
+    <title>Servis Mobil</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Inter -->
@@ -33,13 +33,13 @@
                     <i class="fa-solid fa-car-wrench text-lg text-white"></i>
                 </div>
                 <div>
-                    <h1 class="text-base font-bold leading-tight">AutoLog Servis (Supabase)</h1>
+                    <h1 class="text-base font-bold leading-tight">AutoLog Service</h1>
                     <p class="text-[10px] text-indigo-200">Catatan Perbaikan & Maintenance Armada</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
                 <span id="syncStatus" class="text-[11px] bg-indigo-700 px-2.5 py-1 rounded-md text-indigo-100 flex items-center gap-1">
-                    <i class="fa-solid fa-cloud text-emerald-400"></i> Terhubung Supabase
+                    <i class="fa-solid fa-cloud text-emerald-400"></i> Connected
                 </span>
             </div>
         </div>
@@ -54,7 +54,7 @@
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
                     <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
                         <i class="fa-solid fa-pen-to-square text-indigo-600"></i>
-                        <span id="formTitle">Tambah Catatan Baru</span>
+                        <span id="formTitle">Tambah Catatan</span>
                     </h2>
                     <button id="btnResetForm" onclick="resetForm()" class="text-[11px] text-slate-400 hover:text-slate-600 hidden">
                         Batal Edit
@@ -166,7 +166,7 @@
                         <div>
                             <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
                                 <i class="fa-solid fa-list-check text-indigo-600"></i>
-                                Riwayat Perbaikan (Supabase Database)
+                                Riwayat Perbaikan
                             </h2>
                             <p class="text-[10px] text-slate-500" id="totalRecordsText">Total: 0 Catatan</p>
                         </div>
@@ -221,7 +221,7 @@
 
                     <div id="emptyState" class="py-10 text-center text-slate-400 hidden">
                         <i class="fa-regular fa-folder-open text-3xl mb-2"></i>
-                        <p class="text-xs">Belum ada riwayat catatan perbaikan di database.</p>
+                        <p class="text-xs">Belum ada riwayat catatan perbaikan</p>
                     </div>
                 </div>
             </section>

@@ -49,7 +49,7 @@
                 <!-- Tombol Riwayat Perbaikan -->
                 <button onclick="switchView('history')" id="navBtnHistory" class="px-3 py-1.5 bg-indigo-800 hover:bg-indigo-900 text-[11px] font-medium rounded-lg transition flex items-center gap-1.5 shadow-sm border border-indigo-600 text-indigo-200">
                     <i class="fa-solid fa-clock-rotate-left"></i> Riwayat Perbaikan
-                </span>
+                </button>
             </div>
         </div>
     </header>
@@ -161,7 +161,12 @@
                         </div>
                         <div>
                             <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">Upload Nota (Foto/PDF)</label>
-                            <input type="file" id="fileNota" accept="image/*,application/pdf" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                            <div class="flex items-center gap-1.5">
+                                <input type="file" id="fileNota" accept="image/*,application/pdf" class="flex-1 min-w-0 text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                                <button type="button" onclick="openCameraModal()" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-[11px] transition flex items-center gap-1 shrink-0 cursor-pointer">
+                                    <i class="fa-solid fa-camera"></i> Foto
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -263,6 +268,32 @@
         </div>
     </main>
 
+    <!-- Camera Modal -->
+    <div id="cameraModal" class="fixed inset-0 bg-slate-900/80 z-50 hidden flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl shadow-lg max-w-md w-full overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+                <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-camera text-indigo-600"></i> Ambil Foto Nota
+                </h3>
+                <button type="button" onclick="closeCameraModal()" class="text-slate-400 hover:text-slate-700">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div class="p-3 bg-black flex items-center justify-center">
+                <video id="cameraVideo" autoplay playsinline class="w-full max-h-72 rounded object-contain"></video>
+                <canvas id="cameraCanvas" class="hidden"></canvas>
+            </div>
+            <div class="p-3 flex justify-end gap-2 bg-slate-50 border-t border-slate-200">
+                <button type="button" onclick="closeCameraModal()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-medium text-[11px] hover:bg-slate-100">
+                    Batal
+                </button>
+                <button type="button" onclick="capturePhoto()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-[11px] flex items-center gap-1.5">
+                    <i class="fa-solid fa-camera"></i> Ambil Foto
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Print Preview Modal Area -->
     <div id="printArea" class="hidden print-only max-w-2xl mx-auto bg-white p-6 border border-slate-300 rounded-lg">
         <div class="border-b-2 border-slate-800 pb-3 mb-4 flex justify-between items-start">
@@ -311,7 +342,7 @@
                     <p class="font-semibold text-slate-800" id="pSignDriver">( _________________ )</p>
                 </div>
                 <div>
-                    <p class="mb-10 font-medium">Operasional
+                    <p class="mb-10 font-medium">Operasional</p>
                     <p class="font-semibold text-slate-800">( _________________ )</p>
                 </div>
                 <div>
@@ -331,8 +362,71 @@
         const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let globalLogs = [];
+        let cameraStream = null;
 
         document.getElementById('tanggal').valueAsDate = new Date();
+
+        async function openCameraModal() {
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraVideo');
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Kamera tidak didukung di browser ini.');
+                return;
+            }
+
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' } },
+                    audio: false
+                });
+                video.srcObject = cameraStream;
+                modal.classList.remove('hidden');
+            } catch (err) {
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: false
+                    });
+                    video.srcObject = cameraStream;
+                    modal.classList.remove('hidden');
+                } catch (fallbackErr) {
+                    alert('Gagal mengakses kamera: ' + fallbackErr.message);
+                }
+            }
+        }
+
+        function closeCameraModal() {
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraVideo');
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            video.srcObject = null;
+            modal.classList.add('hidden');
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('cameraCanvas');
+            if (!video.videoWidth || !video.videoHeight) return;
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(blob => {
+                if (!blob) return;
+                const file = new File([blob], `nota_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                document.getElementById('fileNota').files = dt.files;
+                closeCameraModal();
+                showNotification('Foto nota berhasil diambil.');
+            }, 'image/jpeg', 0.9);
+        }
 
         // Fungsi Switch Tampilan Tab
         function switchView(viewName) {
